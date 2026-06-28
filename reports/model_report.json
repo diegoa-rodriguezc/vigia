@@ -1,0 +1,254 @@
+{
+  "trained_at": "2026-06-27T19:57:43.072868+00:00",
+  "seed": 77,
+  "features": [
+    "lag_1",
+    "lag_2",
+    "lag_3",
+    "lag_6",
+    "lag_12",
+    "roll_mean_3",
+    "roll_std_3",
+    "roll_mean_6",
+    "roll_std_6",
+    "roll_mean_12",
+    "roll_std_12",
+    "media_hist",
+    "meses_activos",
+    "mes",
+    "trimestre",
+    "mes_sin",
+    "mes_cos",
+    "trend",
+    "log_poblacion"
+  ],
+  "metricas_backtest": {
+    "backtest": "walk-forward recursivo (rolling origin), sin fuga",
+    "n_origins": 3,
+    "horizon": 6,
+    "n_test": 30606,
+    "mae": 1.947,
+    "smape": 126.12,
+    "baseline_mae": 1.9733,
+    "baseline_smape": 117.87,
+    "resid_dispersion": 1.2305,
+    "pi_level": 80,
+    "pi_scale": 0.7074,
+    "pi_cobertura_empirica_pct": 80.0,
+    "por_volumen": [
+      {
+        "n": 10202,
+        "mae": 0.4832,
+        "smape": 173.47,
+        "baseline_mae": 0.4771,
+        "baseline_smape": 167.39,
+        "estrato": "bajo",
+        "rango_volumen_mensual": "≤0.3",
+        "gana_modelo": false
+      },
+      {
+        "n": 10202,
+        "mae": 0.8254,
+        "smape": 133.82,
+        "baseline_mae": 0.9381,
+        "baseline_smape": 139.52,
+        "estrato": "medio",
+        "rango_volumen_mensual": "0.3–1.1",
+        "gana_modelo": true
+      },
+      {
+        "n": 10202,
+        "mae": 4.5322,
+        "smape": 71.09,
+        "baseline_mae": 4.5046,
+        "baseline_smape": 78.61,
+        "estrato": "alto",
+        "rango_volumen_mensual": ">1.1",
+        "gana_modelo": false
+      }
+    ],
+    "multipaso": {
+      "horizon": 6,
+      "n": 146835,
+      "mae": 2.1975,
+      "smape": 113.41,
+      "baseline_mae": 2.5716,
+      "baseline_smape": 114.69,
+      "pi_cobertura_empirica_pct": 80.0,
+      "por_paso": [
+        {
+          "paso": 1,
+          "n": 30606,
+          "mae": 1.947,
+          "smape": 126.12,
+          "baseline_mae": 1.9733,
+          "baseline_smape": 117.87
+        },
+        {
+          "paso": 2,
+          "n": 29469,
+          "mae": 2.3187,
+          "smape": 125.65,
+          "baseline_mae": 2.6651,
+          "baseline_smape": 119.45
+        },
+        {
+          "paso": 3,
+          "n": 27917,
+          "mae": 2.225,
+          "smape": 118.81,
+          "baseline_mae": 2.6415,
+          "baseline_smape": 118.96
+        },
+        {
+          "paso": 4,
+          "n": 25443,
+          "mae": 1.9827,
+          "smape": 104.75,
+          "baseline_mae": 2.4414,
+          "baseline_smape": 112.22
+        },
+        {
+          "paso": 5,
+          "n": 19716,
+          "mae": 2.1874,
+          "smape": 97.29,
+          "baseline_mae": 2.7775,
+          "baseline_smape": 109.87
+        },
+        {
+          "paso": 6,
+          "n": 13684,
+          "mae": 2.8544,
+          "smape": 86.95,
+          "baseline_mae": 3.5111,
+          "baseline_smape": 104.46
+        }
+      ]
+    }
+  },
+  "supera_linea_base_smape": false,
+  "supera_linea_base_mae": true,
+  "supera_linea_base_smape_multipaso": true,
+  "interpretabilidad": {
+    "metodo": "permutation_importance",
+    "scoring": "neg_mean_absolute_error",
+    "nota": "caída de MAE al barajar cada feature, sobre una muestra del conjunto modelado",
+    "features": [
+      {
+        "feature": "roll_mean_12",
+        "importancia": 1.2842,
+        "std": 0.0071
+      },
+      {
+        "feature": "media_hist",
+        "importancia": 0.3134,
+        "std": 0.0055
+      },
+      {
+        "feature": "roll_mean_3",
+        "importancia": 0.1451,
+        "std": 0.0028
+      },
+      {
+        "feature": "lag_1",
+        "importancia": 0.1437,
+        "std": 0.0031
+      },
+      {
+        "feature": "roll_mean_6",
+        "importancia": 0.0947,
+        "std": 0.0021
+      },
+      {
+        "feature": "trend",
+        "importancia": 0.0842,
+        "std": 0.0053
+      },
+      {
+        "feature": "mes",
+        "importancia": 0.0697,
+        "std": 0.0046
+      },
+      {
+        "feature": "log_poblacion",
+        "importancia": 0.0433,
+        "std": 0.0048
+      },
+      {
+        "feature": "meses_activos",
+        "importancia": 0.0369,
+        "std": 0.0036
+      },
+      {
+        "feature": "lag_12",
+        "importancia": 0.028,
+        "std": 0.0016
+      },
+      {
+        "feature": "lag_2",
+        "importancia": 0.0204,
+        "std": 0.0011
+      },
+      {
+        "feature": "roll_std_12",
+        "importancia": 0.0184,
+        "std": 0.0018
+      },
+      {
+        "feature": "lag_6",
+        "importancia": 0.0051,
+        "std": 0.0008
+      },
+      {
+        "feature": "roll_std_6",
+        "importancia": 0.0024,
+        "std": 0.0005
+      },
+      {
+        "feature": "mes_sin",
+        "importancia": 0.0024,
+        "std": 0.001
+      },
+      {
+        "feature": "mes_cos",
+        "importancia": 0.0012,
+        "std": 0.0005
+      },
+      {
+        "feature": "lag_3",
+        "importancia": 0.0003,
+        "std": 0.0001
+      },
+      {
+        "feature": "roll_std_3",
+        "importancia": 0.0001,
+        "std": 0.001
+      },
+      {
+        "feature": "trimestre",
+        "importancia": -0.0,
+        "std": 0.0001
+      }
+    ]
+  },
+  "universo_modelado": {
+    "series_modeladas": 13089,
+    "municipios_modelados": 1106,
+    "categorias_modeladas": 20,
+    "hechos_modelados": 9210922,
+    "periodo_min": "2003-01",
+    "periodo_max": "2026-05",
+    "min_nonzero": 12
+  },
+  "anomalias": {
+    "total": 18588,
+    "alta": 7409,
+    "media": 11179,
+    "universo_meses_serie": 2676237,
+    "tasa_alertas_pct": 0.695,
+    "series_evaluadas": 13431,
+    "series_con_alerta": 2510,
+    "alertas_por_serie": 1.38
+  }
+}

@@ -1,0 +1,204 @@
+# Orquestación completa de VigIA — levanta toda la plataforma con `docker compose up`.
+name: vigia
+
+services:
+  # ── Base de datos: PostgreSQL con la extensión pgvector ──
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vigia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vigia_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-vigia}
+      # Configurar zona horaria
+      TZ: America/Bogota
+    ports:
+      # Host 5433 -> contenedor 5432: evita chocar con un PostgreSQL nativo del host en 5432.
+      # Los servicios internos siguen usando db:5432 por la red de Docker (no se ven afectados).
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vigia}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 4G # Limite máximo de uso de memoria
+        reservations:
+          memory: 1G
+
+  # ── Redis: sesiones de auth (refresh/denylist), rate-limiting y caché de IA ──
+  redis:
+    image: redis:7-alpine
+    environment:
+      # Configurar zona horaria
+      TZ: America/Bogota
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  # ── LLM y embeddings locales (proveedor por defecto del RAG) ──
+  ollama:
+    image: ollama/ollama:latest
+    environment:
+      # Cada consulta RAG usa DOS modelos (embeddings + LLM). Sin esto Ollama mantiene
+      # solo uno cargado y los recarga desde disco en cada request. Mantener ambos
+      # residentes elimina el thrashing. Requiere RAM para los dos a la vez (~3 GB).
+      OLLAMA_MAX_LOADED_MODELS: "2"
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-30m}
+      # Configurar zona horaria
+      TZ: America/Bogota
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        reservations:
+          memory: 2G
+
+  # ── Servicio ML (Python): ETL + modelos + RAG + API FastAPI ──
+  ml:
+    build: ./ml
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-vigia}:${POSTGRES_PASSWORD:-vigia_dev_password}@db:5432/${POSTGRES_DB:-vigia}?sslmode=disable
+      OLLAMA_BASE_URL: http://ollama:11434
+      # Rutas del lago de datos dentro del contenedor (coinciden con los volúmenes).
+      VIGIA_DATA_DIR: /app/data
+      VIGIA_MODELS_DIR: /app/models
+      VIGIA_REPORTS_DIR: /app/reports
+      # Catálogo de eventos documentados (validación de anomalías); docs/ se monta read-only abajo.
+      VIGIA_EVENTS_CATALOG: /app/docs/eventos_documentados.csv
+      # Configurar zona horaria
+      TZ: America/Bogota
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./reports:/app/reports
+      # Solo lectura: catálogo curado de eventos para `validate-anomalies` en el pipeline.
+      - ./docs:/app/docs:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 6G
+        reservations:
+          memory: 1G
+
+  # ── Backend (Go): API REST / BFF ──
+  backend:
+    build: ./backend
+    environment:
+      BACKEND_PORT: "8080"
+      DATABASE_URL: postgres://${POSTGRES_USER:-vigia}:${POSTGRES_PASSWORD:-vigia_dev_password}@db:5432/${POSTGRES_DB:-vigia}?sslmode=disable
+      ML_API_URL: http://ml:8000
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+      APP_ENV: ${APP_ENV:-development}
+      # Autenticación (JWT + Redis). En producción define JWT_SECRET y ADMIN_PASSWORD fuertes.
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-15m}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-168h}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      # Default fuerte solo para arranque local; sobreescríbelo en producción (si es débil
+      # y APP_ENV=production, el backend aborta). Cumple la política (mayús/minús/dígito/símbolo).
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Demo.VigIA.2026}
+      # Activar SOLO si el backend está tras un proxy inverso de confianza (evita falsificar IP).
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
+      RATE_LIMIT_PUBLIC: ${RATE_LIMIT_PUBLIC:-120}
+      RATE_LIMIT_LOGIN: ${RATE_LIMIT_LOGIN:-10}
+      # Caché de respuestas de IA en Redis (alivia el cómputo del LLM/pronóstico).
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      CACHE_FORECAST_TTL: ${CACHE_FORECAST_TTL:-6h}
+      CACHE_ASSISTANT_TTL: ${CACHE_ASSISTANT_TTL:-1h}
+      # Configurar zona horaria
+      TZ: America/Bogota
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ml:
+        condition: service_healthy
+    # El binario distroless no tiene shell ni curl: se autoconsulta vía subcomando.
+    healthcheck:
+      test: ["CMD", "/api", "healthcheck"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  # ── Frontend (React) servido por nginx ──
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:8080/api/v1
+    environment:
+      # Configurar zona horaria
+      TZ: America/Bogota
+    ports:
+      - "5173:80"
+    # nginx-alpine trae wget (busybox): verifica que sirve el index.
+    # Usa 127.0.0.1 (no "localhost"): nuestro default.conf solo declara `listen 80;`
+    # (IPv4), y el entrypoint de nginx NO añade el listener IPv6 porque el config
+    # difiere del empaquetado. busybox wget resolvería "localhost" a ::1 primero y
+    # daría "Connection refused" sin reintentar en IPv4.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      backend:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+volumes:
+  pgdata:
+  ollama:
+  redisdata:

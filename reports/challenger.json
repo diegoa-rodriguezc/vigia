@@ -1,0 +1,33 @@
+{
+  "champion": {
+    "modelo": "HistGradientBoostingRegressor",
+    "n_origins": 2,
+    "horizon": 6,
+    "mae_1paso": 2.0697,
+    "smape_1paso": 128.17,
+    "mae_multipaso": 2.2757,
+    "smape_multipaso": 111.56
+  },
+  "challenger": {
+    "modelo": "MLPRegressor",
+    "arquitectura": {
+      "hidden_layer_sizes": [
+        64,
+        32
+      ],
+      "activation": "relu",
+      "alpha": 0.001,
+      "learning_rate_init": 0.01,
+      "max_iter": 300,
+      "early_stopping": true,
+      "n_iter_no_change": 10
+    },
+    "n_origins": 2,
+    "horizon": 6,
+    "mae_1paso": 2.2254,
+    "smape_1paso": 130.74,
+    "mae_multipaso": 2.3247,
+    "smape_multipaso": 115.1
+  },
+  "veredicto": "El ganador es HGB, mantiene la ventaja (2.2% mejor MAE multipaso) — no se justifica cambiar de modelo."
+}

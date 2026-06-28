@@ -1,0 +1,181 @@
+{
+  "n_anomalias": 18588,
+  "corroboracion_interna": {
+    "n_anomalias": 18588,
+    "n_corroboradas": 3825,
+    "fraccion_corroborada": 0.206,
+    "n_clusters_multidelito": 1793
+  },
+  "contra_eventos_documentados": {
+    "n_eventos": 11,
+    "n_detectados": 7,
+    "recall": 0.636,
+    "window_months": 1,
+    "by_categoria": false,
+    "detalle": [
+      {
+        "cod_municipio": "11001",
+        "periodo": "2003-02",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Atentado con carro bomba al Club El Nogal, Bogotá (FARC); 36 muertos y 200+ heridos",
+        "detectado": true
+      },
+      {
+        "cod_municipio": "19821",
+        "periodo": "2011-07",
+        "categoria": "TERRORISMO",
+        "descripcion": "Chiva bomba frente a la estación de Policía de Toribío, Cauca (FARC); 3 muertos, 460 viviendas afectadas",
+        "detectado": false
+      },
+      {
+        "cod_municipio": "11001",
+        "periodo": "2017-06",
+        "categoria": "TERRORISMO",
+        "descripcion": "Explosión en el Centro Comercial Andino, Bogotá; 3 mujeres muertas y 9 heridas",
+        "detectado": true
+      },
+      {
+        "cod_municipio": "11001",
+        "periodo": "2019-01",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Carro bomba en la Escuela de Cadetes General Santander, Bogotá (ELN); 22 cadetes muertos",
+        "detectado": false
+      },
+      {
+        "cod_municipio": "52678",
+        "periodo": "2020-08",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Masacre de Samaniego, Nariño; 8 jóvenes asesinados",
+        "detectado": false
+      },
+      {
+        "cod_municipio": "54001",
+        "periodo": "2021-06",
+        "categoria": "TERRORISMO",
+        "descripcion": "Carro bomba en la Brigada 30 del Ejército, Cúcuta; decenas de heridos",
+        "detectado": false
+      },
+      {
+        "cod_municipio": "81794",
+        "periodo": "2022-01",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Enfrentamientos ELN vs disidencias FARC en Arauca, Tame; decenas de homicidios y desplazamiento",
+        "detectado": true
+      },
+      {
+        "cod_municipio": "81736",
+        "periodo": "2022-01",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Enfrentamientos ELN vs disidencias FARC en Arauca, Saravena",
+        "detectado": true
+      },
+      {
+        "cod_municipio": "81065",
+        "periodo": "2022-01",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Enfrentamientos ELN vs disidencias FARC en Arauca, Arauquita; masacre de 4 hombres",
+        "detectado": true
+      },
+      {
+        "cod_municipio": "54810",
+        "periodo": "2025-01",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Crisis del Catatumbo: escalada del ELN, masacres y desplazamiento masivo, Tibú",
+        "detectado": true
+      },
+      {
+        "cod_municipio": "54250",
+        "periodo": "2025-01",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Crisis del Catatumbo: violencia y desplazamiento forzado, El Tarra",
+        "detectado": true
+      }
+    ]
+  },
+  "contra_eventos_documentados_por_categoria": {
+    "n_eventos": 11,
+    "n_detectados": 4,
+    "recall": 0.364,
+    "window_months": 1,
+    "by_categoria": true,
+    "detalle": [
+      {
+        "cod_municipio": "11001",
+        "periodo": "2003-02",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Atentado con carro bomba al Club El Nogal, Bogotá (FARC); 36 muertos y 200+ heridos",
+        "detectado": false
+      },
+      {
+        "cod_municipio": "19821",
+        "periodo": "2011-07",
+        "categoria": "TERRORISMO",
+        "descripcion": "Chiva bomba frente a la estación de Policía de Toribío, Cauca (FARC); 3 muertos, 460 viviendas afectadas",
+        "detectado": false
+      },
+      {
+        "cod_municipio": "11001",
+        "periodo": "2017-06",
+        "categoria": "TERRORISMO",
+        "descripcion": "Explosión en el Centro Comercial Andino, Bogotá; 3 mujeres muertas y 9 heridas",
+        "detectado": false
+      },
+      {
+        "cod_municipio": "11001",
+        "periodo": "2019-01",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Carro bomba en la Escuela de Cadetes General Santander, Bogotá (ELN); 22 cadetes muertos",
+        "detectado": false
+      },
+      {
+        "cod_municipio": "52678",
+        "periodo": "2020-08",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Masacre de Samaniego, Nariño; 8 jóvenes asesinados",
+        "detectado": false
+      },
+      {
+        "cod_municipio": "54001",
+        "periodo": "2021-06",
+        "categoria": "TERRORISMO",
+        "descripcion": "Carro bomba en la Brigada 30 del Ejército, Cúcuta; decenas de heridos",
+        "detectado": false
+      },
+      {
+        "cod_municipio": "81794",
+        "periodo": "2022-01",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Enfrentamientos ELN vs disidencias FARC en Arauca, Tame; decenas de homicidios y desplazamiento",
+        "detectado": false
+      },
+      {
+        "cod_municipio": "81736",
+        "periodo": "2022-01",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Enfrentamientos ELN vs disidencias FARC en Arauca, Saravena",
+        "detectado": true
+      },
+      {
+        "cod_municipio": "81065",
+        "periodo": "2022-01",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Enfrentamientos ELN vs disidencias FARC en Arauca, Arauquita; masacre de 4 hombres",
+        "detectado": true
+      },
+      {
+        "cod_municipio": "54810",
+        "periodo": "2025-01",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Crisis del Catatumbo: escalada del ELN, masacres y desplazamiento masivo, Tibú",
+        "detectado": true
+      },
+      {
+        "cod_municipio": "54250",
+        "periodo": "2025-01",
+        "categoria": "HOMICIDIO",
+        "descripcion": "Crisis del Catatumbo: violencia y desplazamiento forzado, El Tarra",
+        "detectado": true
+      }
+    ]
+  }
+}

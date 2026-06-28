@@ -1,0 +1,10 @@
+# El núcleo de Python (ETL + ML + RAG + API) vive en el paquete `ml/`.
+# Instalar en modo editable con sus dependencias declaradas en ml/pyproject.toml:
+#
+#   cd ml && pip install -e ".[dev]"
+#
+# Extras opcionales:
+#   pip install -e "ml/[rag-local]"   # embeddings locales (sentence-transformers)
+#   pip install -e "ml/[anthropic]"   # proveedor Claude/Anthropic
+#   pip install -e "ml/[openai]"      # proveedor OpenAI
+-e ./ml

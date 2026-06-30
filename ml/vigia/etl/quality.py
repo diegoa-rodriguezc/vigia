@@ -18,7 +18,7 @@ _PLACEHOLDER = "NO REPORTADO"
 def _is_text(s: pd.Series) -> bool:
     """¿Es una columna de texto? (object, pandas ``StringDtype`` o categórica).
 
-    silver castea los campos de texto con ``.astype("string")`` (``StringDtype``), que **no**
+    silver convierte el tipo de los campos de texto con ``.astype("string")`` (``StringDtype``), que **no**
     es ``object``: filtrar solo por ``dtype == object`` saltaba todas esas columnas y dejaba
     ``placeholders_pct`` vacío. Aquí se contemplan los tres dtypes textuales posibles.
     """

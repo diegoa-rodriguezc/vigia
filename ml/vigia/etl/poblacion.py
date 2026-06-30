@@ -58,7 +58,7 @@ def _pick(cols: list[str], *, equals: str | None = None, contains: str | None = 
 
 
 def _read_one(content: bytes) -> pd.DataFrame:
-    """Parsea un Excel de proyección DANE a `[cod_municipio, anio, poblacion]` (solo Total)."""
+    """Procesa un Excel de proyección DANE a `[cod_municipio, anio, poblacion]` (solo Total)."""
     raw = pd.read_excel(io.BytesIO(content), sheet_name=0, header=None, dtype=object)
     hdr = None
     for i in range(min(30, len(raw))):

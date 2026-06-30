@@ -19,7 +19,13 @@ const ariaSort = (active: boolean, dir: "asc" | "desc"): "ascending" | "descendi
 // pequeño y permite navegar el ranking nacional completo, no solo el top 50.
 const SUMMARY_LIMIT = 2000;
 
-export default function Panorama({ onVerPronostico }: { onVerPronostico?: (cod: string) => void }) {
+export default function Panorama({
+  onVerPronostico,
+  onVerInforme,
+}: {
+  onVerPronostico?: (cod: string) => void;
+  onVerInforme?: (cod: string) => void;
+}) {
   const [data, setData] = useState<MunicipioResumen[]>([]);
   const [sel, setSel] = useState<MunicipioResumen | null>(null);  // municipio del drill-down
   const [departamentos, setDepartamentos] = useState<DepartamentoResumen[]>([]);
@@ -233,6 +239,9 @@ export default function Panorama({ onVerPronostico }: { onVerPronostico?: (cod: 
           onClose={() => setSel(null)}
           onVerPronostico={onVerPronostico
             ? (cod) => { setSel(null); onVerPronostico(cod); }
+            : undefined}
+          onVerInforme={onVerInforme
+            ? (cod) => { setSel(null); onVerInforme(cod); }
             : undefined}
         />
       )}

@@ -59,10 +59,10 @@ def _norm_text(s: pd.Series) -> pd.Series:
 
 
 def _parse_dates(s: pd.Series, fmt: str) -> pd.Series:
-    """Parsea fechas ISO (`2003-01-01T...`) o `dd/mm/yyyy` de forma robusta.
+    """Interpreta fechas ISO (`2003-01-01T...`) o `dd/mm/yyyy` de forma robusta.
 
     Garantiza una salida uniforme `datetime64[ns]` SIN zona horaria: a escala real,
-    el parseo mixto puede inferir tz en algunos registros y romper comparaciones.
+    la interpretación mixta puede inferir tz en algunos registros y romper comparaciones.
     """
     raw = s.astype("string").str.strip()
     if fmt == "dmy":

@@ -14,8 +14,9 @@ const Alertas = lazy(() => import("./components/Alertas"));
 const Asistente = lazy(() => import("./components/Asistente"));
 const SaludModelo = lazy(() => import("./components/SaludModelo"));
 const Justicia = lazy(() => import("./components/Justicia"));
+const Informe = lazy(() => import("./components/Informe"));
 
-type Tab = "panorama" | "alertas" | "justicia" | "pronostico" | "simulador" | "asistente" | "salud";
+type Tab = "panorama" | "alertas" | "justicia" | "pronostico" | "simulador" | "asistente" | "informe" | "salud";
 
 const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: "panorama", label: "Panorama", icon: "dashboard" },
@@ -24,17 +25,19 @@ const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: "pronostico", label: "Pronóstico", icon: "trending-up" },
   { id: "simulador", label: "Simulador", icon: "sliders" },
   { id: "asistente", label: "Asistente ciudadano", icon: "message" },
+  { id: "informe", label: "Informe", icon: "file-text" },
   { id: "salud", label: "Salud del modelo", icon: "activity" },
 ];
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("panorama");
   const [online, setOnline] = useState<boolean | null>(null);
-  const [preMuni, setPreMuni] = useState<string | null>(null);  // municipio del drill-down → pronóstico
+  const [preMuni, setPreMuni] = useState<string | null>(null);  // municipio del drill-down → pronóstico/informe
   const { authenticated, user, logout, openLogin } = useAuth();
 
-  // Deep-link desde el drill-down del Panorama: preselecciona el municipio y abre Pronóstico.
+  // Deep-links desde el drill-down del Panorama: preseleccionan el municipio y abren la vista.
   const verPronostico = (cod: string) => { setPreMuni(cod); setTab("pronostico"); };
+  const verInforme = (cod: string) => { setPreMuni(cod); setTab("informe"); };
 
   useEffect(() => {
     getHealth()
@@ -111,12 +114,13 @@ export default function App() {
         {/* key={tab} aísla y reinicia el error boundary al cambiar de vista. */}
         <ErrorBoundary key={tab}>
           <Suspense fallback={<div className="skeleton" style={{ height: 240 }} />}>
-            {tab === "panorama" && <Panorama onVerPronostico={verPronostico} />}
+            {tab === "panorama" && <Panorama onVerPronostico={verPronostico} onVerInforme={verInforme} />}
             {tab === "alertas" && <Alertas />}
             {tab === "justicia" && <Justicia />}
             {tab === "pronostico" && <AuthGate feature="el pronóstico"><Forecast initialCod={preMuni} /></AuthGate>}
             {tab === "simulador" && <AuthGate feature="el simulador de escenarios"><Simulador /></AuthGate>}
             {tab === "asistente" && <AuthGate feature="el asistente ciudadano"><Asistente /></AuthGate>}
+            {tab === "informe" && <AuthGate feature="el informe de seguridad"><Informe initialCod={preMuni} /></AuthGate>}
             {tab === "salud" && <SaludModelo />}
           </Suspense>
         </ErrorBoundary>

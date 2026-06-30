@@ -298,6 +298,34 @@ export const getMonitoring = () => api.get<ModelHealth>("/monitoring").then((r) 
 export const askAssistant = (pregunta: string) =>
   api.post<ChatResponse>("/assistant", { pregunta }).then((r) => r.data);
 
+// ── Informe de seguridad municipal (IA generativa anclada a datos) ──
+export interface BriefDatos {
+  panorama: {
+    total_delitos: number;
+    total_respuestas: number;
+    periodo: string;
+    top_delitos: { categoria: string; total: number }[];
+  };
+  justicia?: {
+    tasa_judicializacion_pct: number;
+    total_procesos: number;
+    n_judicializados: number;
+  } | null;
+}
+export interface BriefResponse {
+  cod_municipio: string;
+  municipio: string;
+  departamento: string;
+  generado: string;   // fecha ISO de generación
+  informe: string;    // texto del informe ejecutivo
+  datos: BriefDatos;  // cifras ancladas que lo sustentan (auditable)
+}
+
+// Informe ejecutivo por municipio (endpoint de IA, requiere sesión). El LLM puede tardar
+// (Ollama en CPU ~30-90 s); usa el timeout amplio de `api`.
+export const getBrief = (cod_municipio: string) =>
+  api.get<BriefResponse>("/brief", { params: { cod_municipio } }).then((r) => r.data);
+
 // ── Capa "Justicia" (Fiscalía): embudo de judicialización ──
 export interface JusticiaEtapa {
   etapa: string;

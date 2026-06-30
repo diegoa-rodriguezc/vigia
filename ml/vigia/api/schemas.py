@@ -81,3 +81,16 @@ class Source(BaseModel):
 class ChatResponse(BaseModel):
     respuesta: str
     fuentes: list[Source]
+    # "agente" (el LLM eligió herramientas) o "rag-clasico" (fallback). `pasos` traza las
+    # herramientas que invocó el agente (auditable); vacío en el RAG clásico.
+    modo: str = "rag-clasico"
+    pasos: list[dict] = []
+
+
+class BriefResponse(BaseModel):
+    cod_municipio: str
+    municipio: str
+    departamento: str
+    generado: str  # fecha ISO de generación
+    informe: str  # texto del informe ejecutivo (IA generativa)
+    datos: dict  # cifras ancladas que sustentan el informe (auditable)

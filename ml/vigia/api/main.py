@@ -11,6 +11,7 @@ from fastapi import FastAPI, HTTPException
 
 from vigia.api.schemas import (
     AnomalyItem,
+    BriefResponse,
     ChatRequest,
     ChatResponse,
     PredictRequest,
@@ -131,13 +132,31 @@ def anomalies(limit: int = 50) -> list[AnomalyItem]:
     return [AnomalyItem(**row) for row in df.to_dict(orient="records")]
 
 
-@app.post("/rag/chat", response_model=ChatResponse)
-def rag_chat(req: ChatRequest) -> ChatResponse:
-    """Asistente ciudadano (RAG) sobre datos oficiales."""
-    from vigia.rag.pipeline import answer
+@app.get("/brief/{cod_municipio}", response_model=BriefResponse)
+def brief(cod_municipio: str) -> BriefResponse:
+    """Informe ejecutivo de seguridad de un municipio (IA generativa anclada a datos)."""
+    from vigia.rag.brief import generate_brief
 
     try:
-        res = answer(req.pregunta, k=req.k)
+        res = generate_brief(cod_municipio)
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=503, detail=f"RAG no disponible: {exc}") from exc
-    return ChatResponse(respuesta=res.answer, fuentes=res.sources)
+        raise HTTPException(status_code=503, detail=f"Generación no disponible: {exc}") from exc
+    if res is None:
+        raise HTTPException(status_code=404, detail="Sin datos para ese municipio.")
+    return BriefResponse(**res.__dict__)
+
+
+@app.post("/rag/chat", response_model=ChatResponse)
+def rag_chat(req: ChatRequest) -> ChatResponse:
+    """Asistente ciudadano sobre datos oficiales.
+
+    Usa el AGENTE con herramientas si el proveedor LLM lo soporta (Anthropic/OpenAI); si no,
+    cae al RAG clásico. La decisión vive en `rag.agent.answer` (transparente para el backend).
+    """
+    from vigia.rag.agent import answer
+
+    try:
+        res = answer(req.pregunta)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=503, detail=f"Asistente no disponible: {exc}") from exc
+    return ChatResponse(respuesta=res.answer, fuentes=res.sources, modo=res.modo, pasos=res.steps)

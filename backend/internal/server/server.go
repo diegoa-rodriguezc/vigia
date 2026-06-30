@@ -99,6 +99,7 @@ func New(
 			r.Get("/forecast", h.Forecast)
 			r.Get("/simulate", h.Simulate)
 			r.Post("/assistant", h.Assistant)
+			r.Get("/brief", h.Brief)
 		})
 	})
 

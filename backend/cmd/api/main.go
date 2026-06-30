@@ -103,7 +103,7 @@ func main() {
 		Addr:        ":" + cfg.Port,
 		Handler:     router,
 		ReadTimeout: 15 * time.Second,
-		// WriteTimeout amplio: el endpoint del asistente RAG proxya a un LLM local
+		// WriteTimeout amplio: el endpoint del asistente RAG reenvía a un LLM local
 		// (Ollama en CPU) que puede tardar ~30-90s en generar la respuesta.
 		WriteTimeout: 250 * time.Second,
 		IdleTimeout:  60 * time.Second,

@@ -314,7 +314,7 @@ func (h *Handler) Simulate(w http.ResponseWriter, r *http.Request) {
 	writeMLResponse(w, status, data, "MISS")
 }
 
-// Monitoring proxya el reporte de salud del modelo (frescura, deriva, backtest extendido)
+// Monitoring reenvía el reporte de salud del modelo (frescura, deriva, backtest extendido)
 // del servicio ML. Lectura barata (un JSON) → pública como el resto de agregados.
 func (h *Handler) Monitoring(w http.ResponseWriter, r *http.Request) {
 	data, status, err := h.ml.Proxy(r.Context(), http.MethodGet, "/monitoring", nil)
@@ -323,6 +323,42 @@ func (h *Handler) Monitoring(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeMLResponse(w, status, data, "")
+}
+
+// Brief reenvía el informe ejecutivo de seguridad de un municipio (IA generativa) del servicio
+// ML. Es cómputo de LLM (caro) → protegido con JWT y cacheado por municipio (se invalida al
+// reentrenar/repipeline; usa `?nocache=1` para forzar). El cod_municipio se valida numérico
+// antes de construir la ruta del ML (evita inyección en el path).
+func (h *Handler) Brief(w http.ResponseWriter, r *http.Request) {
+	cod := r.URL.Query().Get("cod_municipio")
+	if cod == "" {
+		writeError(w, http.StatusBadRequest, "parámetro requerido: cod_municipio")
+		return
+	}
+	for _, c := range cod {
+		if c < '0' || c > '9' {
+			writeError(w, http.StatusBadRequest, "cod_municipio debe ser numérico")
+			return
+		}
+	}
+
+	key := "cache:brief:" + cod
+	if h.cacheActive(r) {
+		if cached, ok := h.store.GetCached(r.Context(), key); ok {
+			writeRaw(w, http.StatusOK, cached, "HIT")
+			return
+		}
+	}
+
+	data, status, err := h.ml.Proxy(r.Context(), http.MethodGet, "/brief/"+cod, nil)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	if status == http.StatusOK && h.cacheActive(r) {
+		h.store.SetCached(r.Context(), key, data, h.cache.forecastTTL)
+	}
+	writeMLResponse(w, status, data, "MISS")
 }
 
 // Assistant reenvía la consulta del ciudadano al RAG del servicio ML.

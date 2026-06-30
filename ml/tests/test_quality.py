@@ -39,7 +39,7 @@ def test_municipios_unicos_cuenta_codigos_distintos():
 
 
 def test_placeholders_pct_con_string_dtype():
-    """Regresión: silver castea el texto con `.astype('string')` (StringDtype, no object).
+    """Regresión: silver convierte el tipo del texto con `.astype('string')` (StringDtype, no object).
 
     Con el filtro antiguo `dtype == object`, esas columnas se saltaban y `placeholders_pct`
     salía vacío `{}` pese a haber no-reportados. Reproduce el dtype real del pipeline.

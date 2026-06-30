@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// Monitoring proxya el reporte de salud del servicio ML (200 con el cuerpo del ML).
+// Monitoring reenvía el reporte de salud del servicio ML (200 con el cuerpo del ML).
 func TestMonitoringProxy(t *testing.T) {
 	var hits int32
 	h := newCacheHandler(t, &hits)

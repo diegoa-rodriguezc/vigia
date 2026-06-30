@@ -25,6 +25,7 @@ export type IconName =
   | "info"
   | "database"
   | "download"
+  | "file-text"
   | "sliders";
 
 const PATHS: Record<IconName, ReactNode> = {
@@ -157,6 +158,13 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3" />
       <path d="M2 14h4M10 8h4M18 16h4" />
+    </>
+  ),
+  "file-text": (
+    <>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" />
+      <path d="M14 3v5h5" />
+      <path d="M9 13h6M9 17h6" />
     </>
   ),
 };

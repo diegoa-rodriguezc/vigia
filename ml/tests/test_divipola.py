@@ -1,4 +1,4 @@
-"""Pruebas del parseo de coordenadas DIVIPOLA (formato con coma decimal)."""
+"""Pruebas de la interpretación de coordenadas DIVIPOLA (formato con coma decimal)."""
 
 from vigia.etl.divipola import _parse_coord
 

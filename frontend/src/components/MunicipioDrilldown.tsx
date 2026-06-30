@@ -8,11 +8,12 @@ interface Props {
   muni: MunicipioResumen;
   onClose: () => void;
   onVerPronostico?: (cod: string) => void;
+  onVerInforme?: (cod: string) => void;
 }
 
-// Drill-down de un municipio: desglose por categoría de delito + acceso al pronóstico.
-// Modal accesible (role=dialog, aria-modal, Escape, retorno de foco al cerrar).
-export default function MunicipioDrilldown({ muni, onClose, onVerPronostico }: Props) {
+// Drill-down de un municipio: desglose por categoría de delito + acceso al pronóstico y al
+// informe ejecutivo. Modal accesible (role=dialog, aria-modal, Escape, retorno de foco al cerrar).
+export default function MunicipioDrilldown({ muni, onClose, onVerPronostico, onVerInforme }: Props) {
   const [detalle, setDetalle] = useState<CategoriaTotal[] | null>(null);
   const [error, setError] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -110,6 +111,11 @@ export default function MunicipioDrilldown({ muni, onClose, onVerPronostico }: P
               ]}
               rows={(detalle ?? []).map((d) => ({ categoria: prettyCat(d.categoria), naturaleza: d.naturaleza, total: d.total }))}
             />
+          )}
+          {onVerInforme && (
+            <button className="ghost" onClick={() => onVerInforme(muni.cod_municipio)}>
+              <Icon name="file-text" size={15} /> Generar informe
+            </button>
           )}
           {onVerPronostico && (
             <button className="primary" onClick={() => onVerPronostico(muni.cod_municipio)}>

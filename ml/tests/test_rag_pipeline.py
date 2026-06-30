@@ -1,6 +1,6 @@
 """Pruebas del guardarraíl anti-alucinación del pipeline RAG.
 
-Mockean recuperación, pronóstico y LLM: validan la LÓGICA de decisión de `answer`
+Simulan recuperación, pronóstico y LLM: validan la LÓGICA de decisión de `answer`
 (cuándo se genera y cuándo se rehúsa) sin BD, embeddings ni modelo de lenguaje.
 """
 

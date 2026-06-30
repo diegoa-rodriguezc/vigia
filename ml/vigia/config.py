@@ -56,7 +56,8 @@ class Settings(BaseSettings):
     ollama_embed_model: str = Field(default="nomic-embed-text", alias="OLLAMA_EMBED_MODEL")
     # Razonamiento ("thinking") de los modelos qwen3/deepseek-r1 y similares. Por defecto APAGADO:
     # en CPU el presupuesto de `num_predict` se agotaría dentro del bloque de razonamiento y la
-    # respuesta saldría vacía (done_reason="length"). Solo activar con un modelo+hardware que lo tolere.
+    # respuesta saldría vacía (done_reason="length").
+    # Solo activar con un modelo+hardware que lo tolere.
     ollama_think: bool = Field(default=False, alias="OLLAMA_THINK")
     # ── Afinado del runtime Ollama al hardware (LLM + embeddings) ──
     # Quemarlos obligaba a reconstruir la imagen para tunear; como env se ajustan recreando `ml`.
@@ -88,6 +89,14 @@ class Settings(BaseSettings):
     # Nº de fragmentos recuperados de kb_chunks por consulta. Más k = más cobertura pero prompt más
     # largo → LLM más lento en CPU (y más ruido que el guardarraíl de MIN_SCORE debe filtrar).
     rag_top_k: int = Field(default=5, alias="RAG_TOP_K")
+
+    # ── Agente RAG (tool-use) ──
+    # Cuando está activo Y el proveedor LLM soporta tool-use (Anthropic/OpenAI), el asistente actúa
+    # como AGENTE: el LLM decide qué herramienta invocar (pronóstico, anomalías, justicia, serie,
+    # base de conocimiento). Con Ollama local (sin tool-use fiable en modelos pequeños) o si se
+    # desactiva, cae al RAG clásico —sin regresión—. `max_steps` acota el nº de turnos del agente.
+    rag_agent_enabled: bool = Field(default=True, alias="RAG_AGENT_ENABLED")
+    rag_agent_max_steps: int = Field(default=4, alias="RAG_AGENT_MAX_STEPS")
 
     # ── Reproducibilidad ──
     seed: int = Field(default=77, alias="SEED")

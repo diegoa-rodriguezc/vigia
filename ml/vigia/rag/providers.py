@@ -7,7 +7,9 @@ mediante configuración, sin tocar el resto del RAG. Diseño con interfaz común
 
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 
 import httpx
 
@@ -15,6 +17,82 @@ from vigia.config import settings
 from vigia.logging import get_logger
 
 log = get_logger(__name__)
+
+
+# ───────────────────────── Tipos del agente (tool-use) ─────────────────────────
+@dataclass
+class ToolCall:
+    """Una invocación de herramienta que el LLM solicita en un turno."""
+
+    id: str
+    name: str
+    arguments: dict
+
+
+@dataclass
+class Turn:
+    """El resultado de un turno del agente: o pide herramientas, o entrega texto final."""
+
+    text: str | None = None
+    tool_calls: list[ToolCall] = field(default_factory=list)
+
+
+# El TRANSCRIPTO es genérico (independiente del proveedor); cada `turn()` lo traduce a su
+# formato nativo. Entradas posibles:
+#   {"role": "user", "content": str}
+#   {"role": "assistant", "content": str | None, "tool_calls": [ToolCall, ...]}
+#   {"role": "tool", "id": str, "name": str, "content": str}
+def _to_anthropic_messages(transcript: list[dict]) -> list[dict]:
+    """Traduce el transcripto genérico al formato de mensajes de Anthropic.
+
+    Los resultados de herramienta consecutivos se agrupan en UN mensaje `user` con varios
+    bloques `tool_result` (lo que exige la API de Anthropic tras un turno con varias llamadas).
+    """
+    msgs: list[dict] = []
+    for entry in transcript:
+        role = entry["role"]
+        if role == "user":
+            msgs.append({"role": "user", "content": entry["content"]})
+        elif role == "assistant":
+            blocks: list[dict] = []
+            if entry.get("content"):
+                blocks.append({"type": "text", "text": entry["content"]})
+            for tc in entry.get("tool_calls", []):
+                blocks.append(
+                    {"type": "tool_use", "id": tc.id, "name": tc.name, "input": tc.arguments}
+                )
+            msgs.append({"role": "assistant", "content": blocks})
+        elif role == "tool":
+            block = {"type": "tool_result", "tool_use_id": entry["id"], "content": entry["content"]}
+            if msgs and msgs[-1]["role"] == "user" and isinstance(msgs[-1]["content"], list):
+                msgs[-1]["content"].append(block)
+            else:
+                msgs.append({"role": "user", "content": [block]})
+    return msgs
+
+
+def _to_openai_messages(system: str, transcript: list[dict]) -> list[dict]:
+    """Traduce el transcripto genérico al formato de mensajes de OpenAI."""
+    msgs: list[dict] = [{"role": "system", "content": system}]
+    for entry in transcript:
+        role = entry["role"]
+        if role == "user":
+            msgs.append({"role": "user", "content": entry["content"]})
+        elif role == "assistant":
+            msg: dict = {"role": "assistant", "content": entry.get("content")}
+            if entry.get("tool_calls"):
+                msg["tool_calls"] = [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {"name": tc.name, "arguments": json.dumps(tc.arguments)},
+                    }
+                    for tc in entry["tool_calls"]
+                ]
+            msgs.append(msg)
+        elif role == "tool":
+            msgs.append({"role": "tool", "tool_call_id": entry["id"], "content": entry["content"]})
+    return msgs
 
 
 # ───────────────────────── Embeddings ─────────────────────────
@@ -34,7 +112,7 @@ class OllamaEmbeddings(EmbeddingProvider):
     @property
     def dim(self) -> int:
         # La dimensión la DICTA el modelo configurado (all-minilm=384, nomic-embed-text=768,
-        # etc.). Al cambiar OLLAMA_EMBED_MODEL en el .env no descuadra el `vector(dim)` 
+        # etc.). Al cambiar OLLAMA_EMBED_MODEL en el .env no descuadra el `vector(dim)`
         # de la tabla kb_chunks
         if self._dim is None:
             self._dim = len(self.embed(["dim"])[0])
@@ -96,8 +174,20 @@ class OpenAIEmbeddings(EmbeddingProvider):
 
 # ───────────────────────── LLM ─────────────────────────
 class LLMProvider(ABC):
+    # ¿El proveedor soporta tool-use (agente)? Por defecto NO: el bucle del agente cae al RAG
+    # clásico salvo en los proveedores que lo implementan (Anthropic/OpenAI). `tool_format`
+    # indica en qué formato espera los esquemas de herramienta (lo provee `rag.tools`).
+    supports_tools: bool = False
+    tool_format: str = "openai"
+
     @abstractmethod
     def generate(self, system: str, prompt: str) -> str: ...
+
+    def turn(self, system: str, transcript: list[dict], tools: list[dict]) -> Turn:
+        """Un turno del agente: dado el transcripto y los esquemas de herramienta, devuelve
+        un `Turn` (texto final o llamadas a herramienta). Solo lo implementan los proveedores
+        con `supports_tools = True`."""
+        raise NotImplementedError("Este proveedor no soporta tool-use.")
 
 
 class OllamaLLM(LLMProvider):
@@ -143,6 +233,9 @@ class OllamaLLM(LLMProvider):
 
 
 class AnthropicLLM(LLMProvider):
+    supports_tools = True
+    tool_format = "anthropic"
+
     def __init__(self) -> None:
         import anthropic  # import perezoso
 
@@ -158,8 +251,27 @@ class AnthropicLLM(LLMProvider):
         )
         return "".join(block.text for block in msg.content if block.type == "text")
 
+    def turn(self, system: str, transcript: list[dict], tools: list[dict]) -> Turn:
+        msg = self.client.messages.create(
+            model=self.model,
+            max_tokens=1024,
+            system=system,
+            tools=tools,
+            messages=_to_anthropic_messages(transcript),
+        )
+        text = "".join(b.text for b in msg.content if b.type == "text") or None
+        calls = [
+            ToolCall(id=b.id, name=b.name, arguments=dict(b.input))
+            for b in msg.content
+            if b.type == "tool_use"
+        ]
+        return Turn(text=text, tool_calls=calls)
+
 
 class OpenAILLM(LLMProvider):
+    supports_tools = True
+    tool_format = "openai"
+
     def __init__(self) -> None:
         from openai import OpenAI  # import perezoso
 
@@ -175,6 +287,23 @@ class OpenAILLM(LLMProvider):
             ],
         )
         return resp.choices[0].message.content or ""
+
+    def turn(self, system: str, transcript: list[dict], tools: list[dict]) -> Turn:
+        resp = self.client.chat.completions.create(
+            model=self.model,
+            tools=tools,
+            messages=_to_openai_messages(system, transcript),
+        )
+        message = resp.choices[0].message
+        calls = [
+            ToolCall(
+                id=tc.id,
+                name=tc.function.name,
+                arguments=json.loads(tc.function.arguments or "{}"),
+            )
+            for tc in (message.tool_calls or [])
+        ]
+        return Turn(text=message.content, tool_calls=calls)
 
 
 # ───────────────────────── Factories ─────────────────────────

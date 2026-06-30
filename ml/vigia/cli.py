@@ -231,11 +231,42 @@ def health(horizon: int = 12) -> None:
 
 @app.command()
 def ask(pregunta: str) -> None:
-    """Consulta al asistente ciudadano desde la terminal."""
-    from vigia.rag.pipeline import answer
+    """Consulta al asistente ciudadano desde la terminal (agente con herramientas si el proveedor
+    LLM lo soporta; si no, RAG clásico)."""
+    from vigia.rag.agent import answer
 
     res = answer(pregunta)
     typer.echo(res.answer)
+
+
+@app.command()
+def brief(
+    municipio: str = typer.Argument(
+        ..., help="Código DANE o nombre del municipio (p. ej. 76001 o Cali)"
+    ),
+) -> None:
+    """Genera un informe ejecutivo de seguridad para un municipio (IA generativa anclada a datos:
+    panorama, alertas, pronóstico y judicialización)."""
+    from vigia.rag import tools
+    from vigia.rag.brief import generate_brief
+
+    cod = municipio.strip()
+    if not cod.isdigit():  # se recibió un nombre → resolver al código DANE oficial
+        res = tools.execute("resolver_municipio", {"texto": cod})
+        if not res.get("encontrado"):
+            typer.echo(f"No se reconoció el municipio: {municipio}")
+            raise typer.Exit(code=1)
+        cod = res["cod_municipio"]
+
+    result = generate_brief(cod)
+    if result is None:
+        typer.echo("Sin datos para ese municipio. ¿Ejecutaste el pipeline?")
+        raise typer.Exit(code=1)
+    typer.echo(
+        f"# Informe de seguridad — {result.municipio} "
+        f"({result.departamento})  [{result.generado}]\n"
+    )
+    typer.echo(result.informe)
 
 
 if __name__ == "__main__":

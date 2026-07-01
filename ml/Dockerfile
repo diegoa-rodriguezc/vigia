@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # README.md es necesario: pyproject.toml lo declara como `readme`.
 COPY pyproject.toml README.md ./
 COPY vigia ./vigia
-RUN pip install --upgrade pip && pip install -e .
+RUN pip install --upgrade pip && pip install -e ".[openai,anthropic]"
 
 EXPOSE 8000
 

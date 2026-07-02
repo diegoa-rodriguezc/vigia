@@ -134,7 +134,7 @@ cp .env.example .env          # ajustar las credenciales según corresponda el a
 make deploy                   # up + descarga de modelos + pipeline con datos (todo en Docker)
 ```
 
-Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tomar alrededor de 1 hora, debido a la descarga de fuentes de información, así como la ejecución del RAG en CPU.*
+Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tomar alrededor de 1 hora, debido a la descarga de fuentes de información, así como la indexación de información usado por el RAG en CPU.*
 
 > 💡 Para listar más comandos utilice `make help`, lista todos los atajos disponibles con su descripción.
 
@@ -167,7 +167,7 @@ cp .env.example .env
 make deploy-gpu      
 ```
 
-Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tomar alrededor de 30 min, debido a la descarga de fuentes de información.*
+Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tomar alrededor de 30 min, debido a la descarga de fuentes de información e indexación de información usado por el RAG.*
 
 ## Acceso a la aplicación
 

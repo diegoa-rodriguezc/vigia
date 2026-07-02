@@ -1,8 +1,8 @@
 # VigIA 🛡️ — Inteligencia Artificial para la Seguridad Ciudadana y la Justicia
 
 > **Concurso Datos al Ecosistema 2026 — IA para Colombia** <br/>
-> Reto: **Seguridad Ciudadana y Justicia**<br/>
-> Nivel: **Avanzado**
+> **Reto:** Seguridad Ciudadana y Justicia <br/>
+> **Nivel:** Avanzado
 
 **VigIA** (de *vigía* + *IA*) es una plataforma de analítica predictiva y asistencia ciudadana que
 transforma los datos abiertos de criminalidad de Colombia en **alertas tempranas, pronósticos y

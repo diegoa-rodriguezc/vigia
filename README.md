@@ -1,7 +1,7 @@
 # VigIA 🛡️ — Inteligencia Artificial para la Seguridad Ciudadana y la Justicia
 
 > **Concurso Datos al Ecosistema 2026 — IA para Colombia** <br/>
-> Reto: **Seguridad Ciudadana y Justicia**
+> Reto: **Seguridad Ciudadana y Justicia**<br/>
 > Nivel: **Avanzado**
 
 **VigIA** (de *vigía* + *IA*) es una plataforma de analítica predictiva y asistencia ciudadana que
@@ -22,7 +22,7 @@ de datos delictivos publicados por las Entidades Públicas en **decisiones preve
 | 🚨 **Detección de anomalías** | Identifica picos atípicos de criminalidad relativos a cada territorio (alerta temprana) | Detección de anomalías |
 | 💬 **Asistente ciudadano (agente con herramientas)** | Responde en lenguaje natural usando solo datos oficiales; el LLM **elige y encadena herramientas** (pronóstico, anomalías, embudo de Justicia, serie histórica, base de conocimiento) y cita cada cifra | IA generativa + agente de IA |
 | 📝 **Informe de seguridad municipal** | Genera un **informe ejecutivo** por municipio (panorama, alertas, pronóstico, judicialización) **anclado a las cifras oficiales** (`vigia brief` / `GET /brief`) | IA generativa (reportes automatizados) |
-| 🩺 **Salud del modelo (monitoreo)** | Vigila **frescura** de datos, **deriva (PSI)** y validación a **12 meses** con semáforo, sin reentrenar | Calidad y gobierno del modelo |
+| 🩺 **Salud del modelo (monitoreo)** | Vigila **frescura** de datos, **deriva (PSI - Population Stability Index)** y validación a **12 meses** con semáforo, sin reentrenar | Calidad y gobierno del modelo |
 | ⚖️ **Embudo de judicialización (Fiscalía)** | Mide qué fracción de las noticias criminales avanza en la cadena penal (tasa de judicialización por municipio) | Eje de **Justicia** |
 | 📊 **Tablero interactivo** | Mapas, series y rankings por territorio | Visualización |
 
@@ -46,7 +46,7 @@ A continuación se presentan las capturas de pantalla de la aplicación:
 | Simulador  | Salud del modelo |
 |---|---|
 | [![Simulador — base vs escenario y hechos evitados](docs/screenshots/05-simulador.png)](docs/screenshots/05-simulador.png) | [![Salud del modelo — semáforo de frescura, deriva (PSI) y backtest 12m](docs/screenshots/06-salud.png)](docs/screenshots/06-salud.png) |
-| Palancas de intervención/población con **base vs escenario** y el KPI de **hechos evitados** (supuesto del usuario, no efecto causal estimado por el modelo). | **Semáforo** de frescura, **deriva (PSI)** y backtest a 12 meses con la degradación del error por horizonte. |
+| Palancas de intervención/población con **base vs escenario** y el KPI de **hechos evitados** (supuesto del usuario, no efecto causal estimado por el modelo). | **Semáforo** de frescura, **deriva (PSI - Population Stability Index)** y backtest a 12 meses con la degradación del error por horizonte. |
 
 | Justicia | Informe (IA generativa) |
 |---|---|
@@ -62,33 +62,13 @@ A continuación se presentan las capturas de pantalla de la aplicación:
 5. *Simulador* → mueve las palancas de una intervención o un cambio de población y observa cuántos hechos se evitarían frente al pronóstico base.
 6. *Asistente* → pregunta en lenguaje natural ("¿cuál fue el delito más frecuente en Cali?" o "¿cómo se proyectan los hurtos en Medellín?") y recibe una respuesta con su respectiva fuente.
 7. *Informe* → genera un informe ejecutivo del municipio (panorama, alertas, pronóstico y judicialización), también accesible desde el botón **Generar informe** del drill-down del Panorama.
-8. *Salud del modelo* → revisa el semáforo de frescura, deriva (PSI) y la validación del pronóstico a 12 meses.
+8. *Salud del modelo* → revisa el semáforo de frescura, deriva (PSI - Population Stability Index) y la validación del pronóstico a 12 meses.
 
 ## 🧱 Arquitectura
 
-```
-                    ┌───────────────────────────────────────────────────────┐
- datos.gov.co  ───► │  PYTHON (ml/)   ETL medallion + ML + RAG (FastAPI)    │
-   (API SODA2)      │  bronze ─► silver ─► gold ─► modelos / índice vector  │
-                    └───────────────┬───────────────────────┬───────────────┘
-                                    │ REST                  │ SQL + pgvector
-                                    ▼                       ▼
-                    ┌───────────────────────────┐   ┌───────────────────────┐
-   Ciudadano  ◄───► │  GO (backend/)  API REST  │◄─►│  PostgreSQL + pgvector│
-   Analista         │  BFF / agregados / proxy  │   │  (gold + embeddings)  │
-                    └───────────────┬───────────┘   └───────────────────────┘
-                                    │ JSON
-                                    ▼
-                    ┌───────────────────────────┐
-                    │  REACT (frontend/)        │  Dashboard + mapa + chat
-                    └───────────────────────────┘
+![Arquitectura de componentes de VigIA: tres capas desacopladas (React, Go y Python/FastAPI) sobre PostgreSQL + pgvector, con Redis y Ollama como servicios de apoyo, alimentadas por datos abiertos de datos.gov.co, DANE y Fiscalía](docs/diagrams/arquitectura.png)
 
-   Ollama (LLM local) ◄── proveedor por defecto del RAG (conectable a Claude/OpenAI)
-   Redis              ◄── sesiones de auth (JWT refresh + denylist) y rate-limiting del backend
-
-   Fuentes de datos: 20 datasets abiertos (datos.gov.co · SODA2) + población municipal (DANE)
-                     + capa paralela de Justicia (Fiscalía · Procesos V3)
-```
+> Diagrama editable: [`docs/diagrams/arquitectura.excalidraw`](docs/diagrams/arquitectura.excalidraw) (abrirlo en [excalidraw.com](https://excalidraw.com)).
 
 Detalle completo en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 

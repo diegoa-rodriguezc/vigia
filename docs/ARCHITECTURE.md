@@ -21,6 +21,10 @@
 
 ## 2. Vista de componentes
 
+![Arquitectura de componentes de VigIA: tres capas desacopladas (React, Go y Python/FastAPI) sobre PostgreSQL + pgvector, con Redis y Ollama como servicios de apoyo](diagrams/arquitectura.png)
+
+> Fuente editable: [`diagrams/arquitectura.excalidraw`](diagrams/arquitectura.excalidraw) (Excalidraw).
+
 | Servicio | Tecnología | Responsabilidad | Puerto |
 |---|---|---|---|
 | `db` | PostgreSQL 16 + `pgvector` | Datos gold + embeddings del RAG + tabla `users` | 5432 |
@@ -34,6 +38,13 @@
 
 El orden de ejecución es el de `pipeline()` en `cli.py`
 (`ingest → clean → gold → justicia → train → load-db → rag-index`):
+
+![Pipeline de datos de VigIA: fuentes abiertas (Policía/SODA2, DANE, Fiscalía) que fluyen por el medallion bronze → silver → gold, con la capa paralela de Justicia, hasta entrenar el modelo, cargar PostgreSQL (5 tablas) e indexar el RAG en kb_chunks](diagrams/pipeline-datos.png)
+
+> Fuente editable: [`diagrams/pipeline-datos.excalidraw`](diagrams/pipeline-datos.excalidraw) (Excalidraw).
+
+<details>
+<summary>Ver el flujo como texto</summary>
 
 ```
 Fuentes abiertas:  Policía · 16 datasets SODA2 (datos.gov.co)  ·  DANE · población (dane.gov.co)
@@ -60,6 +71,8 @@ PostgreSQL (tablas servidas por Go)
    ▼
 PostgreSQL (tabla kb_chunks con columna vector)
 ```
+
+</details>
 
 ### 3.1 Unificación de esquemas (reto técnico central)
 

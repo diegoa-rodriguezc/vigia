@@ -1429,3 +1429,29 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,emacs,windows,linux,pydev,python,jupyternotebooks,pycharm,pycharm+all,pycharm+iml,java,react,redis,node,monodevelop,scala,jetbrains,jetbrains+all,jetbrains+iml,visualstudio,visualstudiocode,sublimetext,notepadpp,venv,vercel,virtualenv,dbeaver,svn,angular,metaprogrammingsystem
+
+# ───────────────────────── VigIA ─────────────────────────
+# Entorno
+.env
+.venv
+
+# Lago de datos (medallion) — no versionar artefactos pesados
+data/bronze/*
+data/silver/*
+data/gold/*
+
+# No ignorar los .gitkeep para mantener la estructura (medallion)
+!data/**/.gitkeep 
+
+# Modelos y reportes generados
+models/*
+
+# No ignorar los .gitkeep para mantener la estructura (models)
+!models/.gitkeep
+
+# Python
+ml/*.egg-info/
+ml/.ruff_cache/
+
+# Frontend
+frontend/dist/

@@ -136,7 +136,8 @@ make deploy                   # up + descarga de modelos + pipeline con datos (t
 
 Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tomar alrededor de 1 hora, debido a la descarga de fuentes de información, así como la indexación de información usada por el RAG en CPU.*
 
-> [!TIP] Para listar más comandos utilice `make help`, lista todos los atajos disponibles con su descripción.
+> [!TIP] 
+> Para listar más comandos utilice `make help`, lista todos los atajos disponibles con su descripción.
 
 ### Aceleración por GPU (opcional)
 

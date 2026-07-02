@@ -1,0 +1,32 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: VigIA
+message: >-
+  Inteligencia Artificial para la Seguridad Ciudadana y la
+  Justicia
+type: software
+authors:
+  - given-names: Jeraldine
+    family-names: Mora Lavado
+  - given-names: Jorge Esneider
+    family-names: Henao González
+  - given-names: Héctor Leandro
+    family-names: Rojas Serrano
+  - given-names: Diego Alberto
+    family-names: Rodríguez Cruz
+repository-code: 'https://github.com/diegoa-rodriguezc/vigia'
+abstract: >-
+  VigIA (de vigía + IA) es una plataforma de analítica
+  predictiva y asistencia ciudadana que transforma los datos
+  abiertos de criminalidad de Colombia en alertas tempranas,
+  pronósticos y conocimiento accionable para fortalecer las
+  políticas públicas de seguridad y justicia.
+keywords:
+  - seguridad
+  - justicia
+  - datos
+  - Colombia
+  - IA
+  - Datos abiertos

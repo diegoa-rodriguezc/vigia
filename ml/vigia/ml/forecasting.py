@@ -129,8 +129,8 @@ _HGB_PARAMS: dict = {
 def _new_estimator(overrides: dict | None = None) -> HistGradientBoostingRegressor:
     """Estimador con la configuración estándar (misma semilla para reproducibilidad).
 
-    `overrides` permite inyectar hiperparámetros candidatos durante la búsqueda (HPO) sin
-    tocar los de producción.
+    `overrides` permite inyectar hiperparámetros candidatos durante la búsqueda (HPO - 
+    Hyperparameter Optimization) sin tocar los de producción.
 
     Nota empírica (bitácora en docs/CRISP-ML-Q.md): `loss="poisson"` extrapola por su enlace
     logarítmico y dispara el MAE en la recursión multipaso —de forma CATASTRÓFICA sobre conteos

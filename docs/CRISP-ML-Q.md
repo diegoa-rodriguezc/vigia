@@ -319,7 +319,7 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
     (`learning_rate=0,03`, `max_iter=800`) mejoraba el MAE multipaso solo **−0,8%** al validarla a 3 orígenes
     (2,215→2,197), **a costa de 2× el tiempo de entrenamiento** y con leve regresión a 1 paso → **no se adopta**.
     *Conclusión:* la búsqueda **confirma que los defaults ya eran un óptimo práctico** (no números mágicos), y
-    deja la HPO **reproducible** en el código (`_HGB_PARAMS` + `_new_estimator(overrides)` + `hgb_params` en el
+    deja la HPO (*Hyperparameter Optimization*) **reproducible** en el código (`_HGB_PARAMS` + `_new_estimator(overrides)` + `hgb_params` en el
     backtest). Resultado honesto y valioso para el rigor: el modelo está bien calibrado, no infra-ajustado.
 
 12. **Iteración 10 (champion vs challenger neuronal):** para decidir *con evidencia* si una red neuronal
@@ -329,7 +329,7 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
     producción bajo **exactamente el mismo** backtest walk-forward recursivo sin fuga (mismo filtro de series,
     mismo modo tasa/conteo, mismas features, mismos orígenes). Para reusar el backtest se generalizó
     `_walk_forward` con un parámetro `make_estimator` (su valor por defecto es el HGB de producción, así que el
-    cambio **no altera** el modelo servido ni la HPO previa). El MLP exige escalado de features (a diferencia de
+    cambio **no altera** el modelo servido ni la HPO (*Hyperparameter Optimization*) previa). El MLP exige escalado de features (a diferencia de
     los árboles), de ahí el `StandardScaler` en el pipeline. **El arnés solo EVALÚA**: no toca el artefacto
     servido; cablear al ganador sería una decisión aparte y explícita. El veredicto y las métricas paralelas se
     regeneran de forma reproducible en `reports/challenger.json` (`champion` vs `challenger`, MAE/sMAPE a 1 paso

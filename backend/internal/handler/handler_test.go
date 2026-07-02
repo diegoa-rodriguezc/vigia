@@ -32,6 +32,20 @@ func TestHealth(t *testing.T) {
 	}
 }
 
+// Ready (readiness) sin BD alcanzable devuelve 503: así el HEALTHCHECK del contenedor marca
+// "unhealthy" cuando la base está caída, en vez de mentir con un 200.
+func TestReadyNoDB(t *testing.T) {
+	h := New(nil, nil, nil, config.Config{})
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/ready", nil)
+	rec := httptest.NewRecorder()
+
+	h.Ready(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("esperaba 503 sin BD alcanzable, obtuve %d", rec.Code)
+	}
+}
+
 // Summary sin base de datos devuelve 503 (no 500).
 func TestSummaryNoDB(t *testing.T) {
 	h := New(nil, nil, nil, config.Config{})

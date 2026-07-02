@@ -1,17 +1,25 @@
 import {
   createContext, useCallback, useContext, useEffect, useState, type ReactNode,
 } from "react";
-import { login as apiLogin, logout as apiLogout, getMe, type AuthUser } from "../api";
+import {
+  login as apiLogin, register as apiRegister, logout as apiLogout, getMe, getConfig,
+  type AuthUser,
+} from "../api";
 import { AUTH_EVENT, isAuthenticated } from "./tokens";
 import LoginModal from "../components/LoginModal";
+
+// Modo del modal de acceso: iniciar sesión o crear una cuenta ciudadana.
+export type AuthMode = "login" | "register";
 
 interface AuthState {
   user: AuthUser | null;
   authenticated: boolean;
   ready: boolean; // ya se resolvió la sesión inicial (para evitar parpadeos)
+  registrationEnabled: boolean; // el backend permite crear cuentas (feature flag de runtime)
   login: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  openLogin: () => void;
+  openLogin: (mode?: AuthMode) => void;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -20,6 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [ready, setReady] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
 
   // Sesión inicial: si hay token, validarlo contra /auth/me.
   useEffect(() => {
@@ -28,6 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(setUser)
       .catch(() => setUser(null))
       .finally(() => setReady(true));
+  }, []);
+
+  // Feature flags del backend (p. ej. si el registro está habilitado). Ante fallo, se asume
+  // habilitado (comportamiento por defecto); la guarda autoritativa vive en el servidor.
+  useEffect(() => {
+    getConfig()
+      .then((c) => setRegistrationEnabled(c.registration_enabled))
+      .catch(() => setRegistrationEnabled(true));
   }, []);
 
   // Si los tokens se limpian en otro lugar (p. ej. el interceptor tras un refresh
@@ -44,19 +62,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoginOpen(false);
   }, []);
 
+  const register = useCallback(async (username: string, password: string) => {
+    const u = await apiRegister(username, password);
+    setUser(u);
+    setLoginOpen(false);
+  }, []);
+
   const logout = useCallback(async () => {
     await apiLogout();
     setUser(null);
   }, []);
 
-  const openLogin = useCallback(() => setLoginOpen(true), []);
+  const openLogin = useCallback((mode: AuthMode = "login") => {
+    setAuthMode(mode);
+    setLoginOpen(true);
+  }, []);
 
   return (
     <AuthContext.Provider
-      value={{ user, authenticated: !!user, ready, login, logout, openLogin }}
+      value={{ user, authenticated: !!user, ready, registrationEnabled, login, register, logout, openLogin }}
     >
       {children}
-      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
+      {loginOpen && <LoginModal initialMode={authMode} onClose={() => setLoginOpen(false)} />}
     </AuthContext.Provider>
   );
 }

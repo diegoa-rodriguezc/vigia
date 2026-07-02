@@ -4,7 +4,9 @@ import (
 	"context"
 	"crypto/rand"
 	"errors"
+	"strings"
 	"time"
+	"unicode"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -15,7 +17,37 @@ var (
 	ErrInvalidCredentials = errors.New("credenciales inválidas")
 	ErrAccountLocked      = errors.New("cuenta bloqueada temporalmente por intentos fallidos")
 	ErrStoreUnavailable   = errors.New("almacén de sesiones no disponible")
+	// ErrUsernameTaken lo devuelve el UserStore al chocar con la restricción UNIQUE de username.
+	ErrUsernameTaken = errors.New("el nombre de usuario ya está en uso")
 )
+
+// ValidationError señala una entrada inválida del usuario (registro): su mensaje es apto
+// para mostrarse al cliente tal cual (política de contraseña, nombre de usuario, etc.).
+type ValidationError struct{ Msg string }
+
+func (e ValidationError) Error() string { return e.Msg }
+
+// Límites del nombre de usuario en el registro público.
+const (
+	minUsernameLen = 3
+	maxUsernameLen = 64
+)
+
+// ValidateUsername aplica reglas mínimas al nombre de usuario del registro: longitud 3–64 y
+// solo letras, dígitos, punto, guion, guion bajo o arroba (evita espacios/control y entradas
+// que confundirían el login o las cabeceras).
+func ValidateUsername(username string) error {
+	if len(username) < minUsernameLen || len(username) > maxUsernameLen {
+		return ValidationError{"el usuario debe tener entre 3 y 64 caracteres"}
+	}
+	for _, c := range username {
+		if unicode.IsLetter(c) || unicode.IsDigit(c) || strings.ContainsRune("._-@", c) {
+			continue
+		}
+		return ValidationError{"el usuario solo admite letras, dígitos y los signos . _ - @"}
+	}
+	return nil
+}
 
 // Parámetros del bloqueo anti fuerza-bruta de login.
 const (
@@ -38,6 +70,9 @@ type User struct {
 type UserStore interface {
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 	GetUserByID(ctx context.Context, id string) (User, error)
+	// CreateUser inserta un usuario nuevo con el rol dado; devuelve ErrUsernameTaken si el
+	// nombre ya existe (choque con la restricción UNIQUE).
+	CreateUser(ctx context.Context, username, passwordHash, role string) (User, error)
 }
 
 // TokenPair es lo que se entrega al cliente tras login/refresh.
@@ -118,6 +153,38 @@ func (s *Service) Login(ctx context.Context, username, password, clientIP string
 	}
 
 	s.store.ResetLoginFail(ctx, lockID)
+	pair, err := s.issuePair(ctx, u)
+	if err != nil {
+		return TokenPair{}, PublicUser{}, err
+	}
+	return pair, PublicUser{ID: u.ID, Username: u.Username, Role: u.Role}, nil
+}
+
+// Register crea una cuenta ciudadana (rol "citizen") y la deja autenticada (emite el par de
+// tokens). Valida el nombre de usuario y la política de contraseña ANTES de tocar la BD; si el
+// nombre ya existe devuelve ErrUsernameTaken. El rol "citizen" solo habilita los endpoints de IA
+// tras RequireAuth (no operaciones de admin), de modo que el "asistente ciudadano" es realmente
+// accesible por la ciudadanía sin abrir la cuenta administradora.
+func (s *Service) Register(ctx context.Context, username, password string) (TokenPair, PublicUser, error) {
+	username = strings.TrimSpace(username)
+	if err := ValidateUsername(username); err != nil {
+		return TokenPair{}, PublicUser{}, err
+	}
+	if err := ValidatePassword(password); err != nil {
+		// ValidatePassword ya devuelve un mensaje apto para el usuario; se envuelve como
+		// ValidationError para que el handler lo distinga de un fallo interno y responda 400.
+		return TokenPair{}, PublicUser{}, ValidationError{err.Error()}
+	}
+
+	hash, err := HashPassword(password)
+	if err != nil {
+		return TokenPair{}, PublicUser{}, err
+	}
+	u, err := s.users.CreateUser(ctx, username, hash, "citizen")
+	if err != nil {
+		return TokenPair{}, PublicUser{}, err // incluye ErrUsernameTaken
+	}
+
 	pair, err := s.issuePair(ctx, u)
 	if err != nil {
 		return TokenPair{}, PublicUser{}, err

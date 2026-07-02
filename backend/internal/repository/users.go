@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/vigia/backend/internal/auth"
 )
@@ -41,6 +42,32 @@ func (r *Repository) UpsertAdmin(ctx context.Context, username, passwordHash str
 		DO UPDATE SET password_hash = EXCLUDED.password_hash, role = 'admin'`,
 		username, passwordHash)
 	return err
+}
+
+// CreateUser inserta un usuario nuevo con el rol dado y devuelve su vista de autenticación.
+// Traduce la violación de la restricción UNIQUE de `username` (código 23505) a
+// auth.ErrUsernameTaken para que el handler responda 409 en vez de un 500 opaco.
+func (r *Repository) CreateUser(ctx context.Context, username, passwordHash, role string) (auth.User, error) {
+	if !r.Available() {
+		return auth.User{}, ErrNoDB
+	}
+	var id int64
+	err := r.pool.QueryRow(ctx,
+		`INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3) RETURNING id`,
+		username, passwordHash, role).Scan(&id)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // unique_violation
+			return auth.User{}, auth.ErrUsernameTaken
+		}
+		return auth.User{}, mapErr(err)
+	}
+	return auth.User{
+		ID:           strconv.FormatInt(id, 10),
+		Username:     username,
+		Role:         role,
+		PasswordHash: passwordHash,
+	}, nil
 }
 
 // GetUserByUsername implementa auth.UserStore.

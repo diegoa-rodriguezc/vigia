@@ -24,7 +24,7 @@ import (
 // Modelo de seguridad híbrido:
 //   - Lectura de datos abiertos: pública, con rate-limit por IP.
 //   - Endpoints de IA (/forecast, /assistant) y operaciones: requieren JWT (RequireAuth).
-//   - /auth/*: login (rate-limit estricto), refresh y logout.
+//   - /auth/*: registro y login (rate-limit estricto), refresh y logout.
 func New(
 	cfg config.Config,
 	repo *repository.Repository,
@@ -44,6 +44,9 @@ func New(
 	}
 	r.Use(chimw.Recoverer)
 	r.Use(chimw.Timeout(240 * time.Second))
+	// Tope del cuerpo de la petición (1 MiB): las cargas de esta API son JSON pequeño
+	// (credenciales, una pregunta al asistente); acota el DoS por memoria vía io.ReadAll/Decode.
+	r.Use(middleware.MaxBody(1 << 20))
 	r.Use(middleware.SecurityHeaders)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   strings.Split(cfg.AllowedOrigins, ","),
@@ -55,7 +58,7 @@ func New(
 	}))
 
 	h := handler.New(repo, ml, store, cfg)
-	ah := handler.NewAuthHandler(authSvc)
+	ah := handler.NewAuthHandler(authSvc, cfg.RegistrationEnabled)
 	mw := auth.NewMiddleware(tokens, store)
 
 	publicLimit := middleware.RateLimit(store, "public", cfg.RateLimitPublic)
@@ -63,10 +66,17 @@ func New(
 
 	r.Route("/api/v1", func(r chi.Router) {
 		// Salud: pública y sin límite (la usan el frontend y los healthchecks).
+		// /health = liveness (200 si el proceso sirve; `db` refleja la conectividad real).
+		// /ready  = readiness (503 si la BD no es alcanzable); la usa el HEALTHCHECK del contenedor.
 		r.Get("/health", h.Health)
+		r.Get("/ready", h.Ready)
+		// Configuración pública para el frontend (feature flags de runtime, p. ej. si el
+		// registro de cuentas está habilitado). Pública y sin límite (se lee al arrancar la UI).
+		r.Get("/config", h.Config)
 
 		// Autenticación.
 		r.Group(func(r chi.Router) {
+			r.With(loginLimit).Post("/auth/register", ah.Register)
 			r.With(loginLimit).Post("/auth/login", ah.Login)
 			r.With(loginLimit).Post("/auth/refresh", ah.Refresh)
 			r.With(mw.RequireAuth).Post("/auth/logout", ah.Logout)

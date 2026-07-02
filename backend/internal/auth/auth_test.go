@@ -2,8 +2,10 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
@@ -55,6 +57,21 @@ func (f *fakeUsers) GetUserByID(_ context.Context, id string) (User, error) {
 		return u, nil
 	}
 	return User{}, ErrUserNotFound
+}
+
+func (f *fakeUsers) CreateUser(_ context.Context, username, passwordHash, role string) (User, error) {
+	if _, exists := f.byName[username]; exists {
+		return User{}, ErrUsernameTaken
+	}
+	u := User{
+		ID:           strconv.Itoa(len(f.byID) + 1),
+		Username:     username,
+		Role:         role,
+		PasswordHash: passwordHash,
+	}
+	f.byName[username] = u
+	f.byID[u.ID] = u
+	return u, nil
 }
 
 func adminUser(t *testing.T, password string) User {
@@ -148,6 +165,59 @@ func TestLoginRefreshRotation(t *testing.T) {
 	}
 	if _, err := svc.Refresh(ctx, pair.RefreshToken); err == nil {
 		t.Fatal("reusar el refresh anterior debería fallar (rotación)")
+	}
+}
+
+func TestRegisterCreatesCitizenAndAuthenticates(t *testing.T) {
+	store := newTestStore(t)
+	tm := NewTokenManager("secreto", 15*time.Minute)
+	svc := NewService(tm, store, newFakeUsers(), time.Hour)
+	ctx := context.Background()
+
+	pair, user, err := svc.Register(ctx, "ciudadana", "Cl4ve.Segura!")
+	if err != nil {
+		t.Fatalf("register: %v", err)
+	}
+	if pair.AccessToken == "" || pair.RefreshToken == "" {
+		t.Fatal("el registro debería emitir un par de tokens (auto-login)")
+	}
+	if user.Role != "citizen" {
+		t.Fatalf("el rol esperado es 'citizen', obtuve %q", user.Role)
+	}
+
+	// El usuario recién creado puede iniciar sesión con esa contraseña.
+	if _, _, err := svc.Login(ctx, "ciudadana", "Cl4ve.Segura!", "10.0.0.1"); err != nil {
+		t.Fatalf("login tras registro: %v", err)
+	}
+}
+
+func TestRegisterRejectsDuplicateAndWeakPassword(t *testing.T) {
+	store := newTestStore(t)
+	tm := NewTokenManager("secreto", 15*time.Minute)
+	svc := NewService(tm, store, newFakeUsers(), time.Hour)
+	ctx := context.Background()
+
+	// Contraseña que no cumple la política → ValidationError (400 en el handler).
+	if _, _, err := svc.Register(ctx, "pepe", "corta"); err == nil {
+		t.Fatal("una contraseña débil debería rechazarse")
+	} else {
+		var ve ValidationError
+		if !errors.As(err, &ve) {
+			t.Fatalf("esperaba ValidationError, obtuve %T", err)
+		}
+	}
+
+	// Nombre de usuario inválido → ValidationError.
+	if _, _, err := svc.Register(ctx, "a b", "Cl4ve.Segura!"); err == nil {
+		t.Fatal("un usuario con espacios debería rechazarse")
+	}
+
+	// Registro válido y luego duplicado → ErrUsernameTaken (409 en el handler).
+	if _, _, err := svc.Register(ctx, "duplicada", "Cl4ve.Segura!"); err != nil {
+		t.Fatalf("primer registro: %v", err)
+	}
+	if _, _, err := svc.Register(ctx, "duplicada", "Otr4.Segura2!"); err != ErrUsernameTaken {
+		t.Fatalf("esperaba ErrUsernameTaken, obtuve %v", err)
 	}
 }
 

@@ -12,11 +12,12 @@ import (
 
 // AuthHandler expone los endpoints de autenticación (/auth/*).
 type AuthHandler struct {
-	svc *auth.Service
+	svc                 *auth.Service
+	registrationEnabled bool
 }
 
-func NewAuthHandler(svc *auth.Service) *AuthHandler {
-	return &AuthHandler{svc: svc}
+func NewAuthHandler(svc *auth.Service, registrationEnabled bool) *AuthHandler {
+	return &AuthHandler{svc: svc, registrationEnabled: registrationEnabled}
 }
 
 const (
@@ -68,6 +69,51 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	slog.Info("login exitoso", "usuario", user.Username, "rol", user.Role)
 	writeJSON(w, http.StatusOK, loginResponse{TokenPair: pair, User: user})
+}
+
+// Register crea una cuenta ciudadana (rol "citizen") y la deja autenticada. Es público (con
+// rate-limit estricto, como el login) para que la ciudadanía pueda usar el asistente y el
+// pronóstico sin depender de la cuenta administradora.
+func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+	// Guarda autoritativa: si el despliegue deshabilitó el registro, se rechaza aquí (la UI
+	// además oculta el botón, pero el servidor no confía en el cliente).
+	if !h.registrationEnabled {
+		writeError(w, http.StatusForbidden, "el registro de nuevas cuentas está deshabilitado")
+		return
+	}
+	var body loginRequest
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeError(w, http.StatusBadRequest, "JSON inválido")
+		return
+	}
+	if body.Username == "" || body.Password == "" {
+		writeError(w, http.StatusBadRequest, "usuario y contraseña son obligatorios")
+		return
+	}
+	// Cota temprana de tamaño (defensa antes del bcrypt); la política fina la aplica el servicio.
+	if len(body.Username) > maxUsernameLen || len(body.Password) > maxPasswordLen {
+		writeError(w, http.StatusBadRequest, "usuario o contraseña demasiado largos")
+		return
+	}
+
+	pair, user, err := h.svc.Register(r.Context(), body.Username, body.Password)
+	if err != nil {
+		var ve auth.ValidationError
+		switch {
+		case errors.As(err, &ve):
+			writeError(w, http.StatusBadRequest, ve.Error())
+		case errors.Is(err, auth.ErrUsernameTaken):
+			writeError(w, http.StatusConflict, "el nombre de usuario ya está en uso")
+		case errors.Is(err, auth.ErrStoreUnavailable):
+			writeError(w, http.StatusServiceUnavailable, "servicio de sesiones no disponible")
+		default:
+			slog.Error("fallo inesperado en registro", "error", err)
+			writeError(w, http.StatusInternalServerError, "error interno")
+		}
+		return
+	}
+	slog.Info("registro exitoso", "usuario", user.Username, "rol", user.Role)
+	writeJSON(w, http.StatusCreated, loginResponse{TokenPair: pair, User: user})
 }
 
 type refreshRequest struct {

@@ -67,6 +67,14 @@ export async function login(username: string, password: string): Promise<AuthUse
   return r.data.user;
 }
 
+// Registro de una cuenta ciudadana (rol "citizen"). El backend responde con el par de tokens
+// (auto-login), de modo que tras registrarse la sesión ya queda iniciada.
+export async function register(username: string, password: string): Promise<AuthUser> {
+  const r = await rawApi.post<LoginResult>("/auth/register", { username, password });
+  setTokens(r.data.access_token, r.data.refresh_token);
+  return r.data.user;
+}
+
 export async function logout(): Promise<void> {
   const refresh_token = getRefreshToken();
   try {
@@ -156,6 +164,10 @@ export interface ChatResponse {
 // ── Llamadas ──
 export interface Health { status: string; db: boolean }
 export const getHealth = () => api.get<Health>("/health").then((r) => r.data);
+
+// Configuración pública resuelta por el backend en runtime (feature flags).
+export interface AppConfig { registration_enabled: boolean }
+export const getConfig = () => api.get<AppConfig>("/config").then((r) => r.data);
 
 export interface Stats {
   municipios: number;

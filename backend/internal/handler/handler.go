@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -21,10 +22,11 @@ import (
 )
 
 type Handler struct {
-	repo  *repository.Repository
-	ml    *mlclient.Client
-	store *redisstore.Store
-	cache cacheConfig
+	repo                *repository.Repository
+	ml                  *mlclient.Client
+	store               *redisstore.Store
+	cache               cacheConfig
+	registrationEnabled bool
 }
 
 // cacheConfig controla la caché en Redis de las respuestas de IA (pronóstico y asistente).
@@ -44,6 +46,7 @@ func New(repo *repository.Repository, ml *mlclient.Client, store *redisstore.Sto
 			forecastTTL:  cfg.CacheForecastTTL,
 			assistantTTL: cfg.CacheAssistantTTL,
 		},
+		registrationEnabled: cfg.RegistrationEnabled,
 	}
 }
 
@@ -119,13 +122,59 @@ func clampInt(n, lo, hi int) int {
 	return n
 }
 
+func clampFloat(f, lo, hi float64) float64 {
+	if f < lo {
+		return lo
+	}
+	if f > hi {
+		return hi
+	}
+	return f
+}
+
 // ── endpoints ──
 
-// Health reporta el estado del backend.
+// dbReachable comprueba la conectividad REAL con la BD con un tope de tiempo corto, para que
+// las sondas no queden colgadas si la base no responde.
+func (h *Handler) dbReachable(ctx context.Context) bool {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	return h.repo.Ping(ctx) == nil
+}
+
+// Health es la sonda de LIVENESS: 200 mientras el proceso sirva. El campo `db` refleja la
+// conectividad REAL (ping), no solo que exista el pool, para que el tablero no muestre "BD OK"
+// cuando la base está caída. No condiciona el 200 a la BD: reiniciar el contenedor no arregla
+// una BD externa caída (evita bucles de reinicio); para eso está la sonda de readiness.
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"status": "ok",
-		"db":     h.repo.Available(),
+		"db":     h.dbReachable(r.Context()),
+	})
+}
+
+// Ready es la sonda de READINESS: 200 solo si la BD es alcanzable; 503 si no. La usa el
+// HEALTHCHECK del contenedor, de modo que el orquestador marca "unhealthy" cuando la base está
+// caída (y NO cuando solo está sin poblar: el ping igual responde). Así el healthcheck deja de
+// mentir (antes daba 200 con todos los datos en 503).
+func (h *Handler) Ready(w http.ResponseWriter, r *http.Request) {
+	if h.dbReachable(r.Context()) {
+		writeJSON(w, http.StatusOK, map[string]any{"status": "ready", "db": true})
+		return
+	}
+	writeJSON(w, http.StatusServiceUnavailable, map[string]any{
+		"status": "degraded",
+		"db":     false,
+		"reason": "base de datos no accesible",
+	})
+}
+
+// Config expone la configuración pública que el frontend necesita al arrancar: feature flags
+// resueltos por el servidor en tiempo de ejecución (no en build). Hoy: si el registro de
+// cuentas ciudadanas está habilitado.
+func (h *Handler) Config(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"registration_enabled": h.registrationEnabled,
 	})
 }
 
@@ -240,7 +289,9 @@ func (h *Handler) Forecast(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "parámetros requeridos: cod_municipio, categoria")
 		return
 	}
-	horizon := queryInt(r, "horizon", 6)
+	// Acota el horizonte [1, 24] meses: evita un cómputo desbocado en el ML y claves de caché
+	// absurdas por un valor arbitrario del cliente (el servido es 6; el monitoreo llega a 12).
+	horizon := clampInt(queryInt(r, "horizon", 6), 1, 24)
 
 	// Caché: el pronóstico es determinista por (municipio, categoría, horizonte) y solo
 	// cambia al reentrenar el modelo. Sirve respuestas repetidas en ms en vez de golpear
@@ -279,10 +330,13 @@ func (h *Handler) Simulate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "parámetros requeridos: cod_municipio, categoria")
 		return
 	}
-	horizon := queryInt(r, "horizon", 6)
-	intervencion := queryFloat(r, "intervencion_pct", 0)
-	ramp := queryInt(r, "ramp_meses", 0)
-	shockPob := queryFloat(r, "shock_poblacion_pct", 0)
+	// Acota horizonte y palancas a rangos razonables (evita DoS del ML y claves de caché
+	// desbocadas). intervencion_pct es un supuesto del usuario; shock_poblacion_pct una palanca
+	// del modelo. Los topes son generosos pero finitos.
+	horizon := clampInt(queryInt(r, "horizon", 6), 1, 24)
+	intervencion := clampFloat(queryFloat(r, "intervencion_pct", 0), -100, 100)
+	ramp := clampInt(queryInt(r, "ramp_meses", 0), 0, 24)
+	shockPob := clampFloat(queryFloat(r, "shock_poblacion_pct", 0), -90, 1000)
 
 	// Caché: la simulación es determinista por (municipio, categoría, horizonte, palancas) y solo
 	// cambia al reentrenar el modelo. Reutiliza el TTL del pronóstico (es una variante de él).

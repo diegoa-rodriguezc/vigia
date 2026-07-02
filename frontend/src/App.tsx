@@ -69,7 +69,7 @@ export default function App() {
             <button className="ghost auth-btn" onClick={() => logout()}>Cerrar sesión</button>
           </div>
         ) : (
-          <button className="ghost auth-btn" onClick={openLogin}>
+          <button className="ghost auth-btn" onClick={() => openLogin("login")}>
             <Icon name="shield" size={15} /> Iniciar sesión
           </button>
         )}

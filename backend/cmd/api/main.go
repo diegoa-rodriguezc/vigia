@@ -19,15 +19,18 @@ import (
 	"github.com/vigia/backend/internal/server"
 )
 
-// runHealthcheck consulta el endpoint de salud local y termina con código 0 (sano) o 1.
-// Pensado para el HEALTHCHECK del contenedor distroless, que no tiene shell ni curl.
+// runHealthcheck consulta la sonda de READINESS local y termina con código 0 (listo) o 1.
+// Pensado para el HEALTHCHECK del contenedor distroless (sin shell ni curl). Se usa /ready (no
+// /health) a propósito: así el contenedor se marca "unhealthy" si la BD es inalcanzable, en vez
+// de reportar sano mientras los endpoints de datos dan 503. Una BD accesible pero sin poblar
+// sigue dando 200 (readiness) → el arranque sin datos no rompe el healthcheck.
 func runHealthcheck() {
 	port := os.Getenv("BACKEND_PORT")
 	if port == "" {
 		port = "8080"
 	}
 	client := http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Get("http://127.0.0.1:" + port + "/api/v1/health")
+	resp, err := client.Get("http://127.0.0.1:" + port + "/api/v1/ready")
 	if err != nil {
 		os.Exit(1)
 	}
@@ -68,14 +71,22 @@ func main() {
 		logger.Warn("no se pudo conectar a Redis al inicio", "error", err)
 	}
 
-	// Política de contraseñas para el admin. En producción es un requisito (fail-closed,
-	// coherente con el JWT_SECRET); en desarrollo solo se advierte para no frenar la demo.
+	// Endurecimiento de credenciales (fail-closed en producción, aviso en desarrollo). Cubre dos
+	// cosas: contraseñas DÉBILES (política) y valores PÚBLICOS por defecto del repositorio
+	// (JWT_SECRET de ejemplo o vacío, y la ADMIN_PASSWORD de demo, que es "fuerte" y por eso la
+	// política de fuerza no la atrapa). La demo local (APP_ENV=development) sigue funcionando con
+	// las credenciales de ejemplo; solo verá un aviso.
+	var credProblems []string
 	if err := auth.ValidatePassword(cfg.AdminPassword); err != nil {
+		credProblems = append(credProblems, "ADMIN_PASSWORD débil ("+err.Error()+")")
+	}
+	credProblems = append(credProblems, config.InsecureDefaults(cfg)...)
+	if len(credProblems) > 0 {
 		if cfg.AppEnv == "production" {
-			logger.Error("ADMIN_PASSWORD no cumple la política de seguridad en producción", "error", err)
+			logger.Error("credenciales inseguras en producción; corrígelas antes de desplegar", "problemas", credProblems)
 			os.Exit(1)
 		}
-		logger.Warn("ADMIN_PASSWORD débil (aceptable solo en desarrollo)", "motivo", err)
+		logger.Warn("usando credenciales de DEMO/débiles: válido SOLO en desarrollo, NUNCA en producción", "problemas", credProblems)
 	}
 
 	// Esquema de auth + administrador. Requiere BD disponible.
@@ -107,6 +118,8 @@ func main() {
 		// (Ollama en CPU) que puede tardar ~30-90s en generar la respuesta.
 		WriteTimeout: 250 * time.Second,
 		IdleTimeout:  60 * time.Second,
+		// Acota las cabeceras (defensa DoS); el cuerpo se limita con middleware.MaxBody.
+		MaxHeaderBytes: 1 << 20,
 	}
 
 	go func() {

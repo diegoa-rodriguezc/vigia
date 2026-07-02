@@ -133,6 +133,8 @@ services:
       # Default fuerte solo para arranque local; sobreescríbelo en producción (si es débil
       # y APP_ENV=production, el backend aborta). Cumple la política (mayús/minús/dígito/símbolo).
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Demo.VigIA.2026}
+      # Registro público de cuentas ciudadanas (rol citizen). false = solo admin (403 + botón oculto).
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-true}
       # Activar SOLO si el backend está tras un proxy inverso de confianza (evita falsificar IP).
       TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
       RATE_LIMIT_PUBLIC: ${RATE_LIMIT_PUBLIC:-120}

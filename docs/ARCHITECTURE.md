@@ -155,7 +155,10 @@ los normaliza a un único modelo de evento:
 ### API Go (`:8080`)
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
-| GET | `/api/v1/health` | público | Healthcheck |
+| GET | `/api/v1/health` | público | Liveness (200 si el proceso sirve; `db` refleja la conectividad real) |
+| GET | `/api/v1/ready` | público | Readiness (503 si la BD es inalcanzable); la usa el healthcheck del contenedor |
+| GET | `/api/v1/config` | público | Flags de runtime para el frontend (p. ej. `registration_enabled`) |
+| POST | `/api/v1/auth/register` | público (rate-limit) | Crea una cuenta ciudadana (rol `citizen`) y la deja autenticada |
 | POST | `/api/v1/auth/login` | público (rate-limit) | Devuelve access + refresh token |
 | POST | `/api/v1/auth/refresh` | público (rate-limit) | Rota el par de tokens |
 | POST | `/api/v1/auth/logout` | JWT | Revoca access (denylist) y refresh |
@@ -192,7 +195,7 @@ los normaliza a un único modelo de evento:
   histórico y para cargas analíticas previas a la base relacional.
 - **ADR-05 — Autenticación JWT + Redis (modelo híbrido).** La lectura de datos abiertos permanece
   pública (con *rate-limiting* por IP) para preservar el valor de transparencia; los endpoints de IA
-  caros (`/forecast`, `/assistant`) exigen un **access token JWT** (HS256, corto) enviado como
+  caros (`/forecast`, `/simulate`, `/assistant`, `/brief`) exigen un **access token JWT** (HS256, corto) enviado como
   `Authorization: Bearer`. Los **refresh tokens** son opacos y viven en **Redis** con rotación de un
   solo uso; el logout revoca el access vía *denylist* por `jti`. Se elige Bearer + refresh (en vez de
   cookies httpOnly) por simplicidad de integración con la SPA y el CORS existente; el coste es exponer
@@ -200,8 +203,8 @@ los normaliza a un único modelo de evento:
   bcrypt en la tabla `users` (esquema creado por el backend al arrancar, como el resto del esquema).
   Contraseñas sujetas a política de fortaleza (`auth.ValidatePassword`): una contraseña de admin débil
   aborta el arranque cuando `APP_ENV=production`.
-- **ADR-06 — Redis también como caché de respuestas de IA.** El `/forecast` y el `/assistant` son caros
-  (el LLM local en CPU tarda ~30–90 s). El backend cachea sus respuestas `200` en Redis: el pronóstico por
+- **ADR-06 — Redis también como caché de respuestas de IA.** Los endpoints de IA (`/forecast`, `/simulate`,
+  `/assistant`, `/brief`) son caros (el LLM local en CPU tarda ~30–90 s). El backend cachea sus respuestas `200` en Redis: el pronóstico por
   `(municipio, categoría, horizonte)` (TTL `CACHE_FORECAST_TTL`, def. 6 h, pues solo cambia al reentrenar)
   y el asistente por hash SHA-256 de la pregunta normalizada (TTL `CACHE_ASSISTANT_TTL`, def. 1 h). Sirve
   respuestas repetidas en milisegundos y mitiga el cuello de botella de concurrencia. La caché es

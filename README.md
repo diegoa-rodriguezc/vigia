@@ -77,7 +77,7 @@ Detalle completo en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ```
 vigia/
 ├── data/                  # Lago de datos medallion (bronze/silver/gold) — no versionado
-├── docs/                  # Documentación general (arquitectura, CRISP-ML(Q), diccionario, etc…)
+├── docs/                  # Documentación general (arquitectura, CRISP-ML(Q), diccionario, etc.)
 ├── notebooks/             # Exploración y perfilado (EDA) de las fuentes
 ├── ml/                    # Python: ETL + Machine Learning + RAG + API (FastAPI)
 ├── backend/               # Go: API REST / BFF
@@ -124,7 +124,7 @@ git clone https://github.com/diegoa-rodriguezc/vigia.git
 cd vigia
 ```
 
-3. Realiza la copia del archivo `.env.example` y **edite** los valores del archivo `.env` según corresponda
+3. Realice la copia del archivo `.env.example` y **edite** los valores del archivo `.env` según corresponda
 ```bash
 cp .env.example .env          # ajustar las credenciales según corresponda el ambiente (dev/prod)
 ```
@@ -134,9 +134,9 @@ cp .env.example .env          # ajustar las credenciales según corresponda el a
 make deploy                   # up + descarga de modelos + pipeline con datos (todo en Docker)
 ```
 
-Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tomar alrededor de 1 hora, debido a la descarga de fuentes de información, así como la indexación de información usado por el RAG en CPU.*
+Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tomar alrededor de 1 hora, debido a la descarga de fuentes de información, así como la indexación de información usada por el RAG en CPU.*
 
-> 💡 Para listar más comandos utilice `make help`, lista todos los atajos disponibles con su descripción.
+> [!TIP] Para listar más comandos utilice `make help`, lista todos los atajos disponibles con su descripción.
 
 ### Aceleración por GPU (opcional)
 
@@ -155,7 +155,7 @@ git clone https://github.com/diegoa-rodriguezc/vigia.git
 cd vigia
 ```
 
-3. Realiza la copia del archivo `.env.example` y **edite** los valores del archivo `.env` según corresponda
+3. Realice la copia del archivo `.env.example` y **edite** los valores del archivo `.env` según corresponda
 ```bash
 # ajustar las credenciales según corresponda el ambiente (dev/prod)
 cp .env.example .env
@@ -167,7 +167,7 @@ cp .env.example .env
 make deploy-gpu      
 ```
 
-Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tomar alrededor de 30 min, debido a la descarga de fuentes de información e indexación de información usado por el RAG.*
+Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tomar alrededor de 30 min, debido a la descarga de fuentes de información e indexación de información usada por el RAG.*
 
 ## Acceso a la aplicación
 
@@ -223,7 +223,7 @@ dato abierto de entidad pública admitido por el concurso. Detalle en
 **Datos estructurados + no estructurados.** Además de las series, el asistente RAG indexa **documentos de
 política pública** (PDF/Word) para responder sobre el marco normativo citando la fuente **por página**
 (p. ej. la *Política de Seguridad, Defensa y Convivencia Ciudadana 2022-2026* del Ministerio de Defensa).
-Para incluir documentos, se deben colocar en la carpeta `data/kb_docs/` y ejecutar `docker compose exec ml python -m vigia rag-index` con el fin de indexar los documentos y sean tenidos en cuenta para respuestas del RAG.
+Para incluir documentos, se deben colocar en la carpeta `data/kb_docs/` y ejecutar `docker compose exec ml python -m vigia rag-index` con el fin de indexar los documentos y que sean tenidos en cuenta para las respuestas del RAG.
 
 ## 🗺️ Alineación con las Hojas de Ruta de Datos Abiertos Estratégicos
 
@@ -245,7 +245,7 @@ Detalle del mapeo y la verificación contra la API en [docs/DATA_DICTIONARY.md](
 
 ## 🌎 Impacto, escalabilidad y enfoque territorial
 
-**Problema** El crimen y la violencia le cuestan a Colombia **el 3,64 % del PIB —unos $68 billones al año— (Fedesarrollo–BID, 2022)**[^costo], 
+**Problema.** El crimen y la violencia le cuestan a Colombia **el 3,64 % del PIB —unos $68 billones al año— (Fedesarrollo–BID, 2022)**[^costo], 
 repartidos entre capital humano (0,88 %), sector privado (1,76 %) y sector público (1,0 %). En el plano social, la **percepción de
 inseguridad llegó al 52,9 %** de la población de 15+ años (**DANE, Encuesta de Convivencia y Seguridad
 Ciudadana 2024**)[^dane], y el país registra **~25 homicidios por cada 100.000 habitantes (~13–14 mil al
@@ -264,12 +264,12 @@ atípicos.
 
 **Mecanismo de impacto.** 
 1. *Pronóstico por municipio×delito* con banda de incertidumbre → planeación preventiva con horizonte de meses.
-2. *alertas de anomalías* → reacción temprana ante repuntes.
-3. *asistente ciudadano* → acceso abierto y transparente a la cifra oficial, fortaleciendo el control
+2. *Alertas de anomalías* → reacción temprana ante repuntes.
+3. *Asistente ciudadano* → acceso abierto y transparente a la cifra oficial, fortaleciendo el control
 social. El valor está en reasignar el esfuerzo preventivo **antes** de que el delito escale.
 
 
-**Enfoque territorial** Por construir sobre el código DANE y DIVIPOLA, VigIA
+**Enfoque territorial.** Por estar construida sobre el código DANE y DIVIPOLA, VigIA
 cubre **todo el territorio nacional** (1.106 de 1.126 municipios modelados). En las regiones que el concurso
 prioriza por su menor participación digital, la cobertura concreta es:
 
@@ -301,13 +301,22 @@ VigIA usa un **modelo de acceso híbrido** que preserva la transparencia de los 
 blinda los recursos costosos:
 
 - **Público (con *rate-limiting*):** panorama, mapa, alertas y series.
-- **Protegido con JWT:** el **pronóstico** y el **asistente** (cómputo de IA), para evitar abuso/DoS.
+- **Protegido con JWT:** el **pronóstico**, el **simulador**, el **asistente** y el **informe** (cómputo de IA), para evitar abuso/DoS.
+
+Cualquier ciudadano puede **crear una cuenta** (rol `citizen`) desde `POST /auth/register` —o el botón
+*Crear cuenta* del tablero— y usar así las funciones de IA **sin depender de la cuenta administradora**: el
+"asistente ciudadano" es realmente de acceso ciudadano. El registro aplica la misma política de contraseña
+que el admin y está limitado por IP para evitar altas masivas. Para un despliegue **institucional cerrado**,
+`REGISTRATION_ENABLED=false` deshabilita el alta pública (el servidor responde `403` y la UI oculta el botón).
 
 La autenticación es **JWT (access token corto) + refresh token rotativo en Redis**, con revocación
-(logout), hashing **bcrypt**, bloqueo anti fuerza-bruta, *rate-limiting* y cabeceras de seguridad.
+(logout), hashing **bcrypt**, bloqueo contra ataques de fuerza bruta, *rate-limiting* y cabeceras de seguridad.
 Configurable por `.env` (`JWT_SECRET`, `JWT_EXPIRATION`, `JWT_REFRESH_EXPIRATION`, `ADMIN_*`). En
-producción (`APP_ENV=production`) el backend **exige un `JWT_SECRET` fuerte** o aborta. El usuario
-administrador se inserta al arrancar con `ADMIN_USERNAME`/`ADMIN_PASSWORD`. Detalle en
+producción (`APP_ENV=production`) el backend **aborta si `JWT_SECRET` o `ADMIN_PASSWORD` siguen en sus
+valores públicos por defecto** (los que trae el repositorio) o si la contraseña es débil (fail-closed); en
+desarrollo se permiten con un aviso, para no frenar la demo. La ciudadanía se
+da de alta con rol `citizen` vía `POST /auth/register`; el usuario **administrador** se inserta al arrancar
+con `ADMIN_USERNAME`/`ADMIN_PASSWORD`. Detalle en
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#6-decisiones-de-arquitectura-adr-resumidos) (ADR-05).
 
 ## ⚖️ Ética y reproducibilidad
@@ -323,7 +332,7 @@ equipo humano. El sesgo de subregistro/despliegue subyacente **no se elimina** (
 abierta) y se declara como tal. Detalle en
 [docs/CRISP-ML-Q.md](docs/CRISP-ML-Q.md#el-bucle-de-retroalimentación-del-policing-predictivo-y-cómo-se-acota).
 
-**Publicación** 
+**Publicación.**
 El código fuente, la documentación y la evidencia de uso de datos abiertos están disponibles: en el repositorio 
 - Repositorio de acceso público [github.com/diegoa-rodriguezc/vigia](https://github.com/diegoa-rodriguezc/vigia), garantizando que la
 solución sea verificable, descargable y auditable. 
@@ -333,7 +342,7 @@ entrega y evaluación.
 
 ## 📄 Licencia
 
-MIT — ver [LICENSE](LICENSE). Datos bajo los términos de datos.gov.co.
+MIT — ver [LICENSE](LICENSE). 
 
 ---
 

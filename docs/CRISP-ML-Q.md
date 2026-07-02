@@ -224,7 +224,7 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
 4. **Iteración 2 (datasets completos):** con el calendario por serie corregido, sobre el universo real
    *de entonces* (**1.118 municipios DANE**, ~4,6 M de hechos; ~7.400 series con ≥12 meses de actividad —
    **cifras históricas de esta iteración, con el catálogo de 8 datasets**; el universo vigente tras ampliar
-   a 16 fuentes es mayor: 1.106 municipios modelados, 13.089 series, 9,21 M de hechos, ver **Estado actual**),
+   a 16 fuentes es mayor en series y hechos: 1.106 municipios modelados, 13.089 series, 9,21 M de hechos, ver **Estado actual**),
    el modelo **supera a la línea base en sMAPE** (≈97 vs ≈111). **Honestidad
    metodológica:** en **MAE absoluto el modelo NO bate a la línea base ingenua** (≈2,6 vs ≈2,4): "repetir
    el último valor" es muy difícil de superar en series estables de alto volumen. El aporte del modelo
@@ -334,7 +334,7 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
     servido; cablear al ganador sería una decisión aparte y explícita. El veredicto y las métricas paralelas se
     regeneran de forma reproducible en `reports/challenger.json` (`champion` vs `challenger`, MAE/sMAPE a 1 paso
     y multipaso, con margen relativo). *Resultado sobre los datos reales (18.262 series, 2 orígenes, h=6):* el
-    **champion HGB mantiene la ventaja** —MAE multipaso **2,28 vs 2,32** del MLP (**+2,2%** a favor del HGB), y
+    **champion HGB mantiene la ventaja** —MAE multipaso **2,276 vs 2,325** del MLP (**+2,2%** a favor del HGB), y
     también gana a 1 paso (2,07 vs 2,23) y en sMAPE multipaso (111,6 vs 115,1)—. *Conclusión:* **no se justifica
     cambiar de familia de modelo**; el gradient boosting es mejor Y más barato (el MLP tardó ~1,5 h de CPU vs
     minutos del HGB). Hallazgo honesto que cierra la pregunta "¿una red neuronal lo haría mejor?" con datos, no

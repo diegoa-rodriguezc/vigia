@@ -7,10 +7,14 @@
 # Comando base de Compose. 
 COMPOSE ?= docker compose
 
-# Carga el .env si existe; si no, las variables usan sus defaults `:-`.
+# Carga el .env si existe; si no, las variables usan los defaults de abajo.
 ifneq (,$(wildcard .env))
 include .env
 endif
+
+# Defaults a nivel de make (`?=` no pisa lo que ya vino del .env). 
+OLLAMA_LLM_MODEL ?= llama3.2:1b
+OLLAMA_EMBED_MODEL ?= nomic-embed-text
 export OLLAMA_LLM_MODEL OLLAMA_EMBED_MODEL
 
 help: ## Muestra la ayuda
@@ -37,8 +41,8 @@ deploy-gpu: ## Despliegue con aceleración GPU (NVIDIA): igual que `deploy` + ov
 	$(MAKE) deploy COMPOSE="docker compose -f docker-compose.yml -f docker-compose.gpu.yml"
 
 ollama-pull: ## Descarga los modelos LLM/embeddings dentro del contenedor de Ollama
-	$(COMPOSE) exec ollama ollama pull $${OLLAMA_LLM_MODEL:-llama3.2:1b}
-	$(COMPOSE) exec ollama ollama pull $${OLLAMA_EMBED_MODEL:-nomic-embed-text}
+	$(COMPOSE) exec ollama ollama pull $(OLLAMA_LLM_MODEL)
+	$(COMPOSE) exec ollama ollama pull $(OLLAMA_EMBED_MODEL)
 
 docker-pipeline: ## Ejecuta el pipeline completo DENTRO del contenedor ml (hostnames de la red Docker)
 	$(COMPOSE) exec ml python -m vigia pipeline

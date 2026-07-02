@@ -112,7 +112,7 @@ export default function Asistente() {
         </div>
         <p className="muted" style={{ fontSize: "0.78rem", margin: 0 }}>
           Las respuestas se basan únicamente en datos abiertos oficiales y citan su fuente. Las cifras
-          reflejan hechos registrados, no la criminalidad real. El LLM corre localmente (CPU): una consulta puede tardar ~30-90 s.
+          reflejan hechos registrados, no la criminalidad real. La respuesta la genera un modelo de lenguaje (LLM): con proveedor gestionado responde en unos segundos; con el modelo local en CPU puede tardar ~30-90 s.
         </p>
       </div>
     </>

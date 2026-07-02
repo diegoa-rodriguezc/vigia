@@ -3,8 +3,9 @@ import { getAccessToken, getRefreshToken, setTokens, clearTokens } from "./auth/
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api/v1";
 
-// Timeout amplio: el asistente RAG usa un LLM local (Ollama) en CPU; una consulta
-// puede tardar ~30-90s. El resto de endpoints responde en milisegundos.
+// Timeout amplio: la latencia del asistente RAG depende del proveedor de LLM — con el
+// modelo local (Ollama en CPU) una consulta puede tardar ~30-90s; con proveedor gestionado
+// responde en segundos. El resto de endpoints responde en milisegundos.
 export const api = axios.create({ baseURL, timeout: 240_000 });
 
 // Instancia "cruda" SIN interceptores, usada para renovar el token (evita recursión

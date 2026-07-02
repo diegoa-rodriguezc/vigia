@@ -99,8 +99,8 @@ export default function Informe({ initialCod }: { initialCod?: string | null }) 
             <span className="empty-ic"><Icon name="file-text" size={28} /></span>
             Elige un municipio y pulsa <b>Generar informe</b>.
             <div className="muted" style={{ marginTop: 6 }}>
-              El texto lo redacta un modelo de lenguaje a partir de las cifras oficiales; en CPU
-              puede tardar ~30-90 s.
+              El texto lo redacta un modelo de lenguaje a partir de las cifras oficiales; según el
+              proveedor puede tardar desde unos segundos (gestionado) hasta ~30-90 s (local en CPU).
             </div>
           </div>
         )}

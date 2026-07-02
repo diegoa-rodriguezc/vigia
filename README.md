@@ -77,7 +77,7 @@ Detalle completo en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ```
 vigia/
 ├── data/                  # Lago de datos medallion (bronze/silver/gold) — no versionado
-├── docs/                  # Documentación (concurso, arquitectura, CRISP-ML(Q), diccionario)
+├── docs/                  # Documentación general (arquitectura, CRISP-ML(Q), diccionario, etc…)
 ├── notebooks/             # Exploración y perfilado (EDA) de las fuentes
 ├── ml/                    # Python: ETL + Machine Learning + RAG + API (FastAPI)
 ├── backend/               # Go: API REST / BFF

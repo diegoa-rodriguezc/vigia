@@ -7,7 +7,8 @@ Este documento responde a la pregunta que el concurso pondera más alto (**Impac
 
 ## 1. El problema (cuantificado)
 
-La inseguridad le cuesta a Colombia cerca del **3,64 % del PIB** (Fedesarrollo–BID, 2022) y **52,9 %** de la
+La inseguridad le cuesta a Colombia cerca del **3,64 % del PIB — unos $68 billones al año**
+([Fedesarrollo–BID, cifra 2022; fuente primaria en el repositorio institucional](https://www.repository.fedesarrollo.org.co/handle/11445/4673)) y **52,9 %** de la
 población de 15 años o más se siente insegura (DANE, ECSC 2024). La Policía publica millones de registros delictivos
 como dato abierto, pero **están dispersos en decenas de conjuntos, por tipo de delito, sin agregación ni
 proyección**. El resultado: las entidades territoriales reaccionan a lo ya ocurrido en vez de anticiparlo, y
@@ -90,7 +91,7 @@ las **modela con dato oficial** y hace visible su subregistro.
 | **San Andrés y Providencia** | 2 / 2 | 21 | 14.300 | 62 k |
 
 - Por construir sobre el **código DANE/DIVIPOLA** (no sobre los nombres inconsistentes de las fuentes), VigIA
-  ubica correctamente municipios que los tableros nacionales suelen perder por errores de escritura.
+  ubica correctamente municipios que un cruce por nombre —el atajo habitual— pierde por errores de escritura.
 - Las **tasas por 100.000 habitantes** (población DANE) hacen comparable un municipio amazónico de pocos
   miles con una capital — algo imposible con conteos crudos.
 - Los municipios **no** modelados (Guainía 1/6, Vaupés 3/5, Amazonas 7/11) tienen series demasiado ralas
@@ -99,7 +100,7 @@ las **modela con dato oficial** y hace visible su subregistro.
 
 ---
 
-## 5. Impacto esperado
+## 5. Impacto esperado (órdenes de magnitud)
 
 - **Social:** prevención focalizada → reducción potencial de victimización en los **municipios y periodos**
   proyectados; transparencia ciudadana con un asistente que responde con dato oficial citado.
@@ -111,10 +112,40 @@ las **modela con dato oficial** y hace visible su subregistro.
   **~8,5 %** de las noticias criminales superan la indagación a nivel nacional (5,6 % en Bogotá)—, un cuello
   de botella del sistema penal que ningún conteo de delitos revela; insumo de control social y de política de
   justicia, más allá de la prevención del delito.
+- **Ambiental (descarte razonado):** no es un eje de este reto y VigIA no lo reclama. Su única huella
+  ambiental propia es el **cómputo**, minimizada por diseño: LLM local pequeño (1,7B parámetros) en CPU de
+  servidor estándar —sin exigir GPU dedicada—, caché de respuestas en Redis (cada respuesta cara del LLM se
+  computa una sola vez por TTL) y un pipeline que corre una vez al mes, no en continuo.
 
-> Estos efectos son el **mecanismo esperado** del instrumento; su **magnitud** real solo puede medirse con un
-> piloto junto a una entidad (ver [docs/ADOPCION.md](ADOPCION.md)). VigIA aporta la base de evidencia, no una
-> garantía de resultado.
+### Órdenes de magnitud (escenarios ilustrativos, supuestos declarados)
+
+La magnitud real solo puede medirse con un piloto; pero el **orden de magnitud** del valor en juego sí puede
+acotarse con supuestos conservadores y explícitos:
+
+- **Ancla de efectividad (literatura).** La prevención policial **focalizada** funciona: la revisión
+  sistemática Campbell y su meta-análisis ([Braga, Turchan, Papachristos y Hureau, 2019](https://link.springer.com/article/10.1007/s11292-019-09372-3),
+  65 estudios, 78 pruebas) estima una reducción del delito de **~16 %** en los lugares intervenidos frente a
+  los de control, **sin desplazamiento significativo** a las zonas vecinas. VigIA no ejecuta la intervención:
+  aporta la capa de **priorización anticipada** (*qué* delito, *dónde* y *cuándo*) que esa focalización
+  necesita a escala municipal.
+- **Escenario municipal (el cálculo que hace el Simulador).** Un municipio que registra ~100 hurtos a
+  personas al mes prioriza esa categoría durante un semestre. Suponiendo un efecto de **la mitad** del
+  documentado en la literatura (8 %, por prudencia al pasar de "lugar caliente" a escala municipal):
+  100 × 6 meses × 8 % ≈ **48 hechos evitados en el semestre** en un solo municipio y una sola categoría. Es
+  exactamente la aritmética de la pestaña **Simulador** (palanca de intervención + rampa), declarada allí
+  como supuesto del usuario.
+- **Escenario fiscal nacional (cota mínima).** El crimen cuesta **~$68 billones/año**. Si la focalización
+  anticipada del gasto preventivo evitara apenas el **0,1 %** de ese costo (una milésima), el beneficio sería
+  de **~$68.000 millones de pesos al año**. Operar VigIA cuesta del orden de **unos pocos millones de pesos
+  al año** en infraestructura (ver dimensionamiento en [ADOPCION.md](ADOPCION.md#2-qué-pone-cada-parte)) más
+  el tiempo de una persona analista: aun rebajando el supuesto **cien veces** (0,001 %), el beneficio seguiría
+  superando el costo de operación.
+
+> **Qué son y qué no son estos números:** escenarios **ilustrativos** con aritmética transparente, no
+> promesas ni estimaciones causales. El efecto lo produce la **intervención** (que decide y ejecuta la
+> entidad), no el software; VigIA aporta la anticipación y la focalización que hacen más probable ese
+> efecto, y la vara observado-vs-proyectado para **evaluarlo**. La magnitud real se mide con el piloto de
+> [docs/ADOPCION.md](ADOPCION.md).
 
 ---
 

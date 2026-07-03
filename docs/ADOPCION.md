@@ -26,7 +26,24 @@ también las de menor capacidad analítica instalada — donde una herramienta y
 - **VigIA aporta:** el código abierto (MIT), el pipeline reproducible, el modelo, el tablero y la
   documentación. Cero costo de licencia de datos (todo es abierto).
 - **La entidad aporta:** un equipo mínimo (un analista de datos + un referente de seguridad), un servidor
-  modesto (o una cuenta de nube) y, opcionalmente, sus propios datos internos para enriquecer el modelo.
+  (dimensionado abajo) y, opcionalmente, sus propios datos internos para enriquecer el modelo.
+
+### Dimensionamiento y costo de operación (órdenes de magnitud)
+
+- **Servidor:** 4 vCPU / **16 GB de RAM** / ~30 GB de disco corren la plataforma completa, incluido el LLM
+  local. En nube, una máquina de ese tamaño cuesta ≈ **USD 50–100/mes** (~$2,5–5 millones COP/año); también
+  sirve hardware propio reutilizado. Con un **proveedor gestionado de LLM** (`LLM_PROVIDER=anthropic|openai`
+  por `.env`) el requisito baja a ~8 GB de RAM (sin Ollama) y el asistente cuesta **centavos de dólar por
+  consulta**, amortiguado por la caché en Redis (cada respuesta se computa una vez por TTL).
+- **Licencias:** $0 — software MIT y datos 100 % abiertos.
+- **Operación recurrente:** el runbook mensual
+  ([CRISP-ML-Q §6.6](CRISP-ML-Q.md#66-runbook-mensual-operación-mínima-sin-automatización)) — regenerar el
+  pipeline al publicarse el mes nuevo y revisar el semáforo de *Salud del modelo* — cabe en **~medio día al
+  mes** de la persona analista.
+- **Riesgo operativo principal y su mitigación:** un cambio de esquema en la API SODA2 de una fuente. El
+  catálogo es **declarativo** (`ml/vigia/datasets.py`) y la re-ingesta selectiva
+  (`make docker-reingest ONLY=<fuente>`) acota la reparación a la fuente afectada; el semáforo de
+  **frescura** detecta cuándo una fuente dejó de actualizarse.
 
 ---
 

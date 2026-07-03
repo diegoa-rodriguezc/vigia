@@ -325,8 +325,11 @@ Detalle del mapeo y la verificación contra la API en [docs/DATA_DICTIONARY.md](
 repartidos entre capital humano (0,88 %), sector privado (1,76 %) y sector público (1,0 %). En el plano social, la **percepción de
 inseguridad llegó al 52,9 %** de la población de 15+ años (**DANE, Encuesta de Convivencia y Seguridad
 Ciudadana 2024**)[^dane], y el país registra **~25 homicidios por cada 100.000 habitantes (~13–14 mil al
-año)**[^hom]. Una fracción pequeña de ese gasto, reasignada con **anticipación** a la prevención, tiene un
-retorno social y fiscal alto: ese es el espacio donde VigIA genera valor.
+año)**[^hom]. Una fracción pequeña de ese costo, evitada con **anticipación**, se mide en decenas de miles
+de millones de pesos al año: los **órdenes de magnitud** —con supuestos declarados y anclados a la
+literatura de prevención focalizada— se calculan en
+[docs/IMPACTO.md](docs/IMPACTO.md#5-impacto-esperado-órdenes-de-magnitud). Ese es el espacio donde VigIA
+genera valor.
 
 **Beneficiarios.** Las entidades territoriales rara vez disponen de pronósticos y alertas accionables a
 nivel municipal. VigIA está pensada para **secretarías de seguridad y convivencia, alcaldías y
@@ -335,8 +338,10 @@ Fiscalía**, que pueden anticipar la asignación de recursos preventivos y prior
 atípicos.
 
 > **Ejes de impacto.** El aporte de VigIA es **social** (prevención del delito, control social ciudadano) y
-> **económico** (uso más eficiente del gasto preventivo). El eje **ambiental no aplica** a este reto de
-> seguridad ciudadana.
+> **económico** (uso más eficiente del gasto preventivo). El eje **ambiental** no es objeto de este reto; su
+> única dimensión propia —la huella de cómputo— se **minimiza por diseño**: LLM local pequeño (1,7B
+> parámetros) en CPU, caché de respuestas en Redis (cada respuesta cara se computa una vez) y sin exigir GPU
+> dedicada (el descarte razonado está en [docs/IMPACTO.md](docs/IMPACTO.md#5-impacto-esperado-órdenes-de-magnitud)).
 
 **Mecanismo de impacto.** 
 1. *Pronóstico por municipio×delito* con banda de incertidumbre → planeación preventiva con horizonte de meses.
@@ -344,6 +349,20 @@ atípicos.
 3. *Asistente ciudadano* → acceso abierto y transparente a la cifra oficial, fortaleciendo el control
 social. El valor está en reasignar el esfuerzo preventivo **antes** de que el delito escale.
 
+**Escalabilidad.** La solución escala en cuatro dimensiones, sin reescribir código:
+
+- **Territorial (costo marginal ~0):** el modelo es global y *name-agnostic* (se indexa por código DANE y
+  categoría): cubrir un municipio o departamento adicional no exige reentrenar a mano ni tocar código — ya
+  opera sobre los 1.106 municipios modelables del país.
+- **De fuentes:** añadir un dataset de la familia "mensual" de la Policía es **una entrada en el catálogo
+  declarativo** (`ml/vigia/datasets.py`), sin tocar el ETL; las fuentes enormes se declaran como agregación
+  (`AggregatedSpec`, como la Fiscalía con ~23 M de filas). El catálogo ya creció de 8 a 20 conjuntos así.
+- **De cómputo:** el proveedor de IA se conmuta por `.env` (Ollama local ↔ Anthropic/OpenAI) sin rebuild de
+  la aplicación; la GPU es un *override* de Compose (`make deploy-gpu`); la caché en Redis absorbe la
+  concurrencia de las consultas repetidas.
+- **Institucional:** el mismo despliegue sirve como tablero público o como instancia **institucional
+  cerrada** (`REGISTRATION_ENABLED=false` + JWT); la ruta de pilotaje a 30/60/90 días con una entidad está
+  en [docs/ADOPCION.md](docs/ADOPCION.md).
 
 **Enfoque territorial.** Por estar construida sobre el código DANE y DIVIPOLA, VigIA
 cubre **todo el territorio nacional** (1.106 de 1.126 municipios modelados). En las regiones que el concurso
@@ -425,8 +444,10 @@ MIT — ver [LICENSE](LICENSE).
 
 **Referencias**
 [^politica]: Política de Seguridad Defensa y Convivencia Ciudadana. [Ministerio de Defensa Nacional](https://www.policia.gov.co/sites/default/files/2024-12/Pol%C3%ADtica%20de%20Seguridad%20Defensa%20y%20Convivencia%20Ciudadna.pdf)
-[^costo]: Estudio de Fedesarrollo y el Banco Interamericano de Desarrollo (BID): los costos del crimen y la
-    violencia en Colombia equivalen al **3,64 % del PIB (~$68 billones, 2022)**. Reseñado en
+[^costo]: **Fuente primaria:** Fedesarrollo–BID, *"El crimen y la violencia en Colombia cuestan $68 billones
+    al año"* (costos directos del **3,64 % del PIB**, cifra 2022) —
+    [repositorio institucional de Fedesarrollo](https://www.repository.fedesarrollo.org.co/handle/11445/4673).
+    Reseñas de prensa:
     [Portafolio](https://www.portafolio.co/economia/regiones/cuanto-dinero-cuesta-la-situacion-de-violencia-en-colombia-617292)
     y [La Silla Vacía](https://www.lasillavacia.com/en-vivo/el-crimen-y-la-violencia-en-colombia-cuestan-un-3-6-del-pib/).
     Cifra regional comparable del BID: ~3,4 % del PIB para América Latina y el Caribe.

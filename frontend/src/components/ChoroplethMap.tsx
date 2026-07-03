@@ -28,9 +28,12 @@ function quantileBreaks(values: number[], n: number): number[] {
 
 interface Props {
   departamentos: DepartamentoResumen[];
+  // Clic en un departamento (para cargar sus señales de prensa en Panorama).
+  onSelectDepto?: (cod: string, nombre: string) => void;
+  selectedCod?: string; // departamento resaltado (el seleccionado)
 }
 
-export default function ChoroplethMap({ departamentos }: Props) {
+export default function ChoroplethMap({ departamentos, onSelectDepto, selectedCod }: Props) {
   const [geo, setGeo] = useState<FeatureCollection | null>(null);
 
   useEffect(() => {
@@ -62,28 +65,32 @@ export default function ChoroplethMap({ departamentos }: Props) {
   };
 
   const style = (feature?: Feature<Geometry>): PathOptions => {
-    const d = byCod.get(propsOf(feature).DPTO);
+    const cod = propsOf(feature).DPTO;
+    const d = byCod.get(cod);
+    const isSel = selectedCod != null && cod === selectedCod;
     return {
       fillColor: colorFor(d?.total_delitos),
-      weight: 1,
-      color: "#0b1120",
-      fillOpacity: 0.82,
+      weight: isSel ? 3 : 1,
+      color: isSel ? "#38bdf8" : "#0b1120",
+      fillOpacity: isSel ? 0.95 : 0.82,
     };
   };
 
   const onEachFeature = (feature: Feature<Geometry>, layer: Layer) => {
     const p = propsOf(feature);
     const d = byCod.get(p.DPTO);
-    const nombre = d?.departamento ?? p.NOMBRE_DPT;
+    const nombre = d?.departamento ?? p.NOMBRE_DPT ?? "";
     const cuerpo = d
       ? `<b>${nombre}</b><br/>${d.total_delitos.toLocaleString("es-CO")} delitos<br/>` +
         `${d.municipios} ${d.municipios === 1 ? "municipio" : "municipios"} · ` +
-        `#${d.rank} a nivel nacional`
+        `#${d.rank} a nivel nacional` +
+        (onSelectDepto ? `<br/><i>clic: señales de prensa</i>` : "")
       : `<b>${nombre}</b><br/><i>sin datos</i>`;
     layer.bindTooltip(cuerpo, { sticky: true });
     layer.on({
       mouseover: (e: LeafletMouseEvent) => (e.target as Path).setStyle({ weight: 2.5, color: "#e2e8f0", fillOpacity: 0.95 }),
       mouseout: (e: LeafletMouseEvent) => (e.target as Path).setStyle(style(feature)),
+      click: () => onSelectDepto?.(p.DPTO, nombre),
     });
   };
 
@@ -105,7 +112,7 @@ export default function ChoroplethMap({ departamentos }: Props) {
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
         {geo && byCod.size > 0 && (
-          <GeoJSON key={byCod.size} data={geo} style={style} onEachFeature={onEachFeature} />
+          <GeoJSON key={`${byCod.size}-${selectedCod ?? ""}`} data={geo} style={style} onEachFeature={onEachFeature} />
         )}
       </MapContainer>
       <div className="legend">

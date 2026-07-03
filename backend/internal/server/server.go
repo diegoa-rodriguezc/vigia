@@ -95,6 +95,8 @@ func New(
 			r.Get("/crimes/timeseries", h.TimeSeries)
 			r.Get("/anomalies", h.Anomalies)
 			r.Get("/monitoring", h.Monitoring)
+			// Señal en tiempo real (prensa vía GDELT), pública y en cache.
+			r.Get("/realtime/departamento", h.RealtimeDepartamento)
 			// Capa "Justicia" (Fiscalía): embudo de judicialización.
 			r.Get("/justicia/resumen", h.JusticiaResumen)
 			r.Get("/justicia/municipios", h.JusticiaMunicipios)

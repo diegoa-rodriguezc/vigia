@@ -164,7 +164,7 @@ svg { display: inline-block; vertical-align: middle; flex: none; }
 .content { padding: 26px 24px 48px; max-width: 1280px; margin: 0 auto; animation: fade 0.28s ease; }
 @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
-.panorama-grid { display: grid; gap: 16px; grid-template-columns: 1.6fr 1fr; align-items: start; }
+.panorama-grid { display: grid; gap: 16px; grid-template-columns: 1.6fr 1fr; align-items: stretch; }
 @media (max-width: 900px) { .panorama-grid { grid-template-columns: 1fr; } }
 
 .section-title { margin: 0 0 5px; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
@@ -347,6 +347,7 @@ label.field { display: flex; flex-direction: column; gap: 6px; font-size: 0.76re
    header/tabs sticky al hacer scroll. */
 .leaflet-container { height: 460px; border-radius: var(--radius-sm); position: relative; z-index: 0; isolation: isolate; border: 1px solid var(--border); }
 .leaflet-popup-content-wrapper, .leaflet-tooltip { color: #0f172a; }
+.leaflet-interactive { cursor: pointer; }
 .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; font-size: 0.8rem; color: var(--muted); align-items: center; }
 .legend .dot { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
 

@@ -52,6 +52,10 @@ type Config struct {
 	CacheEnabled      bool
 	CacheForecastTTL  time.Duration
 	CacheAssistantTTL time.Duration
+
+	// NewsDataAPIKey: si está presente, la señal en tiempo real (panel de Panorama) usa
+	// newsdata.io como fuente primaria; si está vacía, cae a GDELT (sin token).
+	NewsDataAPIKey string
 }
 
 func Load() Config {
@@ -90,6 +94,8 @@ func Load() Config {
 		CacheEnabled:      envBool("CACHE_ENABLED", true),
 		CacheForecastTTL:  envDuration("CACHE_FORECAST_TTL", 6*time.Hour),
 		CacheAssistantTTL: envDuration("CACHE_ASSISTANT_TTL", time.Hour),
+
+		NewsDataAPIKey: env("NEWSDATA_API_KEY", ""),
 	}
 }
 

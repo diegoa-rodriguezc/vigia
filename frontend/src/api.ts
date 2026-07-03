@@ -370,6 +370,23 @@ export interface JusticiaDepartamento {
   municipios: number;
 }
 
+// ── Señal en tiempo real (prensa: newsdata.io si hay key, si no GDELT) ──
+export interface RealtimeItem { titulo: string; url: string; fuente: string; fecha: string }
+export interface RealtimeSignal {
+  cod: string;            // "" = nacional
+  departamento: string;   // "Nacional" o el nombre del departamento
+  fuente: string;         // etiqueta de procedencia (señal de prensa, no oficial)
+  items: RealtimeItem[];
+  nota?: string;          // presente si la señal no está disponible ahora
+}
+
+// Noticias de seguridad recientes por departamento (o nacional si no se pasa cod). Es una señal
+// de prensa, NO cifras oficiales. Endpoint público y cacheado en el backend.
+export const getRealtimeDepto = (cod?: string) =>
+  api
+    .get<RealtimeSignal>("/realtime/departamento", { params: cod ? { cod } : {} })
+    .then((r) => r.data);
+
 export const getJusticiaResumen = () =>
   api.get<JusticiaResumenNacional>("/justicia/resumen").then((r) => r.data);
 export const getJusticiaMunicipios = () =>

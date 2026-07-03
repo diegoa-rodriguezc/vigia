@@ -7,6 +7,7 @@ import {
 import { StatTile, ChartTooltip, SkeletonRows, Pagination, usePagination, nfmt, ExportButton } from "./ui";
 import { Icon } from "./icons";
 import ChoroplethMap from "./ChoroplethMap";
+import SenalesRecientes from "./SenalesRecientes";
 import MunicipioDrilldown from "./MunicipioDrilldown";
 
 type SortKey = "departamento" | "municipio" | "total_delitos" | "categorias";
@@ -28,6 +29,7 @@ export default function Panorama({
 }) {
   const [data, setData] = useState<MunicipioResumen[]>([]);
   const [sel, setSel] = useState<MunicipioResumen | null>(null);  // municipio del drill-down
+  const [selDepto, setSelDepto] = useState<{ cod: string; nombre: string } | null>(null); // depto para señales de prensa
   const [departamentos, setDepartamentos] = useState<DepartamentoResumen[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [statsErr, setStatsErr] = useState(false);
@@ -206,30 +208,46 @@ export default function Panorama({
           )}
         </div>
 
-        <div className="card">
+        <div className="card" style={{ display: "flex", flexDirection: "column" }}>
           <h3><Icon name="bar-chart" /> Top 10 por número de delitos</h3>
-          {loading ? <div className="skeleton" style={{ height: 360 }} /> : (
-            <ResponsiveContainer width="100%" height={360}>
-              <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 16 }}>
-                <XAxis type="number" stroke="#94a3b8" fontSize={11} />
-                <YAxis type="category" dataKey="name" width={120} stroke="#94a3b8" fontSize={12} />
-                <RTooltip cursor={{ fill: "rgba(56,189,248,0.08)" }} content={<ChartTooltip />} />
-                <Bar dataKey="total" name="Delitos" fill="#38bdf8" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          {loading ? <div className="skeleton" style={{ flex: 1, minHeight: 360 }} /> : (
+            <div style={{ flex: 1, minHeight: 360 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 16 }}>
+                  <XAxis type="number" stroke="#94a3b8" fontSize={11} />
+                  <YAxis type="category" dataKey="name" width={120} stroke="#94a3b8" fontSize={12} />
+                  <RTooltip cursor={{ fill: "rgba(56,189,248,0.08)" }} content={<ChartTooltip />} />
+                  <Bar dataKey="total" name="Delitos" fill="#38bdf8" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           )}
         </div>
 
-        <div className="card" style={{ gridColumn: "1 / -1" }}>
-          <h3><Icon name="map" /> Mapa de calor por departamento</h3>
-          <p className="card-sub">
-            Intensidad de color según los delitos registrados del departamento (clases por cuantiles).
-          </p>
-          {mapErr
-            ? <div className="table-empty">No se pudo cargar el mapa por departamento.</div>
-            : departamentos.length === 0
-              ? <div className="skeleton" style={{ height: 460 }} />
-              : <ChoroplethMap departamentos={departamentos} />}
+        <div style={{ gridColumn: "1 / -1", display: "flex", flexWrap: "wrap", gap: 16, alignItems: "stretch" }}>
+          <div className="card" style={{ flex: "3 1 380px", minWidth: 0 }}>
+            <h3><Icon name="map" /> Mapa de calor por departamento</h3>
+            <p className="card-sub">
+              Intensidad de color según los delitos registrados del departamento (clases por cuantiles).{" "}
+              Haz clic en un departamento para ver sus señales de prensa recientes.
+            </p>
+            {mapErr
+              ? <div className="table-empty">No se pudo cargar el mapa por departamento.</div>
+              : departamentos.length === 0
+                ? <div className="skeleton" style={{ height: 460 }} />
+                : <ChoroplethMap
+                    departamentos={departamentos}
+                    onSelectDepto={(cod, nombre) => setSelDepto({ cod, nombre })}
+                    selectedCod={selDepto?.cod}
+                  />}
+          </div>
+          <div style={{ flex: "1 1 260px", minWidth: 0, display: "flex" }}>
+            <SenalesRecientes
+              cod={selDepto?.cod}
+              nombre={selDepto?.nombre}
+              onClear={() => setSelDepto(null)}
+            />
+          </div>
         </div>
       </div>
 

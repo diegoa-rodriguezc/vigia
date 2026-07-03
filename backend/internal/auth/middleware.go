@@ -72,9 +72,6 @@ func ClaimsFromContext(ctx context.Context) (*Claims, bool) {
 	return c, ok
 }
 
-// BearerToken expone el token Bearer de la petición (para logout, que también borra refresh).
-func BearerToken(r *http.Request) string { return bearerToken(r) }
-
 func bearerToken(r *http.Request) string {
 	h := r.Header.Get("Authorization")
 	if h == "" {

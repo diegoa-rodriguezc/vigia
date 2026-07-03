@@ -48,6 +48,34 @@ def test_backtest_genera_metricas_y_dispersion():
     assert 70.0 <= model.metrics["pi_cobertura_empirica_pct"] <= 90.0
 
 
+def test_mase_escala_por_naive_insample():
+    """#4: MASE = MAE/escala_naive por punto; <1 cuando el modelo bate al naive in-sample."""
+    y_true = np.array([10.0, 12.0, 11.0, 13.0])
+    y_pred = np.array([10.0, 12.0, 11.0, 13.0])  # perfecto → MASE 0
+    scale = np.array([2.0, 2.0, 2.0, 2.0])
+    assert forecasting._mase(y_true, y_pred, scale) == 0.0
+    # Error absoluto medio 1.0 con escala 2.0 → MASE 0.5 (<1 = mejor que el naive).
+    y_pred2 = y_true + 1.0
+    assert forecasting._mase(y_true, y_pred2, scale) == 0.5
+    # Escala nula/indefinida se ignora (serie de historia constante); si TODA lo es → None.
+    assert forecasting._mase(y_true, y_pred2, np.array([0.0, np.nan, 0.0, 0.0])) is None
+
+
+def test_backtest_reporta_mase_y_baseline_estacional():
+    """#4: el reporte debe traer MASE y la vara ESTACIONAL (mismo mes del año anterior),
+    además de la persistencia; y los skill scores relativos a ambas."""
+    model = forecasting.train(_series(), test_months=6)
+    m = model.metrics
+    for key in ("mase", "baseline_mase", "baseline_estacional_mae", "baseline_estacional_smape",
+                "skill_mae_vs_persistencia_pct", "skill_mae_vs_estacional_pct"):
+        assert key in m, key
+    assert m["mase"] > 0
+    # La vara estacional también aparece a nivel multipaso y en el desglose por volumen.
+    assert "baseline_estacional_mae" in m["multipaso"]
+    assert "mase" in m["multipaso"]
+    assert "mase" in m["por_volumen"][0]
+
+
 def test_backtest_valida_horizonte_volumen_y_cobertura():
     """#4 (desglose por volumen) + #5 (multipaso recursivo + cobertura de la banda)."""
     model = forecasting.train(_series(), test_months=4)

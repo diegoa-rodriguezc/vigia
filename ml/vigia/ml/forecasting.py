@@ -129,7 +129,7 @@ _HGB_PARAMS: dict = {
 def _new_estimator(overrides: dict | None = None) -> HistGradientBoostingRegressor:
     """Estimador con la configuración estándar (misma semilla para reproducibilidad).
 
-    `overrides` permite inyectar hiperparámetros candidatos durante la búsqueda (HPO - 
+    `overrides` permite inyectar hiperparámetros candidatos durante la búsqueda (HPO,
     Hyperparameter Optimization) sin tocar los de producción.
 
     Nota empírica (bitácora en docs/CRISP-ML-Q.md): `loss="poisson"` extrapola por su enlace
@@ -141,19 +141,66 @@ def _new_estimator(overrides: dict | None = None) -> HistGradientBoostingRegress
     return HistGradientBoostingRegressor(random_state=settings.seed, **params)
 
 
-def _metrics_block(y_true: np.ndarray, y_pred: np.ndarray, baseline: np.ndarray) -> dict:
-    """Error del modelo y de la línea base ingenua sobre el mismo conjunto."""
-    return {
+def _mase(y_true: np.ndarray, y_pred: np.ndarray, scale: np.ndarray) -> float | None:
+    """MASE (Hyndman): MAE escalado por el MAE ingenuo 1-paso *in-sample* de CADA serie.
+
+    `scale` es, por punto, el MAE de la persistencia dentro de la muestra de entrenamiento de
+    su serie (media de |yₜ−yₜ₋₁|). **MASE < 1 ⇒ el pronóstico fuera de muestra bate al naive
+    dentro de muestra**; es adimensional y comparable entre series de cualquier volumen. A
+    diferencia del sMAPE, NO se degenera sobre conteos casi nulos (0/1) —donde el sMAPE dispara
+    a >100% y deja de ser interpretable—, por eso es la métrica de cabecera. Se ignoran los
+    puntos con `scale` nula/indefinida (serie de historia constante).
+    """
+    scale = np.asarray(scale, dtype=float)
+    mask = np.isfinite(scale) & (scale > 0)
+    if not mask.any():
+        return None
+    err = np.abs(np.asarray(y_pred, dtype=float) - np.asarray(y_true, dtype=float))
+    return float(np.mean(err[mask] / scale[mask]))
+
+
+def _metrics_block(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    baseline: np.ndarray,
+    baseline_season: np.ndarray | None = None,
+    scale: np.ndarray | None = None,
+) -> dict:
+    """Error del modelo y de las líneas base sobre el mismo conjunto.
+
+    Además de la persistencia (naive), reporta —cuando se aportan— la **baseline estacional**
+    (mismo mes del año anterior, una vara más exigente en series con estacionalidad) y el
+    **MASE** del modelo y de la persistencia (métrica escalada, interpretable en conteos dispersos).
+    """
+    blk = {
         "n": int(len(y_true)),
         "mae": round(float(mean_absolute_error(y_true, y_pred)), 4),
         "smape": round(_smape(y_true, y_pred), 2),
         "baseline_mae": round(float(mean_absolute_error(y_true, baseline)), 4),
         "baseline_smape": round(_smape(y_true, baseline), 2),
     }
+    if baseline_season is not None and len(baseline_season):
+        blk["baseline_estacional_mae"] = round(
+            float(mean_absolute_error(y_true, baseline_season)), 4
+        )
+        blk["baseline_estacional_smape"] = round(_smape(y_true, baseline_season), 2)
+    if scale is not None and len(scale):
+        m = _mase(y_true, y_pred, scale)
+        if m is not None:
+            blk["mase"] = round(m, 4)
+        mb = _mase(y_true, baseline, scale)
+        if mb is not None:
+            blk["baseline_mase"] = round(mb, 4)
+    return blk
 
 
 def _stratify_by_volume(
-    y_true: np.ndarray, y_pred: np.ndarray, baseline: np.ndarray, vol: np.ndarray
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    baseline: np.ndarray,
+    vol: np.ndarray,
+    baseline_season: np.ndarray | None = None,
+    scale: np.ndarray | None = None,
 ) -> list[dict]:
     """Desglosa el error a 1 paso por TERCIL de volumen de la serie (media histórica).
 
@@ -176,7 +223,13 @@ def _stratify_by_volume(
     for nombre, mask, rango in estratos:
         if not mask.any():
             continue
-        blk = _metrics_block(y_true[mask], y_pred[mask], baseline[mask])
+        blk = _metrics_block(
+            y_true[mask],
+            y_pred[mask],
+            baseline[mask],
+            baseline_season=None if baseline_season is None else baseline_season[mask],
+            scale=None if scale is None else scale[mask],
+        )
         blk.update(
             estrato=nombre,
             rango_volumen_mensual=rango,
@@ -225,7 +278,9 @@ def _walk_forward(
         return None
     first_origin = max(1, last_origin - n_splits + 1)
     max_lag = max(LAGS)
-    acc: dict[str, list] = {k: [] for k in ("step", "y_true", "y_pred", "baseline", "vol")}
+    acc: dict[str, list] = {
+        k: [] for k in ("step", "y_true", "y_pred", "baseline", "bl_season", "scale", "vol")
+    }
     n_origins = 0
     for oi in range(first_origin, last_origin + 1):
         origin = periodos[oi]
@@ -240,6 +295,13 @@ def _walk_forward(
         # Línea base (persistencia) y volumen para estratificar: en CONTEOS, mode-agnósticos.
         baseline_val = train_df.groupby(KEY)[TARGET].last()
         vol_lookup = train_df.groupby(KEY)[TARGET].mean()
+        # Escala de MASE: MAE ingenuo 1-paso DENTRO de la muestra de entrenamiento, por serie
+        # (media de |yₜ−yₜ₋₁|). train_df va ordenado por serie+periodo, así que el diff es 1-paso.
+        naive_mae = (
+            train_df.assign(_d=train_df.groupby(KEY)[TARGET].diff().abs())
+            .groupby(KEY)["_d"]
+            .mean()
+        )
         hist = _as_modeling_target(train_df, mode).copy()  # recursión en espacio de modelado
         for h, tp in enumerate(periodos[oi : oi + horizon], start=1):
             # Espeja la recursión de producción (`predict`): features de la ÚLTIMA fila observada
@@ -262,6 +324,13 @@ def _walk_forward(
             keys_idx = pd.MultiIndex.from_frame(cmp[KEY])
             base_arr = np.nan_to_num(baseline_val.reindex(keys_idx).to_numpy().astype(float))
             vol_arr = vol_lookup.reindex(keys_idx).to_numpy()
+            scale_arr = naive_mae.reindex(keys_idx).to_numpy().astype(float)  # MASE (NaN ok)
+            # Baseline ESTACIONAL-ingenua: conteo del mismo mes del año anterior (tp−12 meses), por
+            # calendario y solo con datos anteriores al origen (tp−12 < origin si h≤12 → sin fuga).
+            # Vara más exigente que la persistencia en series con estacionalidad marcada.
+            season_tp = pd.Timestamp(tp) - pd.DateOffset(months=12)
+            season_lookup = train_df.loc[train_df["periodo"] == season_tp].set_index(KEY)[TARGET]
+            season_arr = np.nan_to_num(season_lookup.reindex(keys_idx).to_numpy().astype(float))
             # Predicción SERVIDA = blend modelo+persistencia (la recursión sigue realimentando la
             # del modelo, arriba). La banda/cobertura se calibran sobre este predictor servido.
             y_served = _BLEND_W * cmp["_yhat"].to_numpy(dtype=float) + (1 - _BLEND_W) * base_arr
@@ -269,6 +338,8 @@ def _walk_forward(
             acc["y_true"].append(cmp["_y"].to_numpy(dtype=float))
             acc["y_pred"].append(y_served)
             acc["baseline"].append(base_arr)
+            acc["bl_season"].append(season_arr)
+            acc["scale"].append(scale_arr)
             acc["vol"].append(np.nan_to_num(vol_arr.astype(float)))
     if not acc["y_true"]:
         return None
@@ -355,6 +426,7 @@ def train(
     bt = _walk_forward(series, cols, n_splits=n_splits, horizon=test_months, mode=mode)
     if bt is not None:
         step, yt, yp, bl, vol = bt["step"], bt["y_true"], bt["y_pred"], bt["baseline"], bt["vol"]
+        bls, sc = bt["bl_season"], bt["scale"]  # baseline estacional y escala MASE por punto
         one = step == 1
         # Dispersión cuasi-Poisson (Pearson) de los residuos a 1 paso: Var(residuo) ≈ φ·nivel.
         # Da una banda que ESCALA con el nivel de cada serie; un σ global daría intervalos
@@ -372,35 +444,60 @@ def train(
         pi_scale = float(np.quantile(std_resid, _PI_LEVEL / 100.0)) if len(std_resid) else _PI_Z
         half = pi_scale * unit
         cobertura = float(np.mean((yt >= yp - half) & (yt <= yp + half))) if len(yt) else 0.0
-        head = (
-            _metrics_block(yt[one], yp[one], bl[one]) if one.any() else _metrics_block(yt, yp, bl)
+        m1 = one if one.any() else np.ones(len(yt), dtype=bool)  # a 1 paso (o todo si no hay)
+        head = _metrics_block(yt[m1], yp[m1], bl[m1], baseline_season=bls[m1], scale=sc[m1])
+        por_volumen = (
+            _stratify_by_volume(
+                yt[one], yp[one], bl[one], vol[one], baseline_season=bls[one], scale=sc[one]
+            )
+            if one.any()
+            else []
         )
-        por_volumen = _stratify_by_volume(yt[one], yp[one], bl[one], vol[one]) if one.any() else []
         por_paso = [
-            {"paso": int(h), **_metrics_block(yt[step == h], yp[step == h], bl[step == h])}
+            {
+                "paso": int(h),
+                **_metrics_block(
+                    yt[step == h],
+                    yp[step == h],
+                    bl[step == h],
+                    baseline_season=bls[step == h],
+                    scale=sc[step == h],
+                ),
+            }
             for h in range(1, bt["horizon"] + 1)
             if (step == h).any()
         ]
+
+        def _skill(model_mae, base_mae):  # % de mejora relativa (+ = mejor); None si no hay vara
+            return (
+                round(100.0 * (1.0 - model_mae / base_mae), 1)
+                if base_mae not in (None, 0)
+                else None
+            )
+
+        multipaso = {
+            "horizon": int(bt["horizon"]),
+            **_metrics_block(yt, yp, bl, baseline_season=bls, scale=sc),
+            "pi_cobertura_empirica_pct": round(cobertura * 100, 1),
+            "por_paso": por_paso,
+        }
         metrics = {
             "backtest": "walk-forward recursivo (rolling origin), sin fuga",
             "n_origins": int(bt["n_origins"]),
             "horizon": int(bt["horizon"]),
             "n_test": head["n"],
-            "mae": head["mae"],
-            "smape": head["smape"],
-            "baseline_mae": head["baseline_mae"],
-            "baseline_smape": head["baseline_smape"],
+            # head lleva mae/smape/baseline_* + baseline_estacional_* + mase/baseline_mase.
+            **{k: v for k, v in head.items() if k != "n"},
+            "skill_mae_vs_persistencia_pct": _skill(head.get("mae"), head.get("baseline_mae")),
+            "skill_mae_vs_estacional_pct": _skill(
+                head.get("mae"), head.get("baseline_estacional_mae")
+            ),
             "resid_dispersion": round(dispersion, 4),
             "pi_level": _PI_LEVEL,
             "pi_scale": round(pi_scale, 4),
             "pi_cobertura_empirica_pct": round(cobertura * 100, 1),
             "por_volumen": por_volumen,
-            "multipaso": {
-                "horizon": int(bt["horizon"]),
-                **_metrics_block(yt, yp, bl),
-                "pi_cobertura_empirica_pct": round(cobertura * 100, 1),
-                "por_paso": por_paso,
-            },
+            "multipaso": multipaso,
         }
         log.info(
             "Backtest walk-forward recursivo (%d orígenes, h=%d): sMAPE 1-paso modelo=%.2f vs "

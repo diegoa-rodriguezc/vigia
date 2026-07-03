@@ -99,6 +99,18 @@ def build_model_report(series: pd.DataFrame, model: ForecastModel) -> dict:
         "supera_linea_base_smape_multipaso": bool(
             multipaso.get("smape", inf) < multipaso.get("baseline_smape", inf)
         ),
+        # Vara ESTACIONAL (mismo mes del año anterior), más exigente que la persistencia. None si
+        # el backtest no la reportó (p. ej. modelo de prueba sin baseline estacional).
+        "supera_linea_base_estacional_mae": (
+            bool(metrics["mae"] < metrics["baseline_estacional_mae"])
+            if "mae" in metrics and "baseline_estacional_mae" in metrics
+            else None
+        ),
+        "supera_linea_base_estacional_mae_multipaso": (
+            bool(multipaso["mae"] < multipaso["baseline_estacional_mae"])
+            if "mae" in multipaso and "baseline_estacional_mae" in multipaso
+            else None
+        ),
         "interpretabilidad": {
             "metodo": "permutation_importance",
             "scoring": "neg_mean_absolute_error",

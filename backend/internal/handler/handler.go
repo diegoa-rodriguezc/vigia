@@ -17,6 +17,7 @@ import (
 
 	"github.com/vigia/backend/internal/config"
 	"github.com/vigia/backend/internal/mlclient"
+	"github.com/vigia/backend/internal/realtime"
 	"github.com/vigia/backend/internal/redisstore"
 	"github.com/vigia/backend/internal/repository"
 )
@@ -25,8 +26,15 @@ type Handler struct {
 	repo                *repository.Repository
 	ml                  *mlclient.Client
 	store               *redisstore.Store
+	news                newsSource
 	cache               cacheConfig
 	registrationEnabled bool
+}
+
+// newsSource abstrae la fuente de señales en tiempo real (GDELT) para poder inyectar un doble en
+// los tests sin salir a la red.
+type newsSource interface {
+	Recent(ctx context.Context, depto string, max int) ([]realtime.Item, error)
 }
 
 // cacheConfig controla la caché en Redis de las respuestas de IA (pronóstico y asistente).
@@ -37,10 +45,21 @@ type cacheConfig struct {
 }
 
 func New(repo *repository.Repository, ml *mlclient.Client, store *redisstore.Store, cfg config.Config) *Handler {
+	// Fuente de señal en tiempo real: newsdata.io si hay API key (más fiable), si no GDELT (sin
+	// token, reproducible). Ambas implementan newsSource.
+	var news newsSource = realtime.NewClient()
+	proveedor := "gdelt"
+	if cfg.NewsDataAPIKey != "" {
+		news = realtime.NewNewsDataClient(cfg.NewsDataAPIKey)
+		proveedor = "newsdata.io"
+	}
+	slog.Info("fuente de señal en tiempo real", "proveedor", proveedor)
+
 	return &Handler{
 		repo:  repo,
 		ml:    ml,
 		store: store,
+		news:  news,
 		cache: cacheConfig{
 			enabled:      cfg.CacheEnabled,
 			forecastTTL:  cfg.CacheForecastTTL,
@@ -176,6 +195,55 @@ func (h *Handler) Config(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"registration_enabled": h.registrationEnabled,
 	})
+}
+
+// RealtimeDepartamento sirve una SEÑAL EN TIEMPO REAL de prensa (GDELT) para un departamento (o
+// nacional si no se pasa `cod`). Es un complemento —no sustituto— del dato oficial mensual: son
+// NOTICIAS, no cifras. Público. La caché en Redis (20 min éxito / 90 s degradado) es imprescindible
+// porque GDELT rate-limita con dureza; ante fallo/rate-limit degrada a "señal no disponible" (200).
+func (h *Handler) RealtimeDepartamento(w http.ResponseWriter, r *http.Request) {
+	depto := "Nacional"
+	deptQuery := "" // vacío = consulta nacional
+	cod := r.URL.Query().Get("cod")
+	if cod != "" {
+		name, ok := realtime.DepartamentoNombre(cod)
+		if !ok {
+			writeError(w, http.StatusBadRequest, "código de departamento inválido")
+			return
+		}
+		depto, deptQuery = name, name
+	}
+
+	cacheKey := "cache:realtime:" + depto
+	if h.store != nil {
+		if cached, ok := h.store.GetCached(r.Context(), cacheKey); ok {
+			writeRaw(w, http.StatusOK, cached, "HIT")
+			return
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+	items, err := h.news.Recent(ctx, deptQuery, 12)
+
+	resp := map[string]any{
+		"cod":          cod,
+		"departamento": depto,
+		"fuente":       "Prensa (señal en tiempo real) — no son cifras oficiales",
+		"items":        items,
+	}
+	ttl := 20 * time.Minute
+	if err != nil {
+		slog.Warn("señal en tiempo real no disponible", "departamento", depto, "error", err)
+		resp["items"] = []realtime.Item{}
+		resp["nota"] = "Señal no disponible en este momento."
+		ttl = 90 * time.Second // caché negativa corta: no martillar GDELT ante fallos/rate-limit
+	}
+	body, _ := json.Marshal(resp)
+	if h.store != nil {
+		h.store.SetCached(r.Context(), cacheKey, body, ttl)
+	}
+	writeRaw(w, http.StatusOK, body, "MISS")
 }
 
 // Summary devuelve los municipios con mayor incidencia.

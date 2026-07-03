@@ -17,8 +17,8 @@ jobs:
       run:
         working-directory: ml
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11" # misma versión que ml/Dockerfile
           cache: pip
@@ -36,8 +36,8 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.22" # misma versión que go.mod
           cache-dependency-path: backend/go.sum
@@ -52,8 +52,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: npm
@@ -69,7 +69,7 @@ jobs:
     name: Build de imágenes Docker
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # El servicio ml declara `env_file: .env`; el de ejemplo basta para el build.
       - name: Preparar .env de ejemplo
         run: cp .env.example .env

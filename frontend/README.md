@@ -5,7 +5,8 @@ Tablero interactivo (React 18 + TypeScript + Vite) con ocho vistas. **Panorama**
 **Informe** requieren inicio de sesión (cómputo de IA protegido, `<AuthGate>`):
 
 - **Panorama** — KPIs nacionales, ranking de municipios, gráfico de barras y mapa coroplético por
-  departamento (Leaflet); drill-down por municipio.
+  departamento (Leaflet); drill-down por municipio y panel de **señales de prensa** en tiempo real
+  (clic en un departamento carga sus noticias de seguridad; complemento, no cifra oficial).
 - **Alertas tempranas** — tabla de anomalías detectadas por severidad, con búsqueda y filtros.
 - **Justicia** — embudo de judicialización de la Fiscalía (KPIs, etapas, barras por departamento y tabla).
 - **Pronóstico** *(JWT)* — histórico + pronóstico a 6 meses por municipio y categoría, con banda de

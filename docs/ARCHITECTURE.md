@@ -172,6 +172,7 @@ los normaliza a un único modelo de evento:
 | GET | `/api/v1/crimes/timeseries` | público (rate-limit) | Serie temporal por municipio/categoría |
 | GET | `/api/v1/anomalies` | público (rate-limit) | Anomalías detectadas |
 | GET | `/api/v1/monitoring` | público (rate-limit) | Salud del modelo (proxy al JSON de `vigia health`) |
+| GET | `/api/v1/realtime/departamento` | público (rate-limit) | Señal de prensa en **tiempo real** (newsdata.io si hay key, si no GDELT) por departamento (o nacional); Se aplica cache en Redis |
 | GET | `/api/v1/justicia/resumen` | público (rate-limit) | Embudo nacional de judicialización + KPIs |
 | GET | `/api/v1/justicia/municipios` | público (rate-limit) | Tasa de judicialización por municipio |
 | GET | `/api/v1/justicia/departamentos` | público (rate-limit) | Tasa de judicialización por departamento |

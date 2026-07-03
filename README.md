@@ -36,7 +36,7 @@ A continuación se presentan las capturas de pantalla de la aplicación:
 | Panorama | Alertas tempranas |
 |---|---|
 | [![Panorama — KPIs, ranking y mapa coroplético](docs/screenshots/01-panorama.png)](docs/screenshots/01-panorama.png) | [![Alertas tempranas — anomalías por severidad](docs/screenshots/02-alertas.png)](docs/screenshots/02-alertas.png) |
-| KPIs nacionales, ranking por municipio, top-10 y **mapa coroplético** por departamento. | Tabla de **anomalías** por severidad, búsqueda/filtros y la explicación del z-robusto. |
+| KPIs nacionales, ranking por municipio, top-10, **mapa coroplético** por departamento y panel de **señales de prensa** en tiempo real. | Tabla de **anomalías** por severidad, búsqueda/filtros y la explicación del z-robusto. |
 
 | Pronóstico  | Asistente ciudadano  |
 |---|---|
@@ -55,7 +55,7 @@ A continuación se presentan las capturas de pantalla de la aplicación:
 
 **Cómo usar la herramienta:** 
 
-1. *Panorama* → ubica los territorios y delitos con mayor incidencia en el mapa y el ranking.
+1. *Panorama* → ubica los territorios y delitos con mayor incidencia en el mapa y el ranking; **haz clic en un departamento** para ver sus **señales de prensa recientes** (tiempo real) en el panel de la derecha.
 2. *Alertas tempranas* → revisa qué municipios tienen repuntes atípicos recientes (no solo volumen alto).
 3. *Justicia* → consulta el embudo de judicialización de la Fiscalía y la tasa por municipio/departamento.
 4. *Pronóstico* → proyecta un delito en un municipio a varios meses con su banda de incertidumbre.
@@ -76,7 +76,7 @@ Detalle completo en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ```
 vigia/
-├── data/                  # Lago de datos medallion (bronze/silver/gold) — no versionado
+├── data/                  # Medallion bronze/silver/gold (no versionado) + kb_docs del RAG (versionado)
 ├── docs/                  # Documentación general (arquitectura, CRISP-ML(Q), diccionario, etc.)
 ├── notebooks/             # Exploración y perfilado (EDA) de las fuentes
 ├── ml/                    # Python: ETL + Machine Learning + RAG + API (FastAPI)
@@ -183,6 +183,17 @@ El proyecto sigue la metodología **CRISP-ML(Q)** (Cross-Industry Standard Proce
 assurance). Cada fase, sus controles de calidad y riesgos están documentados en
 [docs/CRISP-ML-Q.md](docs/CRISP-ML-Q.md).
 
+**Cómo se evalúa el modelo.** El pronóstico se valida con *backtesting* **walk-forward
+recursivo** (sin fuga) contra **dos líneas base ingenuas**: la **persistencia** (repetir el último mes) y la
+**estacional** (mismo mes del año anterior). La métrica de cabecera es el **MASE** (error escalado, estándar
+para series de conteo) —**no** el sMAPE, que en hechos casi nulos (0/1) se dispara a >100% por artefacto
+aritmético, no por error real—. El modelo **supera a ambas líneas base** en MAE y MASE a 1 paso y en el
+horizonte completo que se sirve (6 meses), y su ventaja **crece con el horizonte**; el único punto donde cede
+es el sMAPE a 1 paso (el citado artefacto). Su valor se concentra en las series de **volumen medio y alto**
+—donde hay señal recurrente y la planeación preventiva importa—; en las ultra-dispersas el naive es casi
+óptimo por construcción y no se sobre-afirma nada. Las cifras reproducibles están en
+[reports/model_report.json](reports/model_report.json).
+
 ## 🔓 Datos abiertos utilizados
 
 **20 conjuntos de datos abiertos** de [datos.gov.co](https://www.datos.gov.co/browse?category=Seguridad+y+Defensa)
@@ -225,6 +236,16 @@ dato abierto de entidad pública admitido por el concurso. Detalle en
 política pública** (PDF/Word) para responder sobre el marco normativo citando la fuente **por página**
 (p. ej. la *Política de Seguridad, Defensa y Convivencia Ciudadana 2022-2026* del Ministerio de Defensa).
 Para incluir documentos, se deben colocar en la carpeta `data/kb_docs/` y ejecutar `docker compose exec ml python -m vigia rag-index` con el fin de indexar los documentos y que sean tenidos en cuenta para las respuestas del RAG.
+
+**Señal en tiempo real (prensa).** El dato oficial de la Policía es **mensual y con rezago**; como
+complemento, el tablero incorpora una **señal en tiempo real** de prensa. En la pestaña **Panorama**, al
+seleccionar un departamento en el mapa, el panel de la derecha carga sus **noticias de seguridad recientes**.
+Son **noticias, no cifras oficiales** —así se etiqueta en la interfaz— y sirven de contexto vivo sobre el
+dato estadístico. La fuente es **newsdata.io** cuando se configura una `NEWSDATA_API_KEY` (gratuita), o
+**GDELT** (*Global Database of Events, Language and Tone*, sin token) como respaldo. El backend cachea la
+señal en Redis, así que es pública y ligera. No existe una API nacional de criminalidad en tiempo real
+(verificado en el *Asset Inventory*); estas fuentes internacionales cubren ese eje sin mezclar unidades
+distintas con la estadística oficial.
 
 ## 🗺️ Alineación con las Hojas de Ruta de Datos Abiertos Estratégicos
 
@@ -311,7 +332,9 @@ que el admin y está limitado por IP para evitar altas masivas. Para un desplieg
 `REGISTRATION_ENABLED=false` deshabilita el alta pública (el servidor responde `403` y la UI oculta el botón).
 
 La autenticación es **JWT (access token corto) + refresh token rotativo en Redis**, con revocación
-(logout), hashing **bcrypt**, bloqueo contra ataques de fuerza bruta, *rate-limiting* y cabeceras de seguridad.
+(logout), hashing **bcrypt**, bloqueo contra ataques de fuerza bruta, *rate-limiting*, límite de tamaño de
+petición y cabeceras de seguridad (incluida una **Content-Security-Policy** en el frontend, calibrada a los
+orígenes del tablero).
 Configurable por `.env` (`JWT_SECRET`, `JWT_EXPIRATION`, `JWT_REFRESH_EXPIRATION`, `ADMIN_*`). En
 producción (`APP_ENV=production`) el backend **aborta si `JWT_SECRET` o `ADMIN_PASSWORD` siguen en sus
 valores públicos por defecto** (los que trae el repositorio) o si la contraseña es débil (fail-closed); en

@@ -1446,8 +1446,8 @@ data/gold/*
 # Modelos y reportes generados
 models/*
 
-# No ignorar los .gitkeep para mantener la estructura (models)
-!models/.gitkeep
+# No ignorar el README
+!models/README.md
 
 # Python
 ml/*.egg-info/

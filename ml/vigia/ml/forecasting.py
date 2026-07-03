@@ -1,4 +1,4 @@
-"""Pronóstico espacio-temporal de criminalidad (modelo global).
+"""Pronóstico de criminalidad por municipio y mes (modelo global).
 
 Un único `HistGradientBoostingRegressor` se entrena sobre TODAS las series
 `municipio × categoria` usando features de rezago/estacionalidad. Ventajas:

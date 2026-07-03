@@ -1,0 +1,302 @@
+{
+  "trained_at": "2026-07-03T00:33:44.054182+00:00",
+  "seed": 77,
+  "features": [
+    "lag_1",
+    "lag_2",
+    "lag_3",
+    "lag_6",
+    "lag_12",
+    "roll_mean_3",
+    "roll_std_3",
+    "roll_mean_6",
+    "roll_std_6",
+    "roll_mean_12",
+    "roll_std_12",
+    "media_hist",
+    "meses_activos",
+    "mes",
+    "trimestre",
+    "mes_sin",
+    "mes_cos",
+    "trend",
+    "log_poblacion"
+  ],
+  "metricas_backtest": {
+    "backtest": "walk-forward recursivo (rolling origin), sin fuga",
+    "n_origins": 3,
+    "horizon": 6,
+    "n_test": 30606,
+    "mae": 1.921,
+    "smape": 126.2,
+    "baseline_mae": 1.9733,
+    "baseline_smape": 117.87,
+    "baseline_estacional_mae": 2.1421,
+    "baseline_estacional_smape": 121.34,
+    "mase": 1.361,
+    "baseline_mase": 1.4446,
+    "skill_mae_vs_persistencia_pct": 2.7,
+    "skill_mae_vs_estacional_pct": 10.3,
+    "resid_dispersion": 1.2241,
+    "pi_level": 80,
+    "pi_scale": 0.7102,
+    "pi_cobertura_empirica_pct": 80.0,
+    "por_volumen": [
+      {
+        "n": 10202,
+        "mae": 0.4805,
+        "smape": 173.65,
+        "baseline_mae": 0.4771,
+        "baseline_smape": 167.39,
+        "baseline_estacional_mae": 0.4657,
+        "baseline_estacional_smape": 171.92,
+        "mase": 1.8719,
+        "baseline_mase": 1.8357,
+        "estrato": "bajo",
+        "rango_volumen_mensual": "≤0.3",
+        "gana_modelo": false
+      },
+      {
+        "n": 10202,
+        "mae": 0.8222,
+        "smape": 133.91,
+        "baseline_mae": 0.9381,
+        "baseline_smape": 139.52,
+        "baseline_estacional_mae": 0.9171,
+        "baseline_estacional_smape": 143.05,
+        "mase": 1.1732,
+        "baseline_mase": 1.3324,
+        "estrato": "medio",
+        "rango_volumen_mensual": "0.3–1.1",
+        "gana_modelo": true
+      },
+      {
+        "n": 10202,
+        "mae": 4.4603,
+        "smape": 71.05,
+        "baseline_mae": 4.5046,
+        "baseline_smape": 78.61,
+        "baseline_estacional_mae": 5.0435,
+        "baseline_estacional_smape": 82.81,
+        "mase": 1.038,
+        "baseline_mase": 1.1657,
+        "estrato": "alto",
+        "rango_volumen_mensual": ">1.1",
+        "gana_modelo": true
+      }
+    ],
+    "multipaso": {
+      "horizon": 6,
+      "n": 146835,
+      "mae": 2.2096,
+      "smape": 113.48,
+      "baseline_mae": 2.5716,
+      "baseline_smape": 114.69,
+      "baseline_estacional_mae": 2.4405,
+      "baseline_estacional_smape": 113.53,
+      "mase": 1.4898,
+      "baseline_mase": 1.6596,
+      "pi_cobertura_empirica_pct": 80.0,
+      "por_paso": [
+        {
+          "paso": 1,
+          "n": 30606,
+          "mae": 1.921,
+          "smape": 126.2,
+          "baseline_mae": 1.9733,
+          "baseline_smape": 117.87,
+          "baseline_estacional_mae": 2.1421,
+          "baseline_estacional_smape": 121.34,
+          "mase": 1.361,
+          "baseline_mase": 1.4446
+        },
+        {
+          "paso": 2,
+          "n": 29469,
+          "mae": 2.3668,
+          "smape": 125.83,
+          "baseline_mae": 2.6651,
+          "baseline_smape": 119.45,
+          "baseline_estacional_mae": 2.3136,
+          "baseline_estacional_smape": 118.86,
+          "mase": 1.4268,
+          "baseline_mase": 1.5432
+        },
+        {
+          "paso": 3,
+          "n": 27917,
+          "mae": 2.2203,
+          "smape": 119.3,
+          "baseline_mae": 2.6415,
+          "baseline_smape": 118.96,
+          "baseline_estacional_mae": 2.2716,
+          "baseline_estacional_smape": 115.55,
+          "mase": 1.4559,
+          "baseline_mase": 1.6247
+        },
+        {
+          "paso": 4,
+          "n": 25443,
+          "mae": 1.985,
+          "smape": 104.39,
+          "baseline_mae": 2.4414,
+          "baseline_smape": 112.22,
+          "baseline_estacional_mae": 2.4944,
+          "baseline_estacional_smape": 108.32,
+          "mase": 1.5431,
+          "baseline_mase": 1.7595
+        },
+        {
+          "paso": 5,
+          "n": 19716,
+          "mae": 2.2077,
+          "smape": 97.25,
+          "baseline_mae": 2.7775,
+          "baseline_smape": 109.87,
+          "baseline_estacional_mae": 2.7291,
+          "baseline_estacional_smape": 107.4,
+          "mase": 1.6083,
+          "baseline_mase": 1.8514
+        },
+        {
+          "paso": 6,
+          "n": 13684,
+          "mae": 2.9153,
+          "smape": 86.81,
+          "baseline_mae": 3.5111,
+          "baseline_smape": 104.46,
+          "baseline_estacional_mae": 3.21,
+          "baseline_estacional_smape": 104.97,
+          "mase": 1.7129,
+          "baseline_mase": 2.0003
+        }
+      ]
+    }
+  },
+  "supera_linea_base_smape": false,
+  "supera_linea_base_mae": true,
+  "supera_linea_base_smape_multipaso": true,
+  "supera_linea_base_estacional_mae": true,
+  "supera_linea_base_estacional_mae_multipaso": true,
+  "interpretabilidad": {
+    "metodo": "permutation_importance",
+    "scoring": "neg_mean_absolute_error",
+    "nota": "caída de MAE al barajar cada feature, sobre una muestra del conjunto modelado",
+    "features": [
+      {
+        "feature": "roll_mean_12",
+        "importancia": 1.2813,
+        "std": 0.0068
+      },
+      {
+        "feature": "media_hist",
+        "importancia": 0.3121,
+        "std": 0.0061
+      },
+      {
+        "feature": "roll_mean_3",
+        "importancia": 0.1562,
+        "std": 0.0027
+      },
+      {
+        "feature": "lag_1",
+        "importancia": 0.1479,
+        "std": 0.0026
+      },
+      {
+        "feature": "trend",
+        "importancia": 0.0827,
+        "std": 0.0045
+      },
+      {
+        "feature": "roll_mean_6",
+        "importancia": 0.0797,
+        "std": 0.002
+      },
+      {
+        "feature": "mes",
+        "importancia": 0.0657,
+        "std": 0.0042
+      },
+      {
+        "feature": "log_poblacion",
+        "importancia": 0.0378,
+        "std": 0.0047
+      },
+      {
+        "feature": "meses_activos",
+        "importancia": 0.0373,
+        "std": 0.0028
+      },
+      {
+        "feature": "lag_2",
+        "importancia": 0.0237,
+        "std": 0.0006
+      },
+      {
+        "feature": "lag_12",
+        "importancia": 0.0219,
+        "std": 0.0019
+      },
+      {
+        "feature": "roll_std_12",
+        "importancia": 0.0127,
+        "std": 0.0018
+      },
+      {
+        "feature": "lag_6",
+        "importancia": 0.0059,
+        "std": 0.0008
+      },
+      {
+        "feature": "mes_sin",
+        "importancia": 0.0025,
+        "std": 0.0009
+      },
+      {
+        "feature": "lag_3",
+        "importancia": 0.0021,
+        "std": 0.0002
+      },
+      {
+        "feature": "mes_cos",
+        "importancia": 0.0008,
+        "std": 0.0008
+      },
+      {
+        "feature": "roll_std_3",
+        "importancia": 0.0005,
+        "std": 0.0007
+      },
+      {
+        "feature": "trimestre",
+        "importancia": 0.0003,
+        "std": 0.0001
+      },
+      {
+        "feature": "roll_std_6",
+        "importancia": -0.0003,
+        "std": 0.0004
+      }
+    ]
+  },
+  "universo_modelado": {
+    "series_modeladas": 13089,
+    "municipios_modelados": 1106,
+    "categorias_modeladas": 20,
+    "hechos_modelados": 9210922,
+    "periodo_min": "2003-01",
+    "periodo_max": "2026-05",
+    "min_nonzero": 12
+  },
+  "anomalias": {
+    "total": 18588,
+    "alta": 7409,
+    "media": 11179,
+    "universo_meses_serie": 2676237,
+    "tasa_alertas_pct": 0.695,
+    "series_evaluadas": 13431,
+    "series_con_alerta": 2510,
+    "alertas_por_serie": 1.38
+  }
+}

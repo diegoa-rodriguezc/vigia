@@ -1,0 +1,20 @@
+# Override de aceleración por GPU (NVIDIA) para el servicio Ollama (LLM + embeddings).
+#
+# Modo de uso::
+#   make deploy-gpu
+#
+# Requisitos del host:
+#   - Linux:   driver NVIDIA + NVIDIA Container Toolkit (`nvidia-ctk`).
+#   - Windows: Docker Desktop con backend WSL2 + driver NVIDIA con soporte WSL.
+#
+name: vigia
+
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

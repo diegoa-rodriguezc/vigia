@@ -1,0 +1,19 @@
+# Catálogo de eventos documentados para validar las anomalías (vigia validate-anomalies).
+# Hitos de seguridad REALES, públicos y verificables, con su municipio (código DANE) y mes.
+# Se mide qué fracción cayó dentro de ±N meses de una anomalía detectada (recall@ventana).
+# Columnas: cod_municipio (DANE 5 díg.), periodo (YYYY-MM), categoria (opcional, nombre del
+# catálogo), descripcion, fuente. Las líneas que empiezan con '#' se ignoran (comment="#").
+# Los códigos DANE se verificaron contra DIVIPOLA (gold/resumen_municipio). NO es verdad-terreno
+# exhaustiva: es una muestra de hitos notorios para una validez de cara, no un censo de eventos.
+cod_municipio,periodo,categoria,descripcion,fuente
+11001,2003-02,HOMICIDIO,"Atentado con carro bomba al Club El Nogal, Bogotá (FARC); 36 muertos y 200+ heridos",https://es.wikipedia.org/wiki/Atentado_al_Club_El_Nogal
+19821,2011-07,TERRORISMO,"Chiva bomba frente a la estación de Policía de Toribío, Cauca (FARC); 3 muertos, 460 viviendas afectadas",https://centrodememoriahistorica.gov.co/ocho-anos-de-la-explosion-de-una-chiva-bomba-en-toribio/
+11001,2017-06,TERRORISMO,"Explosión en el Centro Comercial Andino, Bogotá; 3 mujeres muertas y 9 heridas",https://es.wikipedia.org/wiki/Atentado_del_centro_comercial_Andino
+11001,2019-01,HOMICIDIO,"Carro bomba en la Escuela de Cadetes General Santander, Bogotá (ELN); 22 cadetes muertos",https://es.wikipedia.org/wiki/Atentado_contra_la_escuela_de_polic%C3%ADa_General_Santander
+52678,2020-08,HOMICIDIO,"Masacre de Samaniego, Nariño; 8 jóvenes asesinados",https://www.eltiempo.com/justicia/delitos/nueve-personas-fueron-asesinadas-en-samaniego-narino-529890
+54001,2021-06,TERRORISMO,"Carro bomba en la Brigada 30 del Ejército, Cúcuta; decenas de heridos",https://www.elespectador.com/colombia/mas-regiones/explosion-de-carro-bomba-en-instalaciones-de-la-brigada-30-en-cucuta/
+81794,2022-01,HOMICIDIO,"Enfrentamientos ELN vs disidencias FARC en Arauca, Tame; decenas de homicidios y desplazamiento",https://es.wikipedia.org/wiki/Enfrentamientos_en_Arauca_en_2022
+81736,2022-01,HOMICIDIO,"Enfrentamientos ELN vs disidencias FARC en Arauca, Saravena",https://es.wikipedia.org/wiki/Enfrentamientos_en_Arauca_en_2022
+81065,2022-01,HOMICIDIO,"Enfrentamientos ELN vs disidencias FARC en Arauca, Arauquita; masacre de 4 hombres",https://www.infobae.com/america/colombia/2022/02/11/masacre-de-4-hombres-en-arauquita-podria-tener-origen-en-disputas-entre-disidencias-de-las-farc-y-eln/
+54810,2025-01,HOMICIDIO,"Crisis del Catatumbo: escalada del ELN, masacres y desplazamiento masivo, Tibú",https://en.wikipedia.org/wiki/2025_Catatumbo_clashes
+54250,2025-01,HOMICIDIO,"Crisis del Catatumbo: violencia y desplazamiento forzado, El Tarra",https://en.wikipedia.org/wiki/2025_Catatumbo_clashes

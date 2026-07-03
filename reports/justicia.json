@@ -1,0 +1,83 @@
+{
+  "fuente": "Fiscalía General de la Nación — Procesos V3 (dbdv-iihs)",
+  "grano": "municipio × año × etapa",
+  "total_procesos": 23029390,
+  "embudo_etapas": {
+    "indagacion": 21069716,
+    "judicializado": 1959486,
+    "desconocido": 188
+  },
+  "tasa_judicializacion_nacional_pct": 8.51,
+  "cobertura": {
+    "municipios": 1126,
+    "anio_min": 2004,
+    "anio_max": 2026
+  },
+  "top_municipios_por_procesos": [
+    {
+      "cod_municipio": "11001",
+      "municipio": "BOGOTÁ, D.C.",
+      "total_procesos": 5506930,
+      "tasa_judicializacion_pct": 5.58
+    },
+    {
+      "cod_municipio": "05001",
+      "municipio": "MEDELLÍN",
+      "total_procesos": 1698640,
+      "tasa_judicializacion_pct": 7.87
+    },
+    {
+      "cod_municipio": "76001",
+      "municipio": "SANTIAGO DE CALI",
+      "total_procesos": 1284851,
+      "tasa_judicializacion_pct": 7.84
+    },
+    {
+      "cod_municipio": "08001",
+      "municipio": "BARRANQUILLA",
+      "total_procesos": 707289,
+      "tasa_judicializacion_pct": 8.97
+    },
+    {
+      "cod_municipio": "13001",
+      "municipio": "CARTAGENA DE INDIAS",
+      "total_procesos": 511619,
+      "tasa_judicializacion_pct": 6.51
+    },
+    {
+      "cod_municipio": "68001",
+      "municipio": "BUCARAMANGA",
+      "total_procesos": 455269,
+      "tasa_judicializacion_pct": 12.49
+    },
+    {
+      "cod_municipio": "50001",
+      "municipio": "VILLAVICENCIO",
+      "total_procesos": 396553,
+      "tasa_judicializacion_pct": 9.09
+    },
+    {
+      "cod_municipio": "73001",
+      "municipio": "IBAGUÉ",
+      "total_procesos": 369561,
+      "tasa_judicializacion_pct": 12.28
+    },
+    {
+      "cod_municipio": "54001",
+      "municipio": "SAN JOSÉ DE CÚCUTA",
+      "total_procesos": 366613,
+      "tasa_judicializacion_pct": 11.08
+    },
+    {
+      "cod_municipio": "52001",
+      "municipio": "PASTO",
+      "total_procesos": 359483,
+      "tasa_judicializacion_pct": 7.63
+    }
+  ],
+  "advertencias_uso": [
+    "Rezago judicial: un proceso por un hecho reciente puede seguir en indagación o sin radicar; los años recientes subcuentan más que la serie de la Policía.",
+    "La indagación domina el volumen (la mayoría de noticias no avanza); el valor está en la TASA de judicialización, no en el conteo bruto.",
+    "Noticia criminal/proceso (Fiscalía) ≠ hecho registrado (Policía): capa paralela, no comparable 1:1; la taxonomía penal tampoco es 1:1 con las categorías de la Policía."
+  ]
+}

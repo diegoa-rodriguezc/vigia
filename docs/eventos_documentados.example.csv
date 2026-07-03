@@ -1,0 +1,8 @@
+cod_municipio,periodo,categoria,descripcion,fuente
+# Plantilla del catálogo de eventos documentados para `vigia validate-anomalies --events <archivo>`.
+# Reemplaza estas filas de EJEMPLO por hitos reales y públicos VERIFICADOS (prensa, informes
+# oficiales, ONG). Columnas: cod_municipio (DANE, 5 díg.), periodo (YYYY-MM), categoria (opcional;
+# usa el nombre del catálogo, p. ej. HOMICIDIO), descripcion y fuente (opcionales). Las líneas que
+# empiezan con '#' se ignoran. by_categoria se activa pasando categoría en el evento + flag en código.
+11001,2024-01,HOMICIDIO,(EJEMPLO — reemplazar con un evento verificado),(URL/informe)
+76001,2024-05,,(EJEMPLO — evento sin categoría: casa por municipio-mes),(URL/informe)

@@ -1,0 +1,126 @@
+{
+  "generado_en": "2026-06-27T21:00:32Z",
+  "estado_global": "amarillo",
+  "frescura": {
+    "periodo_max": "2026-05",
+    "lag_meses": 1,
+    "estado": "verde"
+  },
+  "deriva_datos": {
+    "psi": 0.1607,
+    "estado": "amarillo",
+    "ventana_meses": 6,
+    "referencia_meses": 18,
+    "volumen_mensual_referencia": 50340.3,
+    "volumen_mensual_reciente": 40445.0,
+    "cambio_volumen_pct": -19.7
+  },
+  "backtest_extendido": {
+    "horizon": 12,
+    "n_origins": 2,
+    "mae": 1.951,
+    "smape": 122.63,
+    "baseline_mae": 2.1485,
+    "baseline_smape": 116.65,
+    "supera_baseline_mae": true,
+    "por_paso": [
+      {
+        "paso": 1,
+        "n": 23136,
+        "mae": 1.3945,
+        "smape": 130.44,
+        "baseline_mae": 1.5884,
+        "baseline_smape": 117.71
+      },
+      {
+        "paso": 2,
+        "n": 22831,
+        "mae": 1.5427,
+        "smape": 130.07,
+        "baseline_mae": 1.728,
+        "baseline_smape": 119.27
+      },
+      {
+        "paso": 3,
+        "n": 22465,
+        "mae": 1.6899,
+        "smape": 127.9,
+        "baseline_mae": 1.8,
+        "baseline_smape": 118.48
+      },
+      {
+        "paso": 4,
+        "n": 21998,
+        "mae": 1.7309,
+        "smape": 126.91,
+        "baseline_mae": 1.8906,
+        "baseline_smape": 118.2
+      },
+      {
+        "paso": 5,
+        "n": 21438,
+        "mae": 1.8793,
+        "smape": 126.21,
+        "baseline_mae": 2.0001,
+        "baseline_smape": 118.12
+      },
+      {
+        "paso": 6,
+        "n": 20789,
+        "mae": 1.993,
+        "smape": 126.55,
+        "baseline_mae": 2.1138,
+        "baseline_smape": 118.27
+      },
+      {
+        "paso": 7,
+        "n": 20036,
+        "mae": 2.2637,
+        "smape": 132.18,
+        "baseline_mae": 2.5406,
+        "baseline_smape": 123.64
+      },
+      {
+        "paso": 8,
+        "n": 19250,
+        "mae": 2.3216,
+        "smape": 128.63,
+        "baseline_mae": 2.6055,
+        "baseline_smape": 121.27
+      },
+      {
+        "paso": 9,
+        "n": 18100,
+        "mae": 2.1457,
+        "smape": 112.95,
+        "baseline_mae": 2.2193,
+        "baseline_smape": 112.49
+      },
+      {
+        "paso": 10,
+        "n": 16010,
+        "mae": 2.1621,
+        "smape": 99.98,
+        "baseline_mae": 2.4568,
+        "baseline_smape": 107.52
+      },
+      {
+        "paso": 11,
+        "n": 11049,
+        "mae": 2.4471,
+        "smape": 96.61,
+        "baseline_mae": 2.8527,
+        "baseline_smape": 108.22
+      },
+      {
+        "paso": 12,
+        "n": 6341,
+        "mae": 3.1795,
+        "smape": 90.68,
+        "baseline_mae": 3.6152,
+        "baseline_smape": 107.33
+      }
+    ],
+    "estado": "verde"
+  }
+}

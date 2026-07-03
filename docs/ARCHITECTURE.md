@@ -9,7 +9,7 @@
 3. **Reproducibilidad y auditabilidad** — todo el flujo se ejecuta desde una CLI y desde Docker; el
    RAG usa por defecto modelos locales (sin costo de API ni envío de datos a terceros). El **pipeline de
    datos** (bronze→silver→gold) es **determinista bit-a-bit** (semilla fija) y sus métricas se regeneran en
-   `reports/`. El **modelo** es reproducible *salvo ruido numérico ~1%* entre corridas (el gradient boosting
+   `reports/`. El **modelo** es reproducible *salvo ruido numérico ~1 %* entre corridas (el gradient boosting
    con `early_stopping` corta según un score sensible a las reducciones de punto flotante multi-hilo, pese a
    las semillas; las conclusiones cualitativas son estables — ver
    [CRISP-ML(Q) - Reproducibilidad](CRISP-ML-Q.md#3-ingeniería-del-modelo)). La generación de texto del
@@ -37,7 +37,7 @@
 ## 3. Flujo de datos (pipeline)
 
 El orden de ejecución es el de `pipeline()` en `cli.py`
-(`ingest → clean → gold → justicia → train → load-db → rag-index`):
+(`ingest → clean → gold → justicia → train → validate-anomalies → load-db → rag-index`):
 
 ![Pipeline de datos de VigIA: fuentes abiertas (Policía/SODA2, DANE, Fiscalía) que fluyen por el medallion bronze → silver → gold, con la capa paralela de Justicia, hasta entrenar el modelo, cargar PostgreSQL (5 tablas) e indexar el RAG en kb_chunks](diagrams/pipeline-datos.png)
 
@@ -52,7 +52,7 @@ Fuentes abiertas:  Policía · 16 datasets SODA2 (datos.gov.co)  ·  DANE · pob
    │  vigia ingest          (descarga paginada con reintentos; Justicia por streaming keyset)
    ▼
 data/bronze/*.parquet        ← copia fiel del crudo + metadatos de linaje
-   │  vigia clean            (fechas ISO/dd-mm-yyyy, normalización DANE, tipado, deduplicado)
+   │  vigia clean            (fechas ISO/dd/mm/yyyy, normalización DANE, tipado, deduplicado)
    ▼
 data/silver/eventos.parquet  ← esquema UNIFICADO de eventos delictivos
    │  vigia gold             (serie mensual municipio×delito + features + población DANE)
@@ -98,9 +98,9 @@ los normaliza a un único modelo de evento:
   *features* de rezago (lags 1, 2, 3, 6, 12), medias/desviaciones móviles, estacionalidad (mes,
   trimestre, seno/coseno, tendencia) e **identidad de serie** (media histórica expansiva y meses
   activos, que dan al modelo el nivel base de cada municipio×categoría sin fuga de datos).
-- **Incertidumbre:** cada pronóstico incluye una **banda (~80%)** derivada de la dispersión robusta de
-  los residuos del backtest, ensanchada con √horizonte (error recursivo acumulado).
-- **Validación:** *backtesting* temporal **walk-forward** (rolling origin de varios meses, sin fuga de
+- **Incertidumbre:** cada pronóstico incluye una **banda (~80 %)** derivada de la dispersión robusta de
+  los residuos de la validación retrospectiva (*backtest*), ensanchada con √horizonte (error recursivo acumulado).
+- **Validación:** *backtesting* temporal **walk-forward** (origen rodante de varios meses, sin fuga de
   datos) con MAE / sMAPE contra una línea base ingenua; el modelo final se reentrena con todo el histórico.
   Las métricas se persisten en `reports/model_report.json` (`ml/vigia/ml/evaluate.py`).
 
@@ -168,15 +168,15 @@ los normaliza a un único modelo de evento:
 | GET | `/api/v1/crimes/municipios` | público (rate-limit) | Ranking/agregado por municipio |
 | GET | `/api/v1/crimes/departamentos` | público (rate-limit) | Agregado por departamento (mapa coroplético) |
 | GET | `/api/v1/crimes/categories` | público (rate-limit) | Agregado por categoría de delito |
-| GET | `/api/v1/crimes/municipio` | público (rate-limit) | Desglose por categoría de un municipio (drill-down) |
+| GET | `/api/v1/crimes/municipio` | público (rate-limit) | Desglose por categoría de un municipio |
 | GET | `/api/v1/crimes/timeseries` | público (rate-limit) | Serie temporal por municipio/categoría |
 | GET | `/api/v1/anomalies` | público (rate-limit) | Anomalías detectadas |
 | GET | `/api/v1/monitoring` | público (rate-limit) | Salud del modelo (proxy al JSON de `vigia health`) |
-| GET | `/api/v1/realtime/departamento` | público (rate-limit) | Señal de prensa en **tiempo real** (newsdata.io si hay key, si no GDELT) por departamento (o nacional); Se aplica cache en Redis |
+| GET | `/api/v1/realtime/departamento` | público (rate-limit) | Señal de prensa **reciente** (newsdata.io si hay key, si no GDELT) por departamento (o nacional); se aplica caché en Redis |
 | GET | `/api/v1/justicia/resumen` | público (rate-limit) | Embudo nacional de judicialización + KPIs |
 | GET | `/api/v1/justicia/municipios` | público (rate-limit) | Tasa de judicialización por municipio |
 | GET | `/api/v1/justicia/departamentos` | público (rate-limit) | Tasa de judicialización por departamento |
-| GET | `/api/v1/justicia/municipio` | público (rate-limit) | Drill-down año×etapa de un municipio |
+| GET | `/api/v1/justicia/municipio` | público (rate-limit) | Desglose año×etapa de un municipio |
 | GET | `/api/v1/forecast` | **JWT** | Pronóstico (proxy al servicio ML) |
 | GET | `/api/v1/simulate` | **JWT** | Simulación de escenarios (palancas en query; proxy al servicio ML) |
 | POST | `/api/v1/assistant` | **JWT** | Asistente RAG/agente (proxy al servicio ML) |

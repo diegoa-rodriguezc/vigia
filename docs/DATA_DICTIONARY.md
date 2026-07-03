@@ -14,7 +14,7 @@ no de datos.gov.co; ver [Población municipal](#población-municipal--denominado
 A estas fuentes de la **Policía** se suma una de **otra entidad** —la **Fiscalía General de la Nación**— como
 capa paralela de **Justicia** (ver [Capa "Justicia"](#capa-justicia--fiscalía-general-de-la-nación-fuente-de-otra-entidad-capa-paralela)). Las **filas** son volúmenes crudos aproximados de la API;
 los conteos autoritativos tras limpieza viven en [`reports/silver_quality.json`](../reports/silver_quality.json),
-regenerado en cada corrida. Ese informe distingue `completitud_pct` (100% por construcción: silver imputa el
+regenerado en cada corrida. Ese informe distingue `completitud_pct` (100 % por construcción: silver imputa el
 marcador `NO REPORTADO` en vez de dejar nulos) de `placeholders_pct` (el **% real de no reportados** por
 campo). La **alineación de estas fuentes con la Hoja de Ruta Nacional de Datos Abiertos
 Estratégicos** se documenta y verifica en la sección
@@ -24,7 +24,7 @@ Estratégicos** se documenta y verifica en la sección
 |---|---|---|---|---|---|
 | `homicidios` | `m8fd-ahd9` | A | ISO | 339.653 | `arma_medio`, `_modalidad_presunta` |
 | `hurto_vehiculos` | `csb4-y6v2` | A | ISO | 382.563 | `tipo_delito` (categoría por artículo) |
-| `hurto_personas` | `4rxi-8m8d` | A | ISO | 641.724 | delito urbano más frecuente |
+| `hurto_personas` | `4rxi-8m8d` | A | ISO | 641.724 | delito urbano más frecuente (por hechos —`cantidad`—, no por filas) |
 | `hurto_residencias` | `7mn7-vzqp` | A | ISO | 609.597 | — |
 | `delitos_sexuales` | `bz43-8ahq` | A | ISO | 438.526 | `sexo`, `zona` (desagregable por género) |
 | `delitos_informaticos` | `4v6r-wu98` | A | ISO | 491.867 | `descripcion_conducta` (no mapeada) |
@@ -262,7 +262,7 @@ en hoja, fila de encabezado y orden → el parser localiza el encabezado y selec
 solo `ÁREA GEOGRÁFICA = Total`). Implementado en [`ml/vigia/etl/poblacion.py`](../ml/vigia/etl/poblacion.py);
 se materializa en `data/bronze/poblacion.parquet` (`[cod_municipio, anio, poblacion]`, con linaje en
 `poblacion.meta.json`) y se cruza en `gold` por `(cod_municipio, anio)` con *clip* de año para respaldar los
-extremos (2003-2004 → 2005; años futuros → 2035). Cobertura del cruce: **100%** de la serie mensual.
+extremos (2003-2004 → 2005; años futuros → 2035). Cobertura del cruce: **100 %** de la serie mensual.
 
 ## Esquema unificado — `data/silver/eventos.parquet`
 
@@ -344,6 +344,14 @@ Además de los datasets estructurados, la base de conocimiento del asistente ind
 contenedor) y `docker-rag-index` los procesa (`pypdf`/`python-docx`), los parte en fragmentos solapados
 (~800 caracteres, solape 150) y los indexa en `kb_chunks` junto a las *data cards* de gold. Implementado
 en [`ml/vigia/rag/documents.py`](../ml/vigia/rag/documents.py).
+
+**Procedencia del documento incluido.** El PDF versionado (*Política de Seguridad, Defensa y Convivencia
+Ciudadana 2022-2026*, Ministerio de Defensa Nacional) es la **copia íntegra y sin modificaciones** del
+documento oficial publicado por la Policía Nacional en
+[policia.gov.co](https://www.policia.gov.co/sites/default/files/2024-12/Pol%C3%ADtica%20de%20Seguridad%20Defensa%20y%20Convivencia%20Ciudadna.pdf)
+(verificado: mismo tamaño byte a byte, 47.785.152 bytes, que el original en línea; descargado en junio de
+2026). Documento público oficial, redistribuido con cita de su fuente para que el pilar de datos no
+estructurados sea **reproducible en un clon** sin depender de la disponibilidad del sitio de origen.
 
 | Campo (metadata del chunk) | Valor | Uso |
 |---|---|---|

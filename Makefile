@@ -1,7 +1,8 @@
 # VigIA - atajos del ciclo de vida del proyecto
 .DEFAULT_GOAL := help
 .PHONY: help up down logs pipeline ml-install ml-api ml-test \
-        ingest clean gold train load-db rag-index health backend-run backend-test frontend-dev fmt \
+        ingest clean gold justicia train validate-anomalies load-db rag-index health \
+        backend-run backend-test frontend-dev fmt \
         docker-pipeline docker-health docker-rag-index docker-reingest ollama-pull deploy deploy-gpu
 
 # Comando base de Compose. 
@@ -12,9 +13,11 @@ ifneq (,$(wildcard .env))
 include .env
 endif
 
-# Defaults a nivel de make (`?=` no pisa lo que ya vino del .env). 
-OLLAMA_LLM_MODEL ?= llama3.2:1b
-OLLAMA_EMBED_MODEL ?= nomic-embed-text
+# Defaults a nivel de make (`?=` no pisa lo que ya vino del .env).
+# DEBEN coincidir con los de .env.example: si divergen, `make ollama-pull` sin .env
+# descargaría modelos distintos de los que el servicio ml espera.
+OLLAMA_LLM_MODEL ?= qwen3:1.7b
+OLLAMA_EMBED_MODEL ?= qwen3-embedding:0.6b
 export OLLAMA_LLM_MODEL OLLAMA_EMBED_MODEL
 
 help: ## Muestra la ayuda
@@ -78,7 +81,8 @@ docker-reingest: ## Re-ingesta dataset(s) y reconstruye silver->gold->train->loa
 ml-install: ## Instala el paquete Python en modo editable
 	cd ml && pip install -e ".[dev]"
 
-pipeline: ingest clean gold train load-db rag-index ## Ejecuta el pipeline completo end-to-end
+# Mismo orden que `pipeline()` en ml/vigia/cli.py (incluye la capa Justicia y la validación de anomalías)
+pipeline: ingest clean gold justicia train validate-anomalies load-db rag-index ## Ejecuta el pipeline completo end-to-end
 
 ingest: ## Descarga datos abiertos (SODA2) -> bronze
 	cd ml && python -m vigia ingest
@@ -89,8 +93,14 @@ clean: ## Limpieza y unificación -> silver
 gold: ## Agregación y features -> gold
 	cd ml && python -m vigia gold
 
+justicia: ## Construye la capa Justicia (Fiscalía) -> gold + reports/justicia.json
+	cd ml && python -m vigia justicia
+
 train: ## Entrena forecasting + anomalías -> models/
 	cd ml && python -m vigia train
+
+validate-anomalies: ## Valida las anomalías reales (catálogo de eventos + corroboración) -> reports/
+	cd ml && python -m vigia validate-anomalies
 
 load-db: ## Carga la capa gold a PostgreSQL
 	cd ml && python -m vigia load-db

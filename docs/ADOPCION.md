@@ -1,6 +1,6 @@
 # Ruta de adopción y pilotaje
 
-VigIA es una **plataforma funcional**, publicada como proyecto reutilizable. 
+VigIA es una **plataforma funcional**, publicada como proyecto reutilizable.
 Este documento es la propuesta concreta para que una entidad pública pueda adoptarla.
 
 ---
@@ -50,10 +50,10 @@ también las de menor capacidad analítica instalada — donde una herramienta y
 - Recoger métricas de uso (consultas al asistente, alertas atendidas) y de percepción del equipo.
 - Decisión de continuidad / escalamiento a más categorías o municipios.
 
-**Criterios de éxito del piloto:** 
-- el equipo usa el tablero en al menos un Consejo de Seguridad
-- se documenta al menos una decisión informada por VigIA
-- la entidad manifiesta intención de continuar.
+**Criterios de éxito del piloto:**
+- El equipo usa el tablero en al menos un Consejo de Seguridad.
+- Se documenta al menos una decisión informada por VigIA.
+- La entidad manifiesta la intención de continuar.
 
 ---
 
@@ -66,5 +66,5 @@ también las de menor capacidad analítica instalada — donde una herramienta y
 
 ---
 
-El repositorio es abierto y auditable: puede revisar el código, los
-datos y la metodología desarrollada.
+El repositorio es abierto y auditable: cualquier entidad, evaluador o ciudadano puede revisar el código,
+los datos y la metodología desarrollada.

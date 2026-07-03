@@ -96,3 +96,16 @@ Violencia intrafamiliar (mensual) | gepp-dxcs | duplica `vuyt-mqpw` en otra peri
 Terrorismo / Delitos sexuales (trimestral) | 37p5-impc / fpe5-yrmw | duplican las versiones mensuales ya incluidas
 Índices/esquemas/directorios/cuadrantes/etc. | (varios) | no delictivos (transparencia administrativa, infraestructura)
 
+# Recursos complementarios (fuera de SODA2) — procedencia y atribución
+
+Recursos que la plataforma usa además de los datasets SODA2. Ninguno es fuente estadística: las cifras
+provienen siempre de los datasets de arriba.
+
+| Recurso | Ubicación en el repo | Procedencia | Nota de uso |
+|---|---|---|---|
+| Límites departamentales (GeoJSON) | `frontend/public/colombia-departamentos.json` | Derivado de los límites departamentales oficiales del **Marco Geoestadístico Nacional (MGN, DANE)**, vía distribución comunitaria de esos límites; simplificado para uso web (propiedades `DPTO`/`NOMBRE_DPT`, coordenadas a 3 decimales, 33 entidades) | Solo geometría del mapa coroplético; el cruce estadístico es por código DANE (`DPTO`) |
+| *Política de Seguridad, Defensa y Convivencia Ciudadana 2022-2026* (PDF) | `data/kb_docs/` | **Copia íntegra** del documento oficial del Ministerio de Defensa publicado por la Policía Nacional: [policia.gov.co](https://www.policia.gov.co/sites/default/files/2024-12/Pol%C3%ADtica%20de%20Seguridad%20Defensa%20y%20Convivencia%20Ciudadna.pdf) (verificado: mismo tamaño byte a byte, 47.785.152 bytes; descargado 2026-06) | Documento público oficial, redistribuido sin modificaciones y con cita, para reproducibilidad del pilar no estructurado |
+| Teselas del mapa | (servicio externo en runtime) | © OpenStreetMap contributors / © CARTO (`basemaps.cartocdn.com`) | Atribución visible en la interfaz del mapa (Leaflet) |
+| newsdata.io (señal de prensa) | (API externa en runtime, `backend/internal/realtime/newsdata.go`) | API comercial de noticias (`newsdata.io/api/1/latest`), plan gratuito con `NEWSDATA_API_KEY` | Fuente primaria de la señal de prensa si hay key; noticias, **no** cifras oficiales; cacheada en Redis |
+| GDELT (señal de prensa) | (API externa en runtime, `backend/internal/realtime/gdelt.go`) | *Global Database of Events, Language and Tone* (`api.gdeltproject.org`), sin token | Respaldo sin key; rate-limit duro (~1 req/5 s), degradación controlada; noticias, **no** cifras oficiales |
+

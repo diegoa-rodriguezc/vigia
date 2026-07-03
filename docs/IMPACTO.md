@@ -69,7 +69,7 @@ evidencia común** para priorizar y para **evaluar** si lo que se hizo sirvió.
 > mes** —la granularidad que el dato abierto nacional publica de forma consistente para los 1.106 municipios
 > modelados—.
 > **No** desciende a comuna, barrio, cuadrante ni franja horaria: aunque algunas fuentes traen un campo `zona`
-> (urbana/rural), su subregistro es alto (≈81% `NO REPORTADO`, ver
+> (urbana/rural), su subregistro es alto (≈81 % `NO REPORTADO`, ver
 > [CRISP-ML(Q)](CRISP-ML-Q.md#2-ingeniería-de-datos-preparación)) y no sostendría un pronóstico intra-municipal
 > fiable. El detalle táctico fino es competencia de los sistemas operativos internos de la Policía (SIEDCO/
 > cuadrantes), no del dato abierto; VigIA prioriza **el municipio y el delito**, y el equipo local hace el

@@ -5,7 +5,7 @@ Tablero interactivo (React 18 + TypeScript + Vite) con ocho vistas. **Panorama**
 **Informe** requieren inicio de sesión (cómputo de IA protegido, `<AuthGate>`):
 
 - **Panorama** — KPIs nacionales, ranking de municipios, gráfico de barras y mapa coroplético por
-  departamento (Leaflet); drill-down por municipio y panel de **señales de prensa** en tiempo real
+  departamento (Leaflet); desglose por municipio y panel de **señales de prensa** recientes
   (clic en un departamento carga sus noticias de seguridad; complemento, no cifra oficial).
 - **Alertas tempranas** — tabla de anomalías detectadas por severidad, con búsqueda y filtros.
 - **Justicia** — embudo de judicialización de la Fiscalía (KPIs, etapas, barras por departamento y tabla).
@@ -15,7 +15,7 @@ Tablero interactivo (React 18 + TypeScript + Vite) con ocho vistas. **Panorama**
 - **Asistente ciudadano** *(JWT)* — chat RAG/agente sobre datos oficiales, con fuentes citadas.
 - **Informe** *(JWT)* — informe ejecutivo municipal generado por IA (panorama, alertas, pronóstico,
   judicialización) anclado a las cifras oficiales.
-- **Salud del modelo** — semáforo de frescura, deriva (PSI) y backtest a 12 meses.
+- **Salud del modelo** — semáforo de frescura, deriva (PSI) y validación retrospectiva (*backtest*) a 12 meses.
 
 ## Desarrollo
 
@@ -24,7 +24,7 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-La URL del API se configura con `VITE_API_BASE_URL` (por defecto `http://localhost:8080/api/v1`).
+La URL de la API se configura con `VITE_API_BASE_URL` (por defecto `http://localhost:8080/api/v1`).
 
 ## Build de producción
 

@@ -13,7 +13,7 @@ conocimiento accionable** para fortalecer las políticas públicas de seguridad 
 ## 🎯 Problema y propuesta de valor
 
 Las entidades territoriales y la ciudadanía carecen de herramientas que conviertan el enorme volumen
-de datos delictivos publicados por las Entidades Públicas en **decisiones preventivas**. VigIA responde con:
+de datos delictivos publicados por las entidades públicas en **decisiones preventivas**. VigIA responde con:
 
 | Componente IA | Qué hace | Reto del concurso |
 |---|---|---|
@@ -30,39 +30,39 @@ de datos delictivos publicados por las Entidades Públicas en **decisiones preve
 
 > El tablero cuenta con ocho vistas/pestañas. **Pronóstico**, **Simulador**, **Asistente** e **Informe** requieren
 > inicio de sesión (cómputo de IA protegido); **Panorama**, **Alertas**, **Justicia** y **Salud del modelo**
-> son públicas. 
+> son públicas.
 
 A continuación se presentan las capturas de pantalla de la aplicación:
 | Panorama | Alertas tempranas |
 |---|---|
 | [![Panorama — KPIs, ranking y mapa coroplético](docs/screenshots/01-panorama.png)](docs/screenshots/01-panorama.png) | [![Alertas tempranas — anomalías por severidad](docs/screenshots/02-alertas.png)](docs/screenshots/02-alertas.png) |
-| KPIs nacionales, ranking por municipio, top-10, **mapa coroplético** por departamento y panel de **señales de prensa** en tiempo real. | Tabla de **anomalías** por severidad, búsqueda/filtros y la explicación del z-robusto. |
+| KPIs nacionales, ranking de los 10 municipios de mayor incidencia, **mapa coroplético** por departamento y panel de **señales de prensa** recientes. | Tabla de **anomalías** por severidad, búsqueda/filtros y la explicación del z-robusto. |
 
-| Pronóstico  | Asistente ciudadano  |
+| Pronóstico | Asistente ciudadano |
 |---|---|
 | [![Pronóstico — historia, predicción y banda de incertidumbre](docs/screenshots/03-pronostico.png)](docs/screenshots/03-pronostico.png) | [![Asistente — respuesta con citación de fuente](docs/screenshots/04-asistente.png)](docs/screenshots/04-asistente.png) |
-| Selección municipio × categoría con **historia + pronóstico + banda de incertidumbre** (80% nominal, **calibrada empíricamente** a 80% de cobertura real — ver [CRISP-ML(Q)](docs/CRISP-ML-Q.md#4-evaluación-del-modelo)). | Responde **solo con datos oficiales** y **cita cada cifra** (chips de fuente). En el modo por defecto (**Ollama local**) usa **RAG clásico** —la captura—; con proveedor de *tool-use* (**Anthropic/OpenAI**) opera como **agente que elige y encadena herramientas** (pronóstico, anomalías, embudo de Justicia…). |
+| Selección municipio × categoría con **historia + pronóstico + banda de incertidumbre** (80 % nominal, **calibrada empíricamente** a 80 % de cobertura real — ver [CRISP-ML(Q)](docs/CRISP-ML-Q.md#4-evaluación-del-modelo)). | Responde **solo con datos oficiales** y **cita cada cifra** (fichas de fuente). En el modo por defecto (**Ollama local**) usa **RAG clásico** —la captura—; con un proveedor con uso de herramientas (*tool-use*: **Anthropic/OpenAI**) opera como **agente que elige y encadena herramientas** (pronóstico, anomalías, embudo de Justicia…). |
 
-| Simulador  | Salud del modelo |
+| Simulador | Salud del modelo |
 |---|---|
 | [![Simulador — base vs escenario y hechos evitados](docs/screenshots/05-simulador.png)](docs/screenshots/05-simulador.png) | [![Salud del modelo — semáforo de frescura, deriva (PSI) y backtest 12m](docs/screenshots/06-salud.png)](docs/screenshots/06-salud.png) |
-| Palancas de intervención/población con **base vs escenario** y el KPI de **hechos evitados** (supuesto del usuario, no efecto causal estimado por el modelo). | **Semáforo** de frescura, **deriva (PSI - Population Stability Index)** y backtest a 12 meses con la degradación del error por horizonte. |
+| Palancas de intervención/población con **base vs escenario** y el KPI de **hechos evitados** (supuesto del usuario, no efecto causal estimado por el modelo). | **Semáforo** de frescura, **deriva (PSI - Population Stability Index)** y validación retrospectiva (*backtest*) a 12 meses con la degradación del error por horizonte. |
 
 | Justicia | Informe (IA generativa) |
 |---|---|
 | [![Justicia — embudo de judicialización de la Fiscalía](docs/screenshots/07-justicia.png)](docs/screenshots/07-justicia.png) | [![Informe — informe ejecutivo municipal generado por IA](docs/screenshots/08-informe.png)](docs/screenshots/08-informe.png) |
-| **Embudo de judicialización** de la Fiscalía (capa paralela): tasa nacional **8,51 %**, KPIs, barras por departamento y tabla por municipio. | **Informe ejecutivo municipal** generado por IA, **anclado a las cifras oficiales** (panorama, alertas, pronóstico, judicialización) con **chips auditables**. |
+| **Embudo de judicialización** de la Fiscalía (capa paralela): tasa nacional **8,51 %**, KPIs, barras por departamento y tabla por municipio. | **Informe ejecutivo municipal** generado por IA, **anclado a las cifras oficiales** (panorama, alertas, pronóstico, judicialización) con **fichas auditables**. |
 
-**Cómo usar la herramienta:** 
+**Cómo usar la herramienta:**
 
-1. *Panorama* → ubica los territorios y delitos con mayor incidencia en el mapa y el ranking; **haz clic en un departamento** para ver sus **señales de prensa recientes** (tiempo real) en el panel de la derecha.
-2. *Alertas tempranas* → revisa qué municipios tienen repuntes atípicos recientes (no solo volumen alto).
-3. *Justicia* → consulta el embudo de judicialización de la Fiscalía y la tasa por municipio/departamento.
-4. *Pronóstico* → proyecta un delito en un municipio a varios meses con su banda de incertidumbre.
-5. *Simulador* → mueve las palancas de una intervención o un cambio de población y observa cuántos hechos se evitarían frente al pronóstico base.
-6. *Asistente* → pregunta en lenguaje natural ("¿cuál fue el delito más frecuente en Cali?" o "¿cómo se proyectan los hurtos en Medellín?") y recibe una respuesta con su respectiva fuente.
-7. *Informe* → genera un informe ejecutivo del municipio (panorama, alertas, pronóstico y judicialización), también accesible desde el botón **Generar informe** del drill-down del Panorama.
-8. *Salud del modelo* → revisa el semáforo de frescura, deriva (PSI - Population Stability Index) y la validación del pronóstico a 12 meses.
+1. *Panorama* → ubique los territorios y delitos con mayor incidencia en el mapa y el ranking; **haga clic en un departamento** para ver sus **señales de prensa recientes** en el panel de la derecha.
+2. *Alertas tempranas* → revise qué municipios tienen repuntes atípicos recientes (no solo volumen alto).
+3. *Justicia* → consulte el embudo de judicialización de la Fiscalía y la tasa por municipio/departamento.
+4. *Pronóstico* → proyecte un delito en un municipio a varios meses con su banda de incertidumbre.
+5. *Simulador* → mueva las palancas de una intervención o un cambio de población y observe cuántos hechos se evitarían frente al pronóstico base.
+6. *Asistente* → pregunte en lenguaje natural ("¿cuál fue el delito más frecuente en Cali?" o "¿cómo se proyectan los hurtos en Medellín?") y reciba una respuesta con su respectiva fuente.
+7. *Informe* → genere un informe ejecutivo del municipio (panorama, alertas, pronóstico y judicialización), también accesible desde el botón **Generar informe** del desglose por municipio del Panorama.
+8. *Salud del modelo* → revise el semáforo de frescura, la deriva (PSI - Population Stability Index) y la validación del pronóstico a 12 meses.
 
 ## 🧱 Arquitectura
 
@@ -87,21 +87,22 @@ vigia/
 └── Makefile               # Atajos del ciclo de vida del proyecto
 ```
 
-> [!NOTE]
+> [!IMPORTANT]
 > El presente proyecto tiene una implementación de un RAG (Retrieval-Augmented Generation), por lo cual 
-> si su equipo tiene tarjeta gráfica (ej. NVIDIA), se recomienda realizar los pasos mencionados en la sección
+> si su equipo tiene tarjeta gráfica NVIDIA, se recomienda realizar los pasos mencionados en la sección
 > [Aceleración por GPU](#aceleración-por-gpu-opcional) para su despliegue; de lo contrario, realice
 > la [Ejecución en CPU](#ejecución-en-cpu), lo cual influye en el tiempo de despliegue del proyecto.
 
 ## 🚀 Instalación
 
-> **Requerimientos:**
+> [!WARNING]
+> **Requisitos:**
 > - *Sistema operativo:* Windows 10/11, macOS 10.15 o superior, Linux (distribución a su elección).
 > - Tener instalado [Docker](https://www.docker.com/products/docker-desktop/)
-> - Tener instalado [Git](https://git-scm.com/) y/o [GitHub Desktop](http://github.com/apps/desktop)
+> - Tener instalado [Git](https://git-scm.com/) ([GitHub Desktop](https://github.com/apps/desktop) es opcional)
 > - Tener instalado Make
 >    - En **Windows** se instala mediante una terminal/PowerShell ejecutando el siguiente comando
->    ```cmd
+>    ```powershell
 >    winget install ezwinports.make
 >    ```
 >    - En **Linux** se instala mediante una terminal ejecutando el siguiente comando
@@ -126,21 +127,22 @@ cd vigia
 
 3. Realice la copia del archivo `.env.example` y **edite** los valores del archivo `.env` según corresponda
 ```bash
-cp .env.example .env          # ajustar las credenciales según corresponda el ambiente (dev/prod)
+cp .env.example .env          # ajustar las credenciales según corresponda al entorno (desarrollo/producción)
 ```
 
-4. Para levantar los servicios se debe tener en ejecución e instalado **Docker** e instalado **Make** (ver requisitos)
+4. Para levantar los servicios se debe tener **Docker** instalado y en ejecución, y **Make** instalado (ver requisitos)
 ```bash
 make deploy                   # up + descarga de modelos + pipeline con datos (todo en Docker)
 ```
 
-Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tomar alrededor de 1 hora, debido a la descarga de fuentes de información, así como la indexación de información usada por el RAG en CPU.*
+Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tardar alrededor de 1 hora, debido a la descarga de las fuentes de datos, así como a la indexación de la base de conocimiento del RAG en CPU.*
 
 > [!TIP] 
-> Para listar más comandos utilice `make help`, lista todos los atajos disponibles con su descripción.
+> Para conocer más comandos ejecute `make help`, que lista todos los atajos disponibles con su descripción.
 
 ### Aceleración por GPU (opcional)
 
+> [!NOTE]
 > Requisitos: driver NVIDIA + **NVIDIA Container Toolkit** (Linux) o **Docker Desktop con backend WSL2**
 > y driver NVIDIA con soporte WSL (Windows).
 
@@ -158,24 +160,22 @@ cd vigia
 
 3. Realice la copia del archivo `.env.example` y **edite** los valores del archivo `.env` según corresponda
 ```bash
-# ajustar las credenciales según corresponda el ambiente (dev/prod)
+# ajustar las credenciales según corresponda al entorno (desarrollo/producción)
 cp .env.example .env
 ```
 
-4.  Ejecute el comando para despliegue en GPU
+4. Ejecute el comando para despliegue en GPU
 ```bash
 # ejecución en GPU
 make deploy-gpu      
 ```
 
-Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tomar alrededor de 30 min, debido a la descarga de fuentes de información e indexación de información usada por el RAG.*
+Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tardar alrededor de 30 minutos, debido a la descarga de las fuentes de datos y a la indexación de la base de conocimiento del RAG.*
 
 ## Acceso a la aplicación
 
-Una vez levantado/desplegado el proyecto, se puede ingresar mediante un navegador a través de la URL
+Una vez levantado/desplegado el proyecto, se puede acceder desde un navegador en la URL
 - `http://localhost:5173`
-
-
 
 ## 📐 Metodología
 
@@ -183,10 +183,10 @@ El proyecto sigue la metodología **CRISP-ML(Q)** (Cross-Industry Standard Proce
 assurance). Cada fase, sus controles de calidad y riesgos están documentados en
 [docs/CRISP-ML-Q.md](docs/CRISP-ML-Q.md).
 
-**Cómo se evalúa el modelo.** El pronóstico se valida con *backtesting* **walk-forward
-recursivo** (sin fuga) contra **dos líneas base ingenuas**: la **persistencia** (repetir el último mes) y la
+**Cómo se evalúa el modelo.** El pronóstico se valida con una **validación retrospectiva de origen
+rodante** (*backtesting walk-forward* recursivo, sin fuga de información) contra **dos líneas base ingenuas**: la **persistencia** (repetir el último mes) y la
 **estacional** (mismo mes del año anterior). La métrica de cabecera es el **MASE** (error escalado, estándar
-para series de conteo) —**no** el sMAPE, que en hechos casi nulos (0/1) se dispara a >100% por artefacto
+para series de conteo) —**no** el sMAPE, que en hechos casi nulos (0/1) se dispara a >100 % por artefacto
 aritmético, no por error real—. El modelo **supera a ambas líneas base** en MAE y MASE a 1 paso y en el
 horizonte completo que se sirve (6 meses), y su ventaja **crece con el horizonte**; el único punto donde cede
 es el sMAPE a 1 paso (el citado artefacto). Su valor se concentra en las series de **volumen medio y alto**
@@ -221,7 +221,8 @@ cubrir la mitad de *"Justicia"* del reto, VigIA incorpora el dataset *Procesos F
 → Juicio → Ejecución de Penas), una señal que ningún conteo de delitos tiene. Hallazgo nacional real: **solo
 ~8,5 % de las noticias criminales superan la indagación** (Bogotá, 5,6 %). No se fusiona con la serie de la
 Policía (*proceso* ≠ *hecho registrado* → sería doble conteo). Como su API de agregación no es viable a ese
-volumen, se ingiere por **streaming keyset + agregación local** (reproducible sin token). Detalle, cifras y
+volumen, se ingiere por **paginación continua por clave (*streaming keyset*) + agregación local**
+(reproducible sin token). Detalle, cifras y
 *Advertencias de uso* en [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md#capa-justicia--fiscalía-general-de-la-nación-fuente-de-otra-entidad-capa-paralela).
 
 **Contexto demográfico — población municipal (DANE).** Para medir la criminalidad como **tasa por 100.000
@@ -234,8 +235,22 @@ dato abierto de entidad pública admitido por el concurso. Detalle en
 
 **Datos estructurados + no estructurados.** Además de las series, el asistente RAG indexa **documentos de
 política pública** (PDF/Word) para responder sobre el marco normativo citando la fuente **por página**
-(p. ej. la *Política de Seguridad, Defensa y Convivencia Ciudadana 2022-2026* del Ministerio de Defensa).
-Para incluir documentos, se deben colocar en la carpeta `data/kb_docs/` y ejecutar `docker compose exec ml python -m vigia rag-index` con el fin de indexar los documentos y que sean tenidos en cuenta para las respuestas del RAG.
+(p. ej. la *Política de Seguridad, Defensa y Convivencia Ciudadana 2022-2026*[^politica] del Ministerio de Defensa).
+El PDF versionado en `data/kb_docs/` es la **copia íntegra y sin modificaciones** del documento oficial
+publicado por la Policía Nacional (verificado: mismo tamaño byte a byte —47.785.152 bytes— que el original
+en línea[^politica]; descargado en junio de 2026). Es un documento público oficial y se redistribuye en el
+repositorio, con cita de su fuente, para que el pilar de **datos no estructurados** sea reproducible en un
+clon sin depender de la disponibilidad del sitio de origen.
+Para incluir documentos adicionales, se deben colocar en la carpeta `data/kb_docs/` y ejecutar `docker compose exec ml python -m vigia rag-index` con el fin de indexarlos y que sean tenidos en cuenta en las respuestas del RAG.
+
+**Cartografía del mapa (recurso de referencia, no estadístico).** La coropleta del Panorama usa el GeoJSON
+`frontend/public/colombia-departamentos.json`: límites departamentales **derivados del Marco Geoestadístico
+Nacional (MGN) del DANE** —el código DANE de departamento viaja en la propiedad `DPTO`, que es como se cruza
+con `/crimes/departamentos`—, obtenidos vía distribución comunitaria de esos límites oficiales y
+**simplificados para uso web** (propiedades reducidas a `DPTO`/`NOMBRE_DPT` y coordenadas redondeadas a 3
+decimales; 33 entidades: 32 departamentos + Bogotá D.C.). Todas las **cifras** del mapa provienen de los
+datasets de la Policía; el GeoJSON solo aporta la geometría. Los teselados de fondo son de
+© OpenStreetMap / © CARTO, atribuidos en la propia interfaz del mapa.
 
 **Señal en tiempo real (prensa).** El dato oficial de la Policía es **mensual y con rezago**; como
 complemento, el tablero incorpora una **señal en tiempo real** de prensa. En la pestaña **Panorama**, al
@@ -297,9 +312,9 @@ prioriza por su menor participación digital, la cobertura concreta es:
 
 | Región | Municipios modelados | Series modeladas | Hechos delictivos | Población |
 |---|---|---|---|---|
-| **Amazonía** | 44 / 56 | 498 | 118.731 | 1,13 M |
-| **Orinoquía** | 58 / 60 | 768 | 313.726 | 2,12 M |
-| **San Andrés y Providencia** | 2 / 2 | 21 | 14.300 | 62 k |
+| **Amazonía** | 44 / 56 | 498 | 118.731 | 1,13 millones |
+| **Orinoquía** | 58 / 60 | 768 | 313.726 | 2,12 millones |
+| **San Andrés y Providencia** | 2 / 2 | 21 | 14.300 | 62.000 |
 
 Los municipios **no** modelados (p. ej. Guainía 1/6, Vaupés 3/5) son los de la Amazonía profunda cuya serie
 es demasiado dispersa (<12 meses con hechos) para un pronóstico fiable — y esa **escasez de dato es en sí un
@@ -322,7 +337,7 @@ También se puede consultar la arquitectura de la aplicación en [docs/ARCHITECT
 VigIA usa un **modelo de acceso híbrido** que preserva la transparencia de los datos abiertos y a la vez
 blinda los recursos costosos:
 
-- **Público (con *rate-limiting*):** panorama, mapa, alertas y series.
+- **Público (con limitación de peticiones, *rate-limiting*):** panorama, mapa, alertas y series.
 - **Protegido con JWT:** el **pronóstico**, el **simulador**, el **asistente** y el **informe** (cómputo de IA), para evitar abuso/DoS.
 
 Cualquier ciudadano puede **crear una cuenta** (rol `citizen`) desde `POST /auth/register` —o el botón
@@ -332,12 +347,12 @@ que el admin y está limitado por IP para evitar altas masivas. Para un desplieg
 `REGISTRATION_ENABLED=false` deshabilita el alta pública (el servidor responde `403` y la UI oculta el botón).
 
 La autenticación es **JWT (access token corto) + refresh token rotativo en Redis**, con revocación
-(logout), hashing **bcrypt**, bloqueo contra ataques de fuerza bruta, *rate-limiting*, límite de tamaño de
+(logout), hash de contraseñas con **bcrypt**, bloqueo contra ataques de fuerza bruta, limitación de peticiones, límite de tamaño de
 petición y cabeceras de seguridad (incluida una **Content-Security-Policy** en el frontend, calibrada a los
 orígenes del tablero).
 Configurable por `.env` (`JWT_SECRET`, `JWT_EXPIRATION`, `JWT_REFRESH_EXPIRATION`, `ADMIN_*`). En
 producción (`APP_ENV=production`) el backend **aborta si `JWT_SECRET` o `ADMIN_PASSWORD` siguen en sus
-valores públicos por defecto** (los que trae el repositorio) o si la contraseña es débil (fail-closed); en
+valores públicos por defecto** (los que trae el repositorio) o si la contraseña es débil (*fail-closed*: ante la duda, bloquea); en
 desarrollo se permiten con un aviso, para no frenar la demo. La ciudadanía se
 da de alta con rol `citizen` vía `POST /auth/register`; el usuario **administrador** se inserta al arrancar
 con `ADMIN_USERNAME`/`ADMIN_PASSWORD`. Detalle en
@@ -347,30 +362,30 @@ con `ADMIN_USERNAME`/`ADMIN_PASSWORD`. Detalle en
 
 VigIA usa exclusivamente **datos públicos y agregados** (sin información personal identificable), en línea
 con la Ley 1581 de 2012 (Habeas Data). Los pronósticos son una **ayuda a la decisión**, no un mecanismo de
-vigilancia individual ni de *policing* predictivo sobre personas. Frente al **bucle de retroalimentación**
-del *policing* predictivo (más patrullaje → más hechos registrados → más predicción), VigIA lo **acota por
+vigilancia individual ni de policía predictiva (*predictive policing*) sobre personas. Frente al **bucle de
+retroalimentación** de la policía predictiva (más patrullaje → más hechos registrados → más predicción), VigIA lo **acota por
 diseño**: granularidad territorial agregada (no individual), anomalías relativas a cada serie (no se
 concentran en las ciudades grandes), exclusión de la actividad policial de las alertas, aviso de uso
 responsable en la pestaña *Alertas* y en el *prompt* del asistente, y la decisión de despliegue en manos del
 equipo humano. El sesgo de subregistro/despliegue subyacente **no se elimina** (no hay variable de exposición
-abierta) y se declara como tal. Detalle en
-[docs/CRISP-ML-Q.md](docs/CRISP-ML-Q.md#el-bucle-de-retroalimentación-del-policing-predictivo-y-cómo-se-acota).
+abierta) y se declara como tal. Detalle en [docs/CRISP-ML-Q.md](docs/CRISP-ML-Q.md#el-bucle-de-retroalimentación-de-la-policía-predictiva-y-cómo-se-acota).
 
 **Publicación.**
-El código fuente, la documentación y la evidencia de uso de datos abiertos están disponibles: en el repositorio 
-- Repositorio de acceso público [github.com/diegoa-rodriguezc/vigia](https://github.com/diegoa-rodriguezc/vigia), garantizando que la
-solución sea verificable, descargable y auditable. 
+- El código fuente, la documentación y la evidencia de uso de datos abiertos están disponibles en el
+  repositorio de acceso público [github.com/diegoa-rodriguezc/vigia](https://github.com/diegoa-rodriguezc/vigia),
+  lo que garantiza que la solución sea verificable, descargable y auditable.
 - El registro en la sección de **usos de datos.gov.co**
-([herramientas.datos.gov.co/usos](https://herramientas.datos.gov.co/usos)) se realizará al momento de la
-entrega y evaluación.
+  ([herramientas.datos.gov.co/usos](https://herramientas.datos.gov.co/usos)) se realizará al momento de la
+  entrega y evaluación.
 
 ## 📄 Licencia
 
-MIT — ver [LICENSE](LICENSE). 
+MIT — ver [LICENSE](LICENSE).
 
 ---
 
 **Referencias**
+[^politica]: Política de Seguridad Defensa y Convivencia Ciudadana. [Ministerio de Defensa Nacional](https://www.policia.gov.co/sites/default/files/2024-12/Pol%C3%ADtica%20de%20Seguridad%20Defensa%20y%20Convivencia%20Ciudadna.pdf)
 [^costo]: Estudio de Fedesarrollo y el Banco Interamericano de Desarrollo (BID): los costos del crimen y la
     violencia en Colombia equivalen al **3,64 % del PIB (~$68 billones, 2022)**. Reseñado en
     [Portafolio](https://www.portafolio.co/economia/regiones/cuanto-dinero-cuesta-la-situacion-de-violencia-en-colombia-617292)

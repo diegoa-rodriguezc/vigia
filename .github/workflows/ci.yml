@@ -1,0 +1,77 @@
+# CI de VigIA: verifica en una máquina limpia que el código compila y los tests pasan.
+# No ejecuta el pipeline de datos (depende de APIs externas y del LLM local): eso se
+# reproduce con `make deploy` (ver README) y su plan de contingencia de datos.
+name: CI
+
+on:
+  push:
+    branches: [main, dev-darc]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ml:
+    name: Tests Python (ml)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11" # misma versión que ml/Dockerfile
+          cache: pip
+          cache-dependency-path: ml/pyproject.toml
+      - name: Instalar el paquete (modo editable + dev)
+        run: pip install -e ".[dev]"
+      # Los tests corren offline por diseño (sin Postgres/Ollama/red).
+      - name: pytest
+        run: pytest -q
+
+  backend:
+    name: Tests Go (backend)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22" # misma versión que go.mod
+          cache-dependency-path: backend/go.sum
+      # Los tests de auth usan miniredis: no requieren Redis ni Postgres reales.
+      - name: go test
+        run: go test ./...
+
+  frontend:
+    name: Tests y build del frontend (React)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar dependencias (reproducible)
+        run: npm ci
+      - name: vitest
+        run: npm test
+      - name: Build de producción (tsc + vite)
+        run: npm run build
+
+  docker:
+    name: Build de imágenes Docker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # El servicio ml declara `env_file: .env`; el de ejemplo basta para el build.
+      - name: Preparar .env de ejemplo
+        run: cp .env.example .env
+      - name: docker compose build
+        run: docker compose build

@@ -12,6 +12,27 @@ conocimiento accionable** para fortalecer las políticas públicas de seguridad 
 
 ---
 
+**Tabla de contenido**
+
+- [Problema y propuesta de valor](#-problema-y-propuesta-de-valor)
+- [El tablero en imágenes](#️-el-tablero-en-imágenes)
+- [Arquitectura](#-arquitectura)
+- [Estructura del repositorio](#️-estructura-del-repositorio)
+- [Instalación](#-instalación)
+    - [Ejecución en CPU](#ejecución-en-cpu)
+    - [Aceleración por GPU (opcional)](#aceleración-por-gpu-opcional)
+- [Acceso a la aplicación](#-acceso-a-la-aplicación)
+    - [Inicio de sesión (funciones de IA)](#inicio-de-sesión-funciones-de-ia)
+    - [Navegación por el tablero](#navegación-por-el-tablero)
+- [Metodología](#-metodología)
+- [Datos abiertos utilizados](#-datos-abiertos-utilizados)
+- [Alineación con las Hojas de Ruta de Datos Abiertos Estratégicos](#️-alineación-con-las-hojas-de-ruta-de-datos-abiertos-estratégicos)
+- [Impacto, escalabilidad y enfoque territorial](#-impacto-escalabilidad-y-enfoque-territorial)
+- [Equipo](#-equipo)
+- [Seguridad y acceso](#-seguridad-y-acceso)
+- [Ética y reproducibilidad](#️-ética-y-reproducibilidad)
+- [Licencia](#-licencia)
+
 ## 🎯 Problema y propuesta de valor
 
 Las entidades territoriales y la ciudadanía carecen de herramientas que conviertan el enorme volumen
@@ -30,11 +51,12 @@ de datos delictivos publicados por las entidades públicas en **decisiones preve
 
 ## 🖼️ El tablero en imágenes
 
-> El tablero cuenta con ocho vistas/pestañas. **Pronóstico**, **Simulador**, **Asistente** e **Informe** requieren
+> El tablero cuenta con ocho pestañas. **Pronóstico**, **Simulador**, **Asistente** e **Informe** requieren
 > inicio de sesión (cómputo de IA protegido); **Panorama**, **Alertas**, **Justicia** y **Salud del modelo**
 > son públicas.
 
 A continuación se presentan las capturas de pantalla de la aplicación:
+
 | Panorama | Alertas tempranas |
 |---|---|
 | [![Panorama — KPIs, ranking y mapa coroplético](docs/screenshots/01-panorama.png)](docs/screenshots/01-panorama.png) | [![Alertas tempranas — anomalías por severidad](docs/screenshots/02-alertas.png)](docs/screenshots/02-alertas.png) |
@@ -43,7 +65,7 @@ A continuación se presentan las capturas de pantalla de la aplicación:
 | Pronóstico | Asistente ciudadano |
 |---|---|
 | [![Pronóstico — historia, predicción y banda de incertidumbre](docs/screenshots/03-pronostico.png)](docs/screenshots/03-pronostico.png) | [![Asistente — respuesta con citación de fuente](docs/screenshots/04-asistente.png)](docs/screenshots/04-asistente.png) |
-| Selección municipio × categoría con **historia + pronóstico + banda de incertidumbre** (80 % nominal, **calibrada empíricamente sobre los residuos del propio backtest** — cobertura 80 % por construcción, ver [CRISP-ML(Q)](docs/CRISP-ML-Q.md#4-evaluación-del-modelo)). | Responde **solo con datos oficiales** y **cita cada cifra** (fichas de fuente). En el modo por defecto (**Ollama local**) usa **RAG clásico** —la captura—; con un proveedor con uso de herramientas (*tool-use*: **Anthropic/OpenAI**) opera como **agente que elige y encadena herramientas** (pronóstico, anomalías, embudo de Justicia…). |
+| Selección municipio × categoría con **historia + pronóstico + banda de incertidumbre** (80 % nominal, **calibrada empíricamente sobre los residuos de la propia validación retrospectiva** (*backtest*) — cobertura 80 % por construcción, ver [CRISP-ML(Q)](docs/CRISP-ML-Q.md#4-evaluación-del-modelo)). | Responde **solo con datos oficiales** y **cita cada cifra** (fichas de fuente). En el modo por defecto (**Ollama local**) usa **RAG clásico** —la captura—; con un proveedor con uso de herramientas (*tool-use*: **Anthropic/OpenAI**) opera como **agente que elige y encadena herramientas** (pronóstico, anomalías, embudo de Justicia…). |
 
 | Simulador | Salud del modelo |
 |---|---|
@@ -55,16 +77,19 @@ A continuación se presentan las capturas de pantalla de la aplicación:
 | [![Justicia — embudo de judicialización de la Fiscalía](docs/screenshots/07-justicia.png)](docs/screenshots/07-justicia.png) | [![Informe — informe ejecutivo municipal generado por IA](docs/screenshots/08-informe.png)](docs/screenshots/08-informe.png) |
 | **Embudo de judicialización** de la Fiscalía (capa paralela): tasa nacional **8,51 %**, KPIs, barras por departamento y tabla por municipio. | **Informe ejecutivo municipal** generado por IA, **anclado a las cifras oficiales** (panorama, alertas, pronóstico, judicialización) con **fichas auditables**. |
 
-**Cómo usar la herramienta:**
+**Qué ofrece cada pestaña:**
 
-1. *Panorama* → ubique los territorios y delitos con mayor incidencia en el mapa y el ranking; **haga clic en un departamento** para ver sus **señales de prensa recientes** en el panel de la derecha.
-2. *Alertas tempranas* → revise qué municipios tienen repuntes atípicos recientes (no solo volumen alto).
-3. *Justicia* → consulte el embudo de judicialización de la Fiscalía y la tasa por municipio/departamento.
-4. *Pronóstico* → proyecte un delito en un municipio a varios meses con su banda de incertidumbre.
-5. *Simulador* → mueva las palancas de una intervención o un cambio de población y observe cuántos hechos se evitarían frente al pronóstico base.
-6. *Asistente* → pregunte en lenguaje natural ("¿cuál fue el delito más frecuente en Cali?" o "¿cómo se proyectan los hurtos en Medellín?") y reciba una respuesta con su respectiva fuente.
-7. *Informe* → genere un informe ejecutivo del municipio (panorama, alertas, pronóstico y judicialización), también accesible desde el botón **Generar informe** del desglose por municipio del Panorama.
-8. *Salud del modelo* → revise el semáforo de frescura, la deriva (PSI - Population Stability Index) y la validación del pronóstico a 12 meses.
+1. *Panorama* — los territorios y delitos de mayor incidencia en mapa y ranking; al hacer clic en un departamento, sus **señales de prensa recientes** en el panel de la derecha.
+2. *Alertas tempranas* — los municipios con repuntes atípicos recientes (no solo volumen alto).
+3. *Justicia* — el embudo de judicialización de la Fiscalía y la tasa por municipio/departamento.
+4. *Pronóstico* — la proyección de un delito en un municipio a varios meses, con su banda de incertidumbre.
+5. *Simulador* — palancas de intervención o de cambio de población, con los hechos que se evitarían frente al pronóstico base.
+6. *Asistente* — preguntas en lenguaje natural ("¿cuál fue el delito más frecuente en Cali?", "¿cómo se proyectan los hurtos en Medellín?") respondidas con su fuente.
+7. *Informe* — un informe ejecutivo del municipio (panorama, alertas, pronóstico y judicialización), también accesible desde el botón **Generar informe** del desglose por municipio del Panorama.
+8. *Salud del modelo* — el semáforo de frescura, la deriva (PSI - Population Stability Index) y la validación del pronóstico a 12 meses.
+
+> Para un **recorrido guiado paso a paso** tras el despliegue, ver
+> [Navegación por el tablero](#navegación-por-el-tablero).
 
 ## 🧱 Arquitectura
 
@@ -90,7 +115,7 @@ vigia/
 ```
 
 > [!IMPORTANT]
-> El presente proyecto tiene una implementación de un RAG (Retrieval-Augmented Generation), por lo cual 
+> El presente proyecto tiene una implementación de un RAG (Retrieval-Augmented Generation), por lo cual
 > si su equipo tiene tarjeta gráfica NVIDIA, se recomienda realizar los pasos mencionados en la sección
 > [Aceleración por GPU](#aceleración-por-gpu-opcional) para su despliegue; de lo contrario, realice
 > la [Ejecución en CPU](#ejecución-en-cpu), lo cual influye en el tiempo de despliegue del proyecto.
@@ -118,7 +143,7 @@ vigia/
 
 ### Ejecución en CPU
 
-En una ventana de comandos (cmd/terminal), ejecutar los comandos que a continuación se describen:
+En una ventana de comandos (cmd/terminal), ejecute los comandos que se describen a continuación:
 
 1. Clone el repositorio (donde se ejecute el comando es donde se va a almacenar el código)
 ```bash
@@ -142,7 +167,7 @@ make deploy                   # up + descarga de modelos + pipeline con datos (t
 
 Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tardar alrededor de 1 hora, debido a la descarga de las fuentes de datos, así como a la indexación de la base de conocimiento del RAG en CPU.*
 
-> [!TIP] 
+> [!TIP]
 > Para conocer más comandos ejecute `make help`, que lista todos los atajos disponibles con su descripción.
 
 ### Aceleración por GPU (opcional)
@@ -151,7 +176,7 @@ Con el anterior comando, se levantan los contenedores de Docker con las imágene
 > Requisitos: driver NVIDIA + **NVIDIA Container Toolkit** (Linux) o **Docker Desktop con backend WSL2**
 > y driver NVIDIA con soporte WSL (Windows).
 
-En una ventana de comandos (cmd/terminal), ejecutar los comandos que a continuación se describen:
+En una ventana de comandos (cmd/terminal), ejecute los comandos que se describen a continuación:
 
 1. Clone el repositorio (donde se ejecute el comando es donde se va a almacenar el código)
 ```bash
@@ -172,15 +197,14 @@ cp .env.example .env
 4. Ejecute el comando para despliegue en GPU
 ```bash
 # ejecución en GPU
-make deploy-gpu      
+make deploy-gpu
 ```
 
 Con el anterior comando, se levantan los contenedores de Docker con las imágenes necesarias para el despliegue del proyecto. *Este proceso puede tardar alrededor de 30 minutos, debido a la descarga de las fuentes de datos y a la indexación de la base de conocimiento del RAG.*
 
-## Acceso a la aplicación
+## 🌐 Acceso a la aplicación
 
-Una vez levantado/desplegado el proyecto, se puede acceder desde un navegador en la URL
-- `http://localhost:5173`
+Una vez levantado/desplegado el proyecto, se puede acceder desde un navegador en la URL `http://localhost:5173`.
 
 ### Inicio de sesión (funciones de IA)
 
@@ -201,7 +225,7 @@ el cómputo de IA); las otras cuatro son públicas. Dos caminos:
 > Con GPU ([despliegue GPU](#aceleración-por-gpu-opcional)) o con un proveedor gestionado
 > (`LLM_PROVIDER=anthropic|openai` en `.env`) la respuesta del asistente baja a segundos.
 
-### Evalúe en 5 minutos (guion sugerido)
+### Navegación por el tablero
 
 1. **Panorama** (público) — observe los KPI nacionales y el mapa; **haga clic en un departamento** para ver
    sus señales de prensa recientes en el panel derecho, y en un municipio del ranking para su desglose.
@@ -216,8 +240,8 @@ el cómputo de IA); las otras cuatro son públicas. Dos caminos:
 
 ## 📐 Metodología
 
-El proyecto sigue la metodología **CRISP-ML(Q)** (Cross-Industry Standard Process for Machine Learning with Quality
-assurance). Cada fase, sus controles de calidad y riesgos están documentados en
+El proyecto sigue la metodología **CRISP-ML(Q)** (*Cross-Industry Standard Process for Machine Learning with
+Quality Assurance*). Cada fase, sus controles de calidad y riesgos están documentados en
 [docs/CRISP-ML-Q.md](docs/CRISP-ML-Q.md).
 
 **Cómo se evalúa el modelo.** El pronóstico se valida con una **validación retrospectiva de origen
@@ -323,7 +347,7 @@ Detalle del mapeo y la verificación contra la API en [docs/DATA_DICTIONARY.md](
 
 ## 🌎 Impacto, escalabilidad y enfoque territorial
 
-**Problema.** El crimen y la violencia le cuestan a Colombia **el 3,64 % del PIB —unos $68 billones al año— (Fedesarrollo–BID, 2022)**[^costo], 
+**Problema.** El crimen y la violencia le cuestan a Colombia **el 3,64 % del PIB —unos $68 billones al año— (Fedesarrollo–BID, 2022)**[^costo],
 repartidos entre capital humano (0,88 %), sector privado (1,76 %) y sector público (1,0 %). En el plano social, la **percepción de
 inseguridad llegó al 52,9 %** de la población de 15+ años (**DANE, Encuesta de Convivencia y Seguridad
 Ciudadana 2024**)[^dane], y el país registra **~25 homicidios por cada 100.000 habitantes (~13–14 mil al
@@ -345,7 +369,8 @@ atípicos.
 > parámetros) en CPU, caché de respuestas en Redis (cada respuesta cara se computa una vez) y sin exigir GPU
 > dedicada (el descarte razonado está en [docs/IMPACTO.md](docs/IMPACTO.md#5-impacto-esperado-órdenes-de-magnitud)).
 
-**Mecanismo de impacto.** 
+**Mecanismo de impacto.**
+
 1. *Pronóstico por municipio×delito* con banda de incertidumbre → planeación preventiva con horizonte de meses.
 2. *Alertas de anomalías* → reacción temprana ante repuntes.
 3. *Asistente ciudadano* → acceso abierto y transparente a la cifra oficial, fortaleciendo el control
@@ -380,8 +405,6 @@ Los municipios **no** modelados (p. ej. Guainía 1/6, Vaupés 3/5) son los de la
 es demasiado dispersa (<12 meses con hechos) para un pronóstico fiable — y esa **escasez de dato es en sí un
 hallazgo**: VigIA la hace visible con dato oficial en vez de ocultarla. La teoría de cambio y el valor para
 estas regiones se detallan en [docs/IMPACTO.md](docs/IMPACTO.md).
-
-También se puede consultar la arquitectura de la aplicación en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## 👥 Equipo
 
@@ -445,7 +468,8 @@ MIT — ver [LICENSE](LICENSE).
 ---
 
 **Referencias**
-[^politica]: Política de Seguridad Defensa y Convivencia Ciudadana. [Ministerio de Defensa Nacional](https://www.policia.gov.co/sites/default/files/2024-12/Pol%C3%ADtica%20de%20Seguridad%20Defensa%20y%20Convivencia%20Ciudadna.pdf)
+[^politica]: *Política de Seguridad, Defensa y Convivencia Ciudadana 2022-2026* — Ministerio de Defensa
+    Nacional. [PDF oficial (policia.gov.co)](https://www.policia.gov.co/sites/default/files/2024-12/Pol%C3%ADtica%20de%20Seguridad%20Defensa%20y%20Convivencia%20Ciudadna.pdf).
 [^costo]: **Fuente primaria:** Fedesarrollo–BID, *"El crimen y la violencia en Colombia cuestan $68 billones
     al año"* (costos directos del **3,64 % del PIB**, cifra 2022) —
     [repositorio institucional de Fedesarrollo](https://www.repository.fedesarrollo.org.co/handle/11445/4673).
@@ -453,11 +477,9 @@ MIT — ver [LICENSE](LICENSE).
     [Portafolio](https://www.portafolio.co/economia/regiones/cuanto-dinero-cuesta-la-situacion-de-violencia-en-colombia-617292)
     y [La Silla Vacía](https://www.lasillavacia.com/en-vivo/el-crimen-y-la-violencia-en-colombia-cuestan-un-3-6-del-pib/).
     Cifra regional comparable del BID: ~3,4 % del PIB para América Latina y el Caribe.
-
 [^dane]: DANE — **Encuesta de Convivencia y Seguridad Ciudadana (ECSC) 2024**: la percepción de inseguridad
     alcanzó el **52,9 %** de la población de 15 años o más.
     [Boletín oficial (PDF)](https://www.dane.gov.co/files/operaciones/ECSC/bol-ECSC-2024.pdf).
-    
 [^hom]: Tasa de homicidios de **~25 por cada 100.000 habitantes** (~13–14 mil homicidios anuales, 2021–2024),
     según Policía Nacional / Instituto Nacional de Medicina Legal. Serie en
     [Corporación Excelencia en la Justicia](https://cej.org.co/indicadores-de-justicia/criminalidad/homicidios-en-colombia/)

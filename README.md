@@ -1,5 +1,7 @@
 # VigIA 🛡️ — Inteligencia Artificial para la Seguridad Ciudadana y la Justicia
 
+[![CI](https://github.com/diegoa-rodriguezc/vigia/actions/workflows/ci.yml/badge.svg)](https://github.com/diegoa-rodriguezc/vigia/actions/workflows/ci.yml)
+
 > **Concurso Datos al Ecosistema 2026 — IA para Colombia** <br/>
 > **Reto:** Seguridad Ciudadana y Justicia <br/>
 > **Nivel:** Avanzado

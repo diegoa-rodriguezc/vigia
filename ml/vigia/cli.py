@@ -78,7 +78,8 @@ def rag_index() -> None:
 
 @app.command()
 def pipeline() -> None:
-    """Ejecuta el pipeline completo: ingest -> clean -> gold -> train -> load-db -> rag-index.
+    """Ejecuta el pipeline completo:
+    ingest -> clean -> gold -> justicia -> train -> validate-anomalies -> load-db -> rag-index.
 
     Llama a las funciones de librería directamente (no a los comandos Typer, que pasarían
     objetos OptionInfo en vez de los valores por defecto).

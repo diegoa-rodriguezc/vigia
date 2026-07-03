@@ -37,6 +37,8 @@ export default function ChoroplethMap({ departamentos, onSelectDepto, selectedCo
   const [geo, setGeo] = useState<FeatureCollection | null>(null);
 
   useEffect(() => {
+    // Límites derivados del MGN (DANE), simplificados para web; código DANE en DPTO.
+    // Procedencia y atribución: docs/DATASETS.md -> Recursos complementarios.
     fetch("/colombia-departamentos.json")
       .then((r) => r.json())
       .then((j: FeatureCollection) => setGeo(j))

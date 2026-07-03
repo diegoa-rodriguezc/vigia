@@ -92,16 +92,19 @@ los normaliza a un único modelo de evento:
 
 ## 4. Componente de IA
 
-### 4.1 Pronóstico espacio-temporal (`ml/vigia/ml/forecasting.py`)
+### 4.1 Pronóstico por municipio y mes (`ml/vigia/ml/forecasting.py`)
 - **Objetivo:** predecir la cantidad mensual de eventos por municipio y categoría.
 - **Enfoque:** un modelo global (`HistGradientBoostingRegressor`) entrenado sobre todas las series con
   *features* de rezago (lags 1, 2, 3, 6, 12), medias/desviaciones móviles, estacionalidad (mes,
   trimestre, seno/coseno, tendencia) e **identidad de serie** (media histórica expansiva y meses
   activos, que dan al modelo el nivel base de cada municipio×categoría sin fuga de datos).
 - **Incertidumbre:** cada pronóstico incluye una **banda (~80 %)** derivada de la dispersión robusta de
-  los residuos de la validación retrospectiva (*backtest*), ensanchada con √horizonte (error recursivo acumulado).
+  los residuos de la validación retrospectiva (*backtest*), ensanchada con √horizonte (error recursivo
+  acumulado) y con la **escala calibrada empíricamente sobre esos mismos residuos** (`pi_scale`; cobertura
+  80 % por construcción — detalle y acotación en [CRISP-ML(Q) §4](CRISP-ML-Q.md#4-evaluación-del-modelo)).
 - **Validación:** *backtesting* temporal **walk-forward** (origen rodante de varios meses, sin fuga de
-  datos) con MAE / sMAPE contra una línea base ingenua; el modelo final se reentrena con todo el histórico.
+  datos) con MAE / MASE / sMAPE contra **dos líneas base ingenuas** (persistencia y estacional); el modelo
+  final se reentrena con todo el histórico.
   Las métricas se persisten en `reports/model_report.json` (`ml/vigia/ml/evaluate.py`).
 
 ### 4.2 Detección de anomalías (`ml/vigia/ml/anomaly.py`)

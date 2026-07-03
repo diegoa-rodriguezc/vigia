@@ -17,7 +17,7 @@ de datos delictivos publicados por las entidades públicas en **decisiones preve
 
 | Componente IA | Qué hace | Reto del concurso |
 |---|---|---|
-| 🔮 **Pronóstico espacio-temporal** | Predice la incidencia de delitos por municipio y mes, **con banda de incertidumbre** | Analítica predictiva |
+| 🔮 **Pronóstico de criminalidad** | Predice la incidencia de delitos **por municipio y mes**, con banda de incertidumbre | Analítica predictiva |
 | 🎛️ **Simulación de escenarios "¿y si…?"** | Proyecta el efecto de una intervención o un cambio de población sobre el pronóstico y estima **hechos evitados** | Analítica prescriptiva |
 | 🚨 **Detección de anomalías** | Identifica picos atípicos de criminalidad relativos a cada territorio (alerta temprana) | Detección de anomalías |
 | 💬 **Asistente ciudadano (agente con herramientas)** | Responde en lenguaje natural usando solo datos oficiales; el LLM **elige y encadena herramientas** (pronóstico, anomalías, embudo de Justicia, serie histórica, base de conocimiento) y cita cada cifra | IA generativa + agente de IA |
@@ -41,7 +41,7 @@ A continuación se presentan las capturas de pantalla de la aplicación:
 | Pronóstico | Asistente ciudadano |
 |---|---|
 | [![Pronóstico — historia, predicción y banda de incertidumbre](docs/screenshots/03-pronostico.png)](docs/screenshots/03-pronostico.png) | [![Asistente — respuesta con citación de fuente](docs/screenshots/04-asistente.png)](docs/screenshots/04-asistente.png) |
-| Selección municipio × categoría con **historia + pronóstico + banda de incertidumbre** (80 % nominal, **calibrada empíricamente** a 80 % de cobertura real — ver [CRISP-ML(Q)](docs/CRISP-ML-Q.md#4-evaluación-del-modelo)). | Responde **solo con datos oficiales** y **cita cada cifra** (fichas de fuente). En el modo por defecto (**Ollama local**) usa **RAG clásico** —la captura—; con un proveedor con uso de herramientas (*tool-use*: **Anthropic/OpenAI**) opera como **agente que elige y encadena herramientas** (pronóstico, anomalías, embudo de Justicia…). |
+| Selección municipio × categoría con **historia + pronóstico + banda de incertidumbre** (80 % nominal, **calibrada empíricamente sobre los residuos del propio backtest** — cobertura 80 % por construcción, ver [CRISP-ML(Q)](docs/CRISP-ML-Q.md#4-evaluación-del-modelo)). | Responde **solo con datos oficiales** y **cita cada cifra** (fichas de fuente). En el modo por defecto (**Ollama local**) usa **RAG clásico** —la captura—; con un proveedor con uso de herramientas (*tool-use*: **Anthropic/OpenAI**) opera como **agente que elige y encadena herramientas** (pronóstico, anomalías, embudo de Justicia…). |
 
 | Simulador | Salud del modelo |
 |---|---|
@@ -98,6 +98,9 @@ vigia/
 > [!WARNING]
 > **Requisitos:**
 > - *Sistema operativo:* Windows 10/11, macOS 10.15 o superior, Linux (distribución a su elección).
+> - *Hardware:* se recomiendan **16 GB de RAM** (los límites de memoria de los servicios suman ~13 GB y los
+>   modelos de Ollama necesitan quedar residentes) y **~20 GB de disco libre** (imágenes de Docker, modelos
+>   del LLM y lago de datos). Con 8 GB el despliegue completo puede fallar o degradarse notablemente.
 > - Tener instalado [Docker](https://www.docker.com/products/docker-desktop/)
 > - Tener instalado [Git](https://git-scm.com/) ([GitHub Desktop](https://github.com/apps/desktop) es opcional)
 > - Tener instalado Make
@@ -177,6 +180,38 @@ Con el anterior comando, se levantan los contenedores de Docker con las imágene
 Una vez levantado/desplegado el proyecto, se puede acceder desde un navegador en la URL
 - `http://localhost:5173`
 
+### Inicio de sesión (funciones de IA)
+
+Las pestañas **Pronóstico**, **Simulador**, **Asistente** e **Informe** requieren iniciar sesión (protegen
+el cómputo de IA); las otras cuatro son públicas. Dos caminos:
+
+- **Crear una cuenta ciudadana:** botón **Crear cuenta** en la ventana de inicio de sesión (habilitado por
+  defecto, `REGISTRATION_ENABLED=true`). La cuenta con rol `citizen` da acceso a todas las funciones de IA.
+- **Cuenta administradora de demostración:** las credenciales definidas en su `.env`
+  (`ADMIN_USERNAME`/`ADMIN_PASSWORD`; los valores del `.env.example` son `admin` / `Demo.VigIA.2026`).
+  Son valores **de demostración pública**: en producción (`APP_ENV=production`) el backend **aborta el
+  arranque** si siguen sin cambiarse.
+
+> [!NOTE]
+> **Latencia esperable en CPU:** el **Asistente** y el **Informe** invocan el LLM local y tardan **~30-90 s
+> por respuesta** (hasta ~2 min en frío); las consultas repetidas se sirven de la caché en milisegundos
+> (cabecera `X-Cache: HIT`). El **Pronóstico** y el **Simulador** responden en segundos (no invocan el LLM).
+> Con GPU ([despliegue GPU](#aceleración-por-gpu-opcional)) o con un proveedor gestionado
+> (`LLM_PROVIDER=anthropic|openai` en `.env`) la respuesta del asistente baja a segundos.
+
+### Evalúe en 5 minutos (guion sugerido)
+
+1. **Panorama** (público) — observe los KPI nacionales y el mapa; **haga clic en un departamento** para ver
+   sus señales de prensa recientes en el panel derecho, y en un municipio del ranking para su desglose.
+2. **Alertas** (público) — repuntes atípicos *relativos a cada territorio*, con su severidad y su valor z.
+3. **Justicia** (público) — embudo de judicialización de la Fiscalía (tasa nacional **8,51 %**).
+4. **Inicie sesión** (sección anterior) y abra **Pronóstico** — p. ej. *Medellín × Homicidio*: historia,
+   proyección a 6 meses y banda de incertidumbre.
+5. **Simulador** — mueva la palanca de intervención y observe los **hechos evitados** frente al pronóstico base.
+6. **Asistente** — pregunte, p. ej., *"¿cómo se proyectan los hurtos en Medellín?"* (en CPU tarda ~30-90 s;
+   la respuesta cita sus fuentes).
+7. **Salud del modelo** (público) — semáforo de frescura, deriva (PSI) y validación a 12 meses.
+
 ## 📐 Metodología
 
 El proyecto sigue la metodología **CRISP-ML(Q)** (Cross-Industry Standard Process for Machine Learning with Quality
@@ -187,9 +222,13 @@ assurance). Cada fase, sus controles de calidad y riesgos están documentados en
 rodante** (*backtesting walk-forward* recursivo, sin fuga de información) contra **dos líneas base ingenuas**: la **persistencia** (repetir el último mes) y la
 **estacional** (mismo mes del año anterior). La métrica de cabecera es el **MASE** (error escalado, estándar
 para series de conteo) —**no** el sMAPE, que en hechos casi nulos (0/1) se dispara a >100 % por artefacto
-aritmético, no por error real—. El modelo **supera a ambas líneas base** en MAE y MASE a 1 paso y en el
-horizonte completo que se sirve (6 meses), y su ventaja **crece con el horizonte**; el único punto donde cede
-es el sMAPE a 1 paso (el citado artefacto). Su valor se concentra en las series de **volumen medio y alto**
+aritmético, no por error real—. El modelo **supera a ambas líneas base en MAE**, a 1 paso y en el horizonte
+completo que se sirve (6 meses), y a la persistencia **también en MASE** (el reporte no publica el MASE de la
+estacional). Los márgenes, declarados con honestidad: frente a la **persistencia** la ventaja a 1 paso es
+**modesta (+2,7 %)** y **se ensancha al proyectar** (+14 % en MAE multipaso, con ventaja creciente por paso);
+frente a la **estacional** es de ≈+10 % en MAE (1 paso y multipaso), aunque no en todos los pasos (a 2 meses
+la estacional queda ligeramente por delante) y en **sMAPE multipaso ambas quedan en empate práctico**
+(113,5 vs 113,5). Cede en el sMAPE a 1 paso (el citado artefacto). Su valor se concentra en las series de **volumen medio y alto**
 —donde hay señal recurrente y la planeación preventiva importa—; en las ultra-dispersas el naive es casi
 óptimo por construcción y no se sobre-afirma nada. Las cifras reproducibles están en
 [reports/model_report.json](reports/model_report.json).

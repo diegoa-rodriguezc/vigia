@@ -111,8 +111,9 @@ base propio de cada serie sin fuga de datos.
   permutación, RNG sembrado en el muestreo), el `HistGradientBoostingRegressor` con `early_stopping='auto'`
   corta según un score de validación sensible a las reducciones de punto flotante **multi-hilo** (OpenMP, no
   asociativas) → el nº de iteraciones y las métricas fluctúan ~1 % (p. ej. MAE 1-paso ≈1,92). **Las
-  conclusiones cualitativas son estables** (supera a **ambas** líneas base —persistencia y estacional— en
-  MAE/MASE a 1-paso y multipaso, y en sMAPE multipaso; veredictos por tercil constantes). Forzar un solo hilo (`OMP_NUM_THREADS=1`) debería **reducir o eliminar**
+  conclusiones cualitativas son estables** (supera a **ambas** líneas base en MAE a 1 paso y multipaso, y a
+  la persistencia también en MASE; el empate práctico con la estacional en sMAPE multipaso y los veredictos
+  por tercil se mantienen entre corridas). Forzar un solo hilo (`OMP_NUM_THREADS=1`) debería **reducir o eliminar**
   esa fluctuación numérica (al quitar las reducciones multi-hilo), a costa de un entrenamiento mucho más lento; se deja como opción para quien requiera reproducir cifras exactas, no como el camino por defecto.
 
 ## 4. Evaluación del modelo
@@ -121,8 +122,9 @@ base propio de cada serie sin fuga de datos.
 > datos antiguos y le pedimos que adivine meses que ya conocemos, comparándolo con dos reglas ingenuas
 > ("repetir el último dato" y "el mismo mes del año pasado"). Todas las métricas de abajo (MAE, MASE, sMAPE)
 > salen de ese ejercicio: cuanto más bajas, mejor. La conclusión honesta es que el modelo **gana a ambas
-> reglas** al proyectar varios meses —que es lo que se usa—, y que el sMAPE alto que se ve es un **artefacto**
-> de contar hechos casi nulos, no un error real del pronóstico.
+> reglas en error absoluto (MAE)** al proyectar varios meses —que es lo que se usa—, con margen amplio sobre
+> "repetir el último dato" y más ajustado sobre "el mismo mes del año pasado"; y que el sMAPE alto que se ve
+> es un **artefacto** de contar hechos casi nulos, no un error real del pronóstico.
 
 - **Backtesting walk-forward RECURSIVO (rolling origin), sin fuga:** para cada uno de los últimos
   `n_splits` orígenes se entrena solo con el pasado y se pronostica el horizonte completo (`test_months`,
@@ -139,11 +141,12 @@ base propio de cada serie sin fuga de datos.
   (0/1) el denominador `|y|+|ŷ|` colapsa y el sMAPE se satura cerca de su tope (200 %). Por eso la métrica
   primaria es el **MASE** (*Mean Absolute Scaled Error*, Hyndman): el MAE **escalado por el MAE ingenuo
   1-paso _dentro de muestra_ de cada serie**, adimensional y comparable entre territorios. El MASE del modelo
-  (**≈1,36** a 1 paso, **≈1,49** multipaso) queda **por debajo** del de la persistencia (**≈1,44 / ≈1,66**) y
-  del de la estacional. Que el MASE sea **>1** es honesto —pronosticar fuera de muestra estos conteos ruidosos
-  es más difícil que el naive dentro de muestra—; lo relevante es que el modelo **bate a ambas varas en la
+  (**≈1,36** a 1 paso, **≈1,49** multipaso) queda **por debajo** del de la persistencia (**≈1,44 / ≈1,66**);
+  el reporte **no publica el MASE de la estacional** — frente a ella la comparación se hace en MAE. Que el
+  MASE sea **>1** es honesto —pronosticar fuera de muestra estos conteos ruidosos
+  es más difícil que el naive dentro de muestra—; lo relevante es que el modelo **bate a la persistencia en la
   misma escala**. *Skill* en MAE: ≈**+2,7 %** vs. persistencia y ≈**+10 %** vs. estacional a 1 paso; ≈**+14 %** /
-  ≈**+10 %** multipaso (`skill_mae_vs_*` en el reporte).
+  ≈**+9 %** multipaso (`skill_mae_vs_*` en el reporte).
 - **Desglose por volumen de serie (`por_volumen`):** MAE/sMAPE/MASE del modelo vs. líneas base por **tercil de
   volumen mensual**. Reconcilia la lectura del agregado: en el tercil de **volumen ínfimo** (conteos
   esporádicos donde el error absoluto es diminuto y domina el agregado) **ambas** líneas base son imbatibles
@@ -162,7 +165,11 @@ base propio de cada serie sin fuga de datos.
   series de alto volumen daba una banda **demasiado ancha** —cobertura empírica **94,4 %** frente al 80 %
   nominal, fuera del rango [70 %, 90 %] de [6.2](#62-deriva-de-concepto--degradación-del-modelo)—; tras la calibración `pi_scale ≈ 0,71` y la cobertura cae a
   **80,0 %** (1 paso y multipaso), dentro de umbral. El punto del pronóstico (MAE/sMAPE) no cambia: la
-  calibración solo dimensiona el ancho del intervalo.
+  calibración solo dimensiona el ancho del intervalo. **Acotación (para no sobre-afirmar):** la cobertura del
+  80,0 % se mide sobre el **mismo backtest** con el que se calibró `pi_scale` — los residuos son out-of-fold
+  respecto al modelo, pero calibración y verificación comparten datos, así que la cobertura iguala el nominal
+  **por construcción**, no como validación independiente de la banda. Una validación estricta exigiría
+  calibrar en unos orígenes y medir la cobertura en otros (pendiente declarado, no una omisión encubierta).
 - **Interpretabilidad (`interpretabilidad.features`):** importancia de features por **permutación**
   (`sklearn.inspection.permutation_importance`, puntuación = −MAE) sobre una muestra del conjunto modelado.
   El `HistGradientBoostingRegressor` no expone `feature_importances_`; la permutación es agnóstica al
@@ -178,9 +185,12 @@ base propio de cada serie sin fuga de datos.
 - **Criterio de aceptación (múltiple, no una sola métrica):** el modelo debe (a) superar a la persistencia en
   **sMAPE multi-paso** —el horizonte que efectivamente se sirve, 6 meses recursivos— (`supera_linea_base_smape_multipaso`);
   y hoy además (b) la bate en **MAE y MASE a 1 paso y multipaso** (`supera_linea_base_mae`) y (c) supera a la
-  **estacional-ingenua** en MAE a 1 paso y multipaso (`supera_linea_base_estacional_mae[_multipaso]`). **El
-  único punto donde cede es el sMAPE a 1 paso** (≈126 vs ≈118) — el artefacto de los conteos ~0 ya explicado,
-  no una debilidad real del pronóstico—. La ventaja **crece con el horizonte**, que es justo lo que se sirve.
+  **estacional-ingenua** en MAE a 1 paso y multipaso (`supera_linea_base_estacional_mae[_multipaso]`).
+  **Dónde cede (declarado):** el sMAPE a 1 paso (≈126 vs ≈118 — el artefacto de los conteos ~0 ya explicado,
+  no una debilidad real del pronóstico), el **paso 2 en MAE frente a la estacional** (2,37 vs 2,31 — la
+  ventaja sobre esta línea base no es monótona por paso), el **empate práctico con la estacional en sMAPE
+  multipaso** (113,48 vs 113,53) y el tercil de volumen ínfimo (ver `por_volumen`). La ventaja **crece con el
+  horizonte frente a la persistencia**, que es justo lo que se sirve.
 
 **Validación de la detección de anomalías.** No se evalúa por error sino por **precisión/recall contra picos
 inyectados** (ground truth) en un panel sintético (`tests/test_anomaly.py`,
@@ -362,8 +372,9 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
 
 **Estado actual:** modelo aceptado y **reforzado**: tras la Iteración 8 **supera a la persistencia en MAE
 multipaso y sMAPE multipaso** (`supera_linea_base_mae = true`, `supera_linea_base_smape_multipaso = true`),
-revirtiendo la antigua derrota en MAE. **A 1 paso queda en empate técnico en MAE** (≈1,95 vs 1,97, diferencia
-~1 % **dentro del ruido numérico declarado** entre corridas) **y cede en sMAPE** (la persistencia es casi
+revirtiendo la antigua derrota en MAE. **A 1 paso mantiene una ventaja modesta en MAE** (1,92 vs 1,97 en la
+corrida de referencia, ≈+2,7 %; la magnitud es sensible al ruido ~1 % **declarado** entre corridas — entre el
+empate técnico y la ligera ventaja) **y cede en sMAPE** (la persistencia es casi
 imbatible en error relativo a un mes sobre conteos ínfimos), pero ese no es el horizonte servido. El desglose `por_volumen` muestra que el modelo gana en MAE y sMAPE en el tercil
 **medio**, y gana en sMAPE en el **alto** (donde empata en MAE por muy poco, gracias a la mezcla con
 persistencia); el de **volumen ínfimo** queda por detrás en ambas (error absoluto diminuto, "repetir el último
@@ -403,12 +414,13 @@ Iteración 6 el reporte añade `por_volumen` (terciles), `multipaso` (agregado +
 | Iter 3 | 8 datasets (poisson, revertida) ❌ | holdout | 103,4 | 111,0 | 3,4e5 ❌ | 2,38 |
 | Iter 5-7 · 1 paso | 16 ds, conteos | walk-forward rec. (3) | 119,33 | **117,87** | 4,13 | **1,97** |
 | Iter 5-7 · multipaso h6 | 16 ds, conteos | walk-forward rec. (3) | **102,80** | 114,69 | 5,02 | **2,57** |
-| **actual (Iter 8) · 1 paso** | 16 ds + población, **tasa+mezcla** | walk-forward rec. (3) | ≈126 | **117,9** | **≈1,95** | 1,97 |
+| **actual (Iter 8) · 1 paso** | 16 ds + población, **tasa+mezcla** | walk-forward rec. (3) | ≈126 | **117,9** | **≈1,92** | 1,97 |
 | **actual (Iter 8) · multipaso h6** | 16 ds + población, **tasa+mezcla** | walk-forward rec. (3) | **≈113,4** | 114,7 | **≈2,20** | 2,57 |
 
-(Cifras de la corrida de referencia regenerada por `make deploy` — ver `reports/model_report.json`. Tras la **Iteración 8** (población + tasa/100k + mezcla): el modelo **empata a la línea base en MAE a
-1 paso** (≈1,95 vs 1,97, dentro del ruido ~1 %) **y la bate en MAE y sMAPE multipaso** (las filas "actual
-(Iter 8)"); **a 1 paso aún cede en sMAPE** (persistencia casi imbatible en error relativo a un mes). Las filas "Iter 5-7" preservan el estado previo (conteos), cuando
+(Cifras de la corrida de referencia regenerada por `make deploy` — ver `reports/model_report.json`. Tras la **Iteración 8** (población + tasa/100k + mezcla): el modelo **queda ligeramente por delante de la línea base
+en MAE a 1 paso** (≈1,92 vs 1,97, ≈+2,7 %; margen modesto y sensible al ruido ~1 % entre corridas) **y la
+bate en MAE y sMAPE multipaso** (las filas "actual (Iter 8)"); **a 1 paso aún cede en sMAPE** (persistencia
+casi imbatible en error relativo a un mes). Las filas "Iter 5-7" preservan el estado previo (conteos), cuando
 el modelo perdía ~2× en MAE — el contraste evidencia el salto.)
 
 El desglose `por_volumen` que el reporte
@@ -422,7 +434,9 @@ El desglose `por_volumen` que el reporte
 - **`multipaso`** (horizonte recursivo de 6 meses, lo que se sirve): contra la **persistencia multi-paso**
   el modelo gana **tanto en MAE (≈2,20 vs 2,57) como en sMAPE (≈113,4 vs 114,7)**, con ventaja **creciente**
   por paso, porque la persistencia se degrada rápido con el horizonte (a 1 paso el modelo aún cede en sMAPE;
-  la ventaja se abre al proyectar). Se reporta además la **cobertura empírica** de la banda: **80,0 %**, igual
+  la ventaja se abre al proyectar). Contra la **estacional multi-paso** gana en MAE (≈2,21 vs 2,44) pero el
+  sMAPE queda en **empate práctico** (113,48 vs 113,53) y la ventaja en MAE **no es monótona por paso** (a 2
+  meses la estacional queda ligeramente por delante: 2,37 vs 2,31). Se reporta además la **cobertura empírica** de la banda: **80,0 %**, igual
   al 80 % nominal tras la **calibración conformal** de `pi_scale` (antes 94,4 %; ver [4](#4-evaluación-del-modelo)).
 
 > Mejora futura para series de gran volumen: modelos por nivel de volumen o LightGBM/Prophet; pérdida de

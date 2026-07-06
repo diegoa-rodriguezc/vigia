@@ -1,9 +1,9 @@
 {
-  "generado_en": "2026-06-27T21:00:32Z",
+  "generado_en": "2026-07-06T18:44:41Z",
   "estado_global": "amarillo",
   "frescura": {
     "periodo_max": "2026-05",
-    "lag_meses": 1,
+    "lag_meses": 2,
     "estado": "verde"
   },
   "deriva_datos": {

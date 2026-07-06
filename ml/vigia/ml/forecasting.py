@@ -8,12 +8,14 @@ municipios con pocos datos) y es reproducible con semilla fija.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 import joblib
 import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import mean_absolute_error
@@ -25,6 +27,9 @@ from vigia.ml.features import KEY, LAGS, TARGET, feature_columns, make_features
 log = get_logger(__name__)
 
 MODEL_PATH = settings.models_dir / "forecaster.joblib"
+# Metadatos del artefacto (versión de sklearn que lo serializó): un joblib NO es portable entre
+# versiones, y sin esto el error de carga dice qué pasó pero no QUIÉN escribió el modelo.
+META_PATH = MODEL_PATH.with_suffix(".meta.json")
 
 
 @dataclass
@@ -298,9 +303,7 @@ def _walk_forward(
         # Escala de MASE: MAE ingenuo 1-paso DENTRO de la muestra de entrenamiento, por serie
         # (media de |yₜ−yₜ₋₁|). train_df va ordenado por serie+periodo, así que el diff es 1-paso.
         naive_mae = (
-            train_df.assign(_d=train_df.groupby(KEY)[TARGET].diff().abs())
-            .groupby(KEY)["_d"]
-            .mean()
+            train_df.assign(_d=train_df.groupby(KEY)[TARGET].diff().abs()).groupby(KEY)["_d"].mean()
         )
         hist = _as_modeling_target(train_df, mode).copy()  # recursión en espacio de modelado
         for h, tp in enumerate(periodos[oi : oi + horizon], start=1):
@@ -538,7 +541,11 @@ def train(
     )
     settings.ensure_dirs()
     joblib.dump(fitted, MODEL_PATH)
-    log.info("Modelo guardado en %s", MODEL_PATH)
+    META_PATH.write_text(
+        json.dumps({"sklearn": sklearn.__version__, "trained_at": fitted.trained_at}),
+        encoding="utf-8",
+    )
+    log.info("Modelo guardado en %s (sklearn %s)", MODEL_PATH, sklearn.__version__)
     return fitted
 
 
@@ -555,12 +562,19 @@ def load_model() -> ForecastModel:
     try:
         return joblib.load(MODEL_PATH)
     except Exception as exc:  # noqa: BLE001 — cualquier fallo de carga = artefacto inservible
-        import sklearn
-
+        origen = ""
+        try:
+            meta = json.loads(META_PATH.read_text(encoding="utf-8"))
+            origen = (
+                f"; el artefacto fue entrenado con scikit-learn {meta['sklearn']}"
+                f" el {meta.get('trained_at', '¿fecha desconocida?')}"
+            )
+        except Exception:  # noqa: BLE001 — sin meta (artefacto anterior a la guarda) el mensaje base sigue siendo accionable
+            pass
         log.error("No se pudo deserializar el modelo (%s): %s", MODEL_PATH, exc)
         raise RuntimeError(
             "Modelo incompatible con la versión instalada de scikit-learn "
-            f"({sklearn.__version__}). Reentrena con `vigia train` "
+            f"({sklearn.__version__}){origen}. Reentrena con `vigia train` "
             "(o `make docker-pipeline`) para regenerarlo."
         ) from exc
 

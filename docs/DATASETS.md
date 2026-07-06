@@ -63,6 +63,64 @@ curl "https://www.datos.gov.co/resource/fn2v-r4gu.json?\$where=enlace_portal_dat
 
 Detalle narrativo en [../docs/DATA_DICTIONARY.md](../docs/DATA_DICTIONARY.md) y [../README.md](../README.md).
 
+# Licencia y vigencia de las fuentes
+
+**Los 20 conjuntos de datos.gov.co se publican bajo licencia _Creative Commons Attribution — Share Alike
+4.0 International_ (CC BY-SA 4.0)**, verificado **dataset a dataset** contra la API de metadatos del
+portal el **2026-07-06** (no asumido del valor por defecto del portal). Verificación reproducible:
+
+```bash
+for id in m8fd-ahd9 csb4-y6v2 vuyt-mqpw meew-mguv d4fr-sbn2 4rxi-8m8d 7mn7-vzqp bz43-8ahq \
+          4v6r-wu98 q2ib-t9am d7zw-hpf4 yi5j-5fe9 95c7-mm6s 3jdh-nmwu 2iz5-9bbz dhy3-732k \
+          yiu6-gjbe 4uxk-dt6c xaxy-8nri dbdv-iihs; do
+  curl -s "https://www.datos.gov.co/api/views/$id.json" | jq -r '[.id, .license.name] | @tsv'
+done
+```
+
+La misma API expone `rowsUpdatedAt` (última actualización de filas en el portal). Estado al 2026-07-06
+(el **corte temporal del contenido** —hasta qué mes llegan los hechos— es distinto: 2026-05 para la serie
+unificada, ver `reports/silver_quality.json`):
+
+| Dataset | SODA id | Última actualización en el portal |
+|---|---|---|
+| Homicidio | `m8fd-ahd9` | 2026-06-17 |
+| Hurto a vehículos | `csb4-y6v2` | 2026-06-16 |
+| Violencia intrafamiliar | `vuyt-mqpw` | 2026-04-20 |
+| Amenazas | `meew-mguv` | 2026-04-20 |
+| Hurto por modalidades | `d4fr-sbn2` | 2026-04-20 |
+| Hurto a personas | `4rxi-8m8d` | 2026-06-16 |
+| Hurto a residencias | `7mn7-vzqp` | 2026-06-16 |
+| Delitos sexuales | `bz43-8ahq` | 2026-06-16 |
+| Delitos informáticos | `4v6r-wu98` | 2026-06-16 |
+| Extorsión | `q2ib-t9am` | 2026-06-16 |
+| Secuestro | `d7zw-hpf4` | 2026-06-16 |
+| Terrorismo | `yi5j-5fe9` | 2026-06-16 |
+| Trata de personas | `95c7-mm6s` | 2026-06-16 |
+| Reporte de capturas | `3jdh-nmwu` | 2026-04-20 |
+| Incautación de armas de fuego | `2iz5-9bbz` | 2026-04-20 |
+| Recuperación de vehículos | `dhy3-732k` | 2026-04-20 |
+| Auditorías Policía Nacional | `yiu6-gjbe` | 2026-06-30 |
+| Demandas notificadas | `4uxk-dt6c` | 2026-05-04 |
+| DIVIPOLA | `xaxy-8nri` | 2025-01-24 |
+| Procesos Fiscalía V3 | `dbdv-iihs` | 2026-06-05 |
+
+**Recursos fuera de datos.gov.co:** los Excel de proyecciones de población son **datos oficiales de
+acceso público del DANE** (procedencia y URLs exactas en [DATA_DICTIONARY.md](DATA_DICTIONARY.md)); el
+PDF de la *Política de Seguridad* es el documento oficial publicado por la Policía Nacional
+(redistribuido íntegro y con cita); las teselas del mapa se atribuyen a © OpenStreetMap / © CARTO en la
+propia interfaz. La atribución que exige CC BY-SA se cumple citando cada fuente con su entidad y enlace
+(este inventario y el README).
+
+# Validación contra las Hojas de Ruta SECTORIALES
+
+Análisis aparte en [HOJA_RUTA_SECTORIAL.md](HOJA_RUTA_SECTORIAL.md): las fuentes de la Policía pertenecen
+al sector **Defensa** (priorización verificada por la vía Nacional, registro id 70); la **Hoja de Ruta
+Sectorial de Justicia 2024-2026** se verificó contra el PDF oficial (copia de evidencia en
+[hoja-ruta-sectorial-justicia.pdf](hoja-ruta-sectorial-justicia.pdf)) — sus 25 priorizados no cubren la
+criminalidad, pero la propia hoja señala **"Fiscalidad y delincuencia" (Fiscalía General de la Nación,
+*Our Data Index*)** como conjunto estratégico de máxima puntuación fuera de su gobernanza, y VigIA lo
+reutiliza (`dbdv-iihs`).
+
 # Expansión desde el Asset Inventory (análisis crítico)
 
 El **Asset Inventory** (`uzcf-b9dh`) lista ~169 datasets de la categoría *Seguridad y

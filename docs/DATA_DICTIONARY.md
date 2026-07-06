@@ -8,11 +8,17 @@
 
 Consumidas vía API SODA2: `https://www.datos.gov.co/resource/<id>.json`.
 
-Esquemas **verificados** contra la API SODA2. 16 datasets de eventos + 2 administrativos
-(+ DIVIPOLA y población municipal DANE como referencias oficiales, abajo — esta última de `dane.gov.co`,
-no de datos.gov.co; ver [Población municipal](#población-municipal--denominador-para-tasas-por-100k-dane)).
-A estas fuentes de la **Policía** se suma una de **otra entidad** —la **Fiscalía General de la Nación**— como
-capa paralela de **Justicia** (ver [Capa "Justicia"](#capa-justicia--fiscalía-general-de-la-nación-fuente-de-otra-entidad-capa-paralela)). Las **filas** son volúmenes crudos aproximados de la API;
+Esquemas **verificados** contra la API SODA2. **20 conjuntos de datos.gov.co en total**: 16 datasets de
+eventos + 2 administrativos (todos de la **Policía**), la referencia oficial **DIVIPOLA** (DANE, abajo) y
+una fuente de **otra entidad** —la **Fiscalía General de la Nación**— como capa paralela de **Justicia**
+(ver [Capa "Justicia"](#capa-justicia--fiscalía-general-de-la-nación-fuente-de-otra-entidad-capa-paralela)).
+La **población municipal DANE** es una referencia demográfica adicional de `dane.gov.co` —no de
+datos.gov.co— y **no entra en ese conteo de 20** (ver
+[Población municipal](#población-municipal--denominador-para-tasas-por-100k-dane)). Los 20 se publican
+bajo licencia **CC BY-SA 4.0**, verificada dataset a dataset contra la API de metadatos del portal
+(2026-07-06; comando reproducible y fecha de última actualización por fuente en
+[DATASETS.md](DATASETS.md#licencia-y-vigencia-de-las-fuentes)). Las **filas** son
+volúmenes crudos aproximados de la API;
 los conteos autoritativos tras limpieza viven en [`reports/silver_quality.json`](../reports/silver_quality.json),
 regenerado en cada corrida. Ese informe distingue `completitud_pct` (100 % por construcción: silver imputa el
 marcador `NO REPORTADO` en vez de dejar nulos) de `placeholders_pct` (el **% real de no reportados** por
@@ -133,8 +139,9 @@ curl "https://www.datos.gov.co/resource/fn2v-r4gu.json?\$where=categoria='DEFENS
 
 Las 16 fuentes de eventos anteriores (13 de delito + 3 de respuesta institucional) son **todas de la Policía
 Nacional**: miden el *hecho registrado*. Para cubrir el otro eje del reto —**Justicia**— y romper la
-dependencia de una sola entidad, VigIA incorpora un **17.º dataset abierto de la Fiscalía General de la
-Nación** (*entidad distinta*), que aporta una dimensión
+dependencia de una sola entidad, VigIA incorpora un **dataset abierto de la Fiscalía General de la
+Nación** (*entidad distinta*; el 20.º del conteo total, tras los 16 de eventos, los 2 administrativos y
+DIVIPOLA), que aporta una dimensión
 que ningún conteo de delitos tiene: la **JUDICIALIZACIÓN** (qué fracción de las noticias criminales
 avanza más allá de la indagación).
 

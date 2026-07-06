@@ -47,8 +47,10 @@ El orden de ejecución es el de `pipeline()` en `cli.py`
 <summary>Ver el flujo como texto</summary>
 
 ```
-Fuentes abiertas:  Policía · 16 datasets SODA2 (datos.gov.co)  ·  DANE · población (dane.gov.co)
+Fuentes abiertas:  Policía · 18 datasets SODA2 (16 de eventos + 2 administrativos, datos.gov.co)
+                   DANE · DIVIPOLA (SODA2) + población (dane.gov.co, fuera del conteo)
                    Fiscalía · Procesos V3 (dbdv-iihs) — capa paralela de Justicia
+                   (= 20 conjuntos de datos.gov.co en total)
    │  vigia ingest          (descarga paginada con reintentos; Justicia por streaming keyset)
    ▼
 data/bronze/*.parquet        ← copia fiel del crudo + metadatos de linaje

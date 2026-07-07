@@ -111,7 +111,7 @@ def simulate(req: SimulateRequest) -> SimulateResponse:
 def monitoring() -> dict:
     """Reporte de salud del modelo (frescura de datos, deriva/PSI, backtest extendido).
 
-    Sirve el artefacto reproducible `reports/model_health.json` que genera `vigia health`.
+    Devuelve el artefacto reproducible `reports/model_health.json` que genera `vigia health`.
     """
     import json
 

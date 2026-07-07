@@ -61,7 +61,7 @@ def train(test_months: int = 6) -> None:
 
 @app.command(name="load-db")
 def load_db() -> None:
-    """Carga los artefactos gold a PostgreSQL (tablas servidas por el backend Go)."""
+    """Carga los artefactos gold a PostgreSQL (las tablas que expone el backend Go)."""
     from vigia.etl.load import load_gold
 
     load_gold()
@@ -159,7 +159,7 @@ def justicia() -> None:
 @app.command()
 def challenger(test_months: int = 6) -> None:
     """Compara el modelo en producción (HGB) con un challenger neuronal (MLP) bajo el mismo
-    backtest sin fuga. Solo evalúa y reporta (no cambia el modelo servido)."""
+    backtest sin fuga. Solo evalúa y reporta (no cambia el modelo en producción)."""
     import pandas as pd
 
     from vigia.config import settings

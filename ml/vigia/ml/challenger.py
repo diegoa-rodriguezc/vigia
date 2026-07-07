@@ -4,7 +4,7 @@ El modelo en producción (seleccionado) es un `HistGradientBoostingRegressor` gl
 mide un **challenger neuronal** —un perceptrón multicapa (MLP)— bajo EXACTAMENTE el mismo
 backtest walk-forward recursivo sin fuga, para decidir con evidencia (no por intuición) si
 vale la pena cambiar de familia de modelo. Es una herramienta de EVALUACIÓN: no toca el
-artefacto servido; reentrenar/cablear el ganador es una decisión aparte y explícita.
+artefacto en producción; reentrenar/cablear el ganador es una decisión aparte y explícita.
 
 El MLP exige escalado de features (a diferencia de los árboles), así que el challenger es un
 `Pipeline(StandardScaler, MLPRegressor)`. Se mantiene en scikit-learn (sin Torch/TF): una red
@@ -101,7 +101,7 @@ def compare(series: pd.DataFrame, test_months: int = 6, n_splits: int = 3) -> Co
         raise RuntimeError("Datos insuficientes para el backtest comparativo.")
 
     champ, chall = _scores(bt_champ), _scores(bt_chall)
-    # Veredicto por MAE multipaso (la métrica que gobierna el horizonte servido). Margen relativo.
+    # Veredicto por el MAE multipaso, la métrica del horizonte que se entrega. Margen relativo.
     margen = (champ["mae_multipaso"] - chall["mae_multipaso"]) / max(champ["mae_multipaso"], 1e-9)
     if margen > 0.01:
         verdict = f"El challenger MLP mejora el MAE multipaso {margen * 100:.1f}% — evaluar cambio."

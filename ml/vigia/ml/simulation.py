@@ -10,7 +10,7 @@ la procedencia de cada una:
 - **Palanca de SUPUESTO** — el efecto esperado de una *intervención* (un programa de seguridad):
   el modelo NO observa variables de política, así que el efecto lo aporta el usuario como un
   porcentaje de cambio de la incidencia, aplicado con una rampa temporal sobre la trayectoria
-  servida. Se reporta etiquetado como supuesto del usuario, no como una estimación causal del
+  entregada. Se reporta etiquetado como supuesto del usuario, no como una estimación causal del
   modelo (no sobre-afirmar lo que los datos no soportan).
 
 Un escenario sin palancas reproduce EXACTAMENTE el pronóstico base (`predict`): la simulación
@@ -115,7 +115,7 @@ def simulate(
         traj = [dict(p) for p in base]
 
     # Palanca de intervención (supuesto del usuario): factor multiplicativo con rampa sobre la
-    # trayectoria servida. Se aplica a media y banda por igual para que el rango acompañe a la
+    # trayectoria entregada. Se aplica a media y banda por igual para que el rango acompañe a la
     # proyección. clip a 0: una intervención no produce conteos negativos.
     factor_pct = scenario.intervencion_pct / 100.0
     for i, p in enumerate(traj, start=1):

@@ -49,7 +49,7 @@ class ForecastModel:
     # demasiado ANCHA (cobertura ~94%). Default = cuantil normal para modelos antiguos sin el campo.
     pi_scale: float = 1.2816
     # Variable que modela el estimador: "rate" (hechos por 100.000 hab.) cuando hay población, o
-    # "count" (conteos) si no. El pronóstico SIEMPRE se sirve en conteos: en modo "rate" se
+    # "count" (conteos) si no. El pronóstico SIEMPRE se entrega en conteos: en modo "rate" se
     # convierte multiplicando por la población. Modelar tasas iguala la escala entre municipios
     # (Bogotá vs uno pequeño) y mejora MAE y sMAPE frente a modelar conteos (ver bitácora).
     target_mode: str = "count"
@@ -63,11 +63,12 @@ _PI_LEVEL = 80
 # Tasa expresada por 100.000 habitantes (convención epidemiológica estándar).
 RATE_SCALE = 100_000.0
 
-# Peso del modelo en la predicción SERVIDA (resto: persistencia del último valor observado).
+# Peso del modelo en la predicción ENTREGADA (resto: persistencia del último valor observado).
 # El modelo global gana en volumen medio pero puede sobre-extrapolar en mega-ciudades (un error
-# de tasa pequeño × población enorme = gran error de conteo); mezclar con persistencia —fuerte en
-# alto volumen— doma ese overshoot SIN perder la ventaja en medio. Calibrado por backtest: 0.7
-# bate al baseline en MAE (1 paso y multipaso), sMAPE multipaso y el tercil alto (ver bitácora).
+# de tasa pequeño × población enorme = gran error de conteo); mezclar con persistencia —fuerte
+# en alto volumen— doma esa sobreestimación SIN perder la ventaja en medio. Calibrado por
+# backtest: 0.7 bate a la línea base en MAE (1 paso y multipaso), sMAPE multipaso y el tercil
+# alto (ver bitácora).
 _BLEND_W = 0.7
 
 
@@ -119,10 +120,11 @@ def _filter_active_series(series: pd.DataFrame, min_nonzero: int = 12) -> pd.Dat
 
 
 # Hiperparámetros del estimador, CONFIRMADOS por una búsqueda con CV TEMPORAL (walk-forward,
-# sin fuga) que puntuó 8 configuraciones por el MAE multipaso servido (ver bitácora Iteración 9 y
-# docs/CRISP-ML-Q.md): todas cayeron dentro del 1.4% y la mejor alternativa solo daba −0.8% de MAE
-# a costa de 2× el tiempo de entrenamiento → estos defaults quedan como óptimo práctico. NO ajustar
-# con k-fold aleatorio: barajaría el tiempo y filtraría el futuro (métricas engañosamente buenas).
+# sin fuga) que puntuó 8 configuraciones por el MAE multipaso de la predicción entregada (ver
+# bitácora Iteración 9 y docs/CRISP-ML-Q.md): todas cayeron dentro del 1.4% y la mejor alternativa
+# solo daba −0.8% de MAE a costa de 2× el tiempo de entrenamiento → estos defaults quedan como
+# óptimo práctico. NO ajustar con k-fold aleatorio: barajaría el tiempo y filtraría el futuro
+# (métricas engañosamente buenas).
 _HGB_PARAMS: dict = {
     "max_iter": 400,
     "learning_rate": 0.05,
@@ -261,7 +263,7 @@ def _walk_forward(
     Para cada uno de los últimos `n_splits` orígenes temporales se entrena un estimador
     SOLO con el pasado y se pronostican `horizon` meses **de forma recursiva** —idéntico a
     `predict` en producción—, comparando contra los valores reales observados. Así se valida
-    el horizonte que de verdad se sirve (no solo 1 paso). La línea base es la **persistencia**
+    el horizonte que de verdad se entrega (no solo 1 paso). La línea base es la **persistencia**
     (último valor observado antes del origen, arrastrado por todo el horizonte).
 
     `make_estimator` permite inyectar un estimador alternativo (challenger) para comparar bajo el
@@ -334,8 +336,8 @@ def _walk_forward(
             season_tp = pd.Timestamp(tp) - pd.DateOffset(months=12)
             season_lookup = train_df.loc[train_df["periodo"] == season_tp].set_index(KEY)[TARGET]
             season_arr = np.nan_to_num(season_lookup.reindex(keys_idx).to_numpy().astype(float))
-            # Predicción SERVIDA = blend modelo+persistencia (la recursión sigue realimentando la
-            # del modelo, arriba). La banda/cobertura se calibran sobre este predictor servido.
+            # Predicción ENTREGADA = mezcla modelo+persistencia (la recursión sigue realimentando
+            # la del modelo, arriba). La banda/cobertura se calibran sobre este predictor entregado.
             y_served = _BLEND_W * cmp["_yhat"].to_numpy(dtype=float) + (1 - _BLEND_W) * base_arr
             acc["step"].append(np.full(len(cmp), h, dtype=int))
             acc["y_true"].append(cmp["_y"].to_numpy(dtype=float))
@@ -396,7 +398,7 @@ def train(
     """Entrena el modelo con backtesting walk-forward recursivo (sin fuga de datos).
 
     `test_months` es el **horizonte** (en meses) que valida el backtest de forma recursiva
-    —el mismo que sirve `predict` en producción— y `n_splits` el número de orígenes
+    —el mismo que entrega `predict` en producción— y `n_splits` el número de orígenes
     temporales del rolling. El modelo final se reentrena con TODO el histórico para no
     ignorar los meses más recientes.
     """
@@ -421,7 +423,7 @@ def train(
 
     # Backtest walk-forward RECURSIVO multi-paso contra la línea base ingenua (persistencia).
     # Reporta tanto el error a 1 paso (comparable, headline) como el del horizonte completo
-    # que se sirve, su degradación por paso, la cobertura empírica de la banda y el desglose
+    # que se entrega, su degradación por paso, la cobertura empírica de la banda y el desglose
     # por volumen de serie (que reconcilia el MAE frente a la línea base).
     metrics: dict = {}
     dispersion = 0.0
@@ -637,7 +639,7 @@ def predict(
             yhat_cnt = yhat_m * pop / RATE_SCALE
         else:
             yhat_cnt = yhat_m
-        # Predicción servida: blend con persistencia (doma overshoot en alto volumen).
+        # Predicción entregada: mezcla con persistencia (doma la sobreestimación en alto volumen).
         yhat = _BLEND_W * yhat_cnt + (1 - _BLEND_W) * persist
         half = pi_scale * (phi * max(yhat, 1.0)) ** 0.5 * (step**0.5)
         next_periodo = hist["periodo"].max() + pd.DateOffset(months=1)

@@ -98,7 +98,7 @@ def test_backtest_valida_horizonte_volumen_y_cobertura():
     # #4: desglose por tercil de volumen, con veredicto por estrato.
     assert isinstance(m["por_volumen"], list) and m["por_volumen"]
     assert {"estrato", "mae", "baseline_mae", "gana_modelo"} <= set(m["por_volumen"][0])
-    # #5: validación multi-paso recursiva del horizonte que se sirve.
+    # #5: validación multi-paso recursiva del horizonte que se entrega.
     mp = m["multipaso"]
     assert mp["horizon"] == 4
     assert mp["por_paso"] and len(mp["por_paso"]) <= 4

@@ -126,7 +126,7 @@ def _run_pronostico(cod_municipio: str, categoria: str, horizonte: int = 6) -> d
     try:
         horizonte = max(1, min(int(horizonte), 12))
         pts = predict(serie, cod, cat, horizon=horizonte)
-    except RuntimeError as exc:  # modelo ausente o ilegible → 503 accionable aguas arriba
+    except RuntimeError as exc:  # modelo ausente o ilegible → la API lo convierte en 503 accionable
         return {"error": str(exc)}
     if not pts:
         return {"encontrado": False, "nota": "Sin pronóstico disponible para esa serie."}

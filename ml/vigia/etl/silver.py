@@ -162,7 +162,7 @@ def normalize(df: pd.DataFrame, spec: DatasetSpec) -> pd.DataFrame:
     out["ingested_at"] = pd.Timestamp.utcnow()
 
     # Descarte de filas sin fecha válida o sin código de municipio (no localizables
-    # para análisis espacial ni para las tablas servidas).
+    # para análisis espacial ni para las tablas que expone el backend).
     out = out[out["fecha"].notna() & out["cod_municipio"].notna()].copy()
     out["anio"] = out["fecha"].dt.year.astype("int64")
     out["mes"] = out["fecha"].dt.month.astype("int64")

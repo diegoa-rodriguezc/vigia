@@ -6,7 +6,7 @@ import "net/http"
 //   - X-Content-Type-Options: evita el "MIME sniffing".
 //   - X-Frame-Options: impide el embebido en iframes (clickjacking).
 //   - Referrer-Policy: no filtra la URL a terceros.
-//   - Strict-Transport-Security: fuerza HTTPS (solo surte efecto servido por TLS).
+//   - Strict-Transport-Security: fuerza HTTPS (solo surte efecto cuando la respuesta viaja por TLS).
 func SecurityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()

@@ -1,5 +1,5 @@
 """Pruebas del reporte de evaluación: estadísticas, tasa de anomalías y el RESULTADO CENTRAL
-(el modelo supera a la línea base en sMAPE multi-paso — el horizonte que efectivamente se sirve)."""
+(el modelo supera a la línea base en sMAPE multi-paso — el horizonte que se entrega)."""
 
 import json
 from types import SimpleNamespace

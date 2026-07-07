@@ -1,4 +1,4 @@
-// Package repository accede a las tablas gold en PostgreSQL servidas por la API.
+// Package repository accede a las tablas gold en PostgreSQL que expone la API.
 package repository
 
 import (

@@ -161,7 +161,7 @@ func (h *Handler) dbReachable(ctx context.Context) bool {
 	return h.repo.Ping(ctx) == nil
 }
 
-// Health es la sonda de LIVENESS: 200 mientras el proceso sirva. El campo `db` refleja la
+// Health es la sonda de LIVENESS: 200 mientras el proceso responda. El campo `db` refleja la
 // conectividad REAL (ping), no solo que exista el pool, para que el tablero no muestre "BD OK"
 // cuando la base está caída. No condiciona el 200 a la BD: reiniciar el contenedor no arregla
 // una BD externa caída (evita bucles de reinicio); para eso está la sonda de readiness.
@@ -197,7 +197,7 @@ func (h *Handler) Config(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// RealtimeDepartamento sirve una SEÑAL EN TIEMPO REAL de prensa (GDELT) para un departamento (o
+// RealtimeDepartamento devuelve una SEÑAL EN TIEMPO REAL de prensa (GDELT) para un departamento (o
 // nacional si no se pasa `cod`). Es un complemento —no sustituto— del dato oficial mensual: son
 // NOTICIAS, no cifras. Público. La caché en Redis (20 min éxito / 90 s degradado) es imprescindible
 // porque GDELT rate-limita con dureza; ante fallo/rate-limit degrada a "señal no disponible" (200).
@@ -358,11 +358,11 @@ func (h *Handler) Forecast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Acota el horizonte [1, 24] meses: evita un cómputo desbocado en el ML y claves de caché
-	// absurdas por un valor arbitrario del cliente (el servido es 6; el monitoreo llega a 12).
+	// absurdas por un valor arbitrario del cliente (el horizonte por defecto es 6; el monitoreo llega a 12).
 	horizon := clampInt(queryInt(r, "horizon", 6), 1, 24)
 
 	// Caché: el pronóstico es determinista por (municipio, categoría, horizonte) y solo
-	// cambia al reentrenar el modelo. Sirve respuestas repetidas en ms en vez de golpear
+	// cambia al reentrenar el modelo. Responde las consultas repetidas en ms en vez de golpear
 	// al servicio ML cada vez (que en CPU es lento).
 	key := fmt.Sprintf("cache:forecast:%s:%s:%d", cod, cat, horizon)
 	if h.cacheActive(r) {

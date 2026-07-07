@@ -1,4 +1,4 @@
-"""Carga de la capa GOLD a PostgreSQL (tablas servidas por el backend Go).
+"""Carga de la capa GOLD a PostgreSQL (las tablas que expone el backend Go).
 
 Crea y rellena las tablas `resumen_municipio`, `serie_mensual` y
 `anomalias` usando COPY para eficiencia. El esquema relacional vive aquí para que

@@ -22,8 +22,8 @@ emiten en cada ejecución. A diferencia del lago de datos y los modelos (regener
 - Las métricas del boosting pueden fluctuar **~1 % entre ejecuciones** por ruido numérico multi-hilo; las
   conclusiones cualitativas son estables (detalle en
   [docs/CRISP-ML-Q.md](../docs/CRISP-ML-Q.md#3-ingeniería-del-modelo)).
-- Si una cifra de la documentación no coincide exactamente con el JSON, **el JSON regenerado es la
-  fuente autoritativa** — la documentación cita la ejecución de referencia.
+- Si una cifra de la documentación no coincide exactamente con el JSON, **prevalece el JSON
+  regenerado** — la documentación cita la ejecución de referencia.
 
 ## Recomendación operativa
 

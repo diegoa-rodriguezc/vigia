@@ -390,7 +390,7 @@ la **proyección del horizonte completo** con tasas comparables entre territorio
 vigentes — sMAPE/MAE
 del modelo y de la línea base, nº de series, anomalías — se regeneran en cada ejecución del pipeline y
 quedan en [`reports/model_report.json`](../reports/model_report.json) y
-[`reports/silver_quality.json`](../reports/silver_quality.json) (cifras autoritativas y auditables).** La
+[`reports/silver_quality.json`](../reports/silver_quality.json) (las cifras que prevalecen, auditables).** La
 tabla siguiente es una ejecución de referencia (no sustituye al artefacto regenerado):
 
 Ejecución de referencia (16 datasets, backtest **walk-forward**; regenerada por `make deploy`, ver

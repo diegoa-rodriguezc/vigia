@@ -19,7 +19,7 @@ bajo licencia **CC BY-SA 4.0**, verificada dataset a dataset contra la API de me
 (2026-07-06; comando reproducible y fecha de última actualización por fuente en
 [DATASETS.md](DATASETS.md#licencia-y-vigencia-de-las-fuentes)). Las **filas** son
 volúmenes crudos aproximados de la API;
-los conteos autoritativos tras limpieza viven en [`reports/silver_quality.json`](../reports/silver_quality.json),
+los conteos definitivos tras limpieza viven en [`reports/silver_quality.json`](../reports/silver_quality.json),
 regenerado en cada ejecución. Ese informe distingue `completitud_pct` (100 % por construcción: silver imputa el
 marcador `NO REPORTADO` en vez de dejar nulos) de `placeholders_pct` (el **% real de no reportados** por
 campo). La **alineación de estas fuentes con la Hoja de Ruta Nacional de Datos Abiertos

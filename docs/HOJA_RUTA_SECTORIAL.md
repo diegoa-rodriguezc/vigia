@@ -38,17 +38,17 @@ para reproducibilidad — el enlace oficial de SharePoint puede caducar). Dos ha
    ejecutivo** (coherente con lo hallado en la Nacional, cuya categoría *JUSTICIA Y DEL DERECHO* cubre
    registro de propiedad, no criminalidad — ver [DATASETS.md](DATASETS.md)).
 2. **La propia hoja identifica el dato de la Fiscalía como estratégico… y fuera de su alcance.** En la
-   sección *2.1.1.4 Índices Internacionales de Datos Abiertos* (págs. 13-14), los conjuntos de mayor
-   puntuación (55/55 en sus 5 criterios) incluyen **"Fiscalidad y delincuencia"** — origen ***Our Data
-   Index***, entidad responsable **Fiscalía General de la Nación** — junto a *Decisiones judiciales*
+   sección *2.1.1.4 Índices Internacionales de Datos Abiertos* (pág. 13), los conjuntos de mayor
+   puntuación (55 en sus 5 criterios) incluyen **"Fiscalidad y delincuencia"** — origen ***OurDataIndex***
+   *[sic]*, entidad responsable **Fiscalía General de la Nación** — junto a *Decisiones judiciales*
    (Consejo Superior de la Judicatura). Es el **mismo criterio** (*Our Data Index*) que sustenta el
    registro id 70 de la Nacional. Sin embargo, ni la Fiscalía ni la Judicatura aparecen entre los 25
    priorizados para apertura: son **organismos autónomos**, fuera de la gobernanza del ministerio cabeza
    de sector.
 
 **Qué significa para VigIA.** La plataforma **reutiliza exactamente el dato que la hoja sectorial
-reconoce como estratégico pero no puede gobernar**: *Procesos Fiscalía V3* (`dbdv-iihs`, ~23 M de
-procesos, publicado por la Fiscalía en datos.gov.co). El eje de **Justicia** de VigIA (embudo de
+reconoce como estratégico pero no puede gobernar**: *Procesos Fiscalía V3* (`dbdv-iihs`, ~23 millones
+de procesos, publicado por la Fiscalía en datos.gov.co). El eje de **Justicia** de VigIA (embudo de
 judicialización, tasa por municipio) materializa el aprovechamiento de ese vacío señalado por la propia
 hoja de ruta — y demuestra que el dato ya es reutilizable hoy (la ingesta por agregación local documentada
 en [DATA_DICTIONARY.md](DATA_DICTIONARY.md) es reproducible sin token).

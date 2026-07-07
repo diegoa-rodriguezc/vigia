@@ -9,7 +9,7 @@
 3. **Reproducibilidad y auditabilidad** — todo el flujo se ejecuta desde una CLI y desde Docker; el
    RAG usa por defecto modelos locales (sin costo de API ni envío de datos a terceros). El **pipeline de
    datos** (bronze→silver→gold) es **determinista bit-a-bit** (semilla fija) y sus métricas se regeneran en
-   `reports/`. El **modelo** es reproducible *salvo ruido numérico ~1 %* entre corridas (el gradient boosting
+   `reports/`. El **modelo** es reproducible *salvo ruido numérico ~1 %* entre ejecuciones (el gradient boosting
    con `early_stopping` corta según un score sensible a las reducciones de punto flotante multi-hilo, pese a
    las semillas; las conclusiones cualitativas son estables — ver
    [CRISP-ML(Q) - Reproducibilidad](CRISP-ML-Q.md#3-ingeniería-del-modelo)). La generación de texto del

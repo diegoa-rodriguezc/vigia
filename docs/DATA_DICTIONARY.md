@@ -14,13 +14,13 @@ una fuente de **otra entidad** —la **Fiscalía General de la Nación**— como
 (ver [Capa "Justicia"](#capa-justicia--fiscalía-general-de-la-nación-fuente-de-otra-entidad-capa-paralela)).
 La **población municipal DANE** es una referencia demográfica adicional de `dane.gov.co` —no de
 datos.gov.co— y **no entra en ese conteo de 20** (ver
-[Población municipal](#población-municipal--denominador-para-tasas-por-100k-dane)). Los 20 se publican
+[Población municipal](#población-municipal--denominador-para-tasas-por-100000-habitantes-dane)). Los 20 se publican
 bajo licencia **CC BY-SA 4.0**, verificada dataset a dataset contra la API de metadatos del portal
 (2026-07-06; comando reproducible y fecha de última actualización por fuente en
 [DATASETS.md](DATASETS.md#licencia-y-vigencia-de-las-fuentes)). Las **filas** son
 volúmenes crudos aproximados de la API;
 los conteos autoritativos tras limpieza viven en [`reports/silver_quality.json`](../reports/silver_quality.json),
-regenerado en cada corrida. Ese informe distingue `completitud_pct` (100 % por construcción: silver imputa el
+regenerado en cada ejecución. Ese informe distingue `completitud_pct` (100 % por construcción: silver imputa el
 marcador `NO REPORTADO` en vez de dejar nulos) de `placeholders_pct` (el **% real de no reportados** por
 campo). La **alineación de estas fuentes con la Hoja de Ruta Nacional de Datos Abiertos
 Estratégicos** se documenta y verifica en la sección
@@ -52,8 +52,8 @@ Estratégicos** se documenta y verifica en la sección
 > se **excluyó**: su estructura (`fecha_de_hecho`, sin `codigo_dane` ni `cantidad`) no encaja en la serie
 > delictiva. `hurto_modalidades` (`d4fr-sbn2`): el *profiling* inicial estaba generado con el SODA id
 > equivocado (mostraba datos de vehículos); **verificado contra la API es familia B**, con la categoría en
-> la columna `tipo_de_hurto` y **3 modalidades NO vehiculares** — HURTO ABIGEATO (≈37,5k), PIRATERÍA
-> TERRESTRE (≈4,8k) y ENTIDADES FINANCIERAS (≈1,8k). **No solapa** con `hurto_vehiculos` (automotores /
+> la columna `tipo_de_hurto` y **3 modalidades NO vehiculares** — HURTO ABIGEATO (≈37.500), PIRATERÍA
+> TERRESTRE (≈4.800) y ENTIDADES FINANCIERAS (≈1.800). **No solapa** con `hurto_vehiculos` (automotores /
 > motocicletas), por lo que se integra a la serie sin doble conteo (verificado: el conteo de vehículos no
 > cambió al añadirla).
 >
@@ -182,7 +182,7 @@ clasificación de etapa es robusta a tildes/mayúsculas (`_clasifica_etapa`).
 | Procesos totales | **23.029.390** |
 | Embudo | Indagación 21.069.716 (91,5 %) · **Judicializado 1.959.486 (8,5 %)** · desconocido 188 |
 | **Tasa de judicialización nacional** | **8,51 %** |
-| Top municipios (procesos · tasa) | Bogotá 5,5 M · 5,6 % — Medellín 1,7 M · 7,9 % — Cali 1,28 M · 7,8 % — Barranquilla 707 k · 9,0 % — Cartagena 512 k · 6,5 % |
+| Top municipios (procesos · tasa) | Bogotá 5,5 millones · 5,6 % — Medellín 1,7 millones · 7,9 % — Cali 1,28 millones · 7,8 % — Barranquilla 707.000 · 9,0 % — Cartagena 512.000 · 6,5 % |
 
 > El hallazgo es contundente y honesto: **solo ~8,5 % de las noticias criminales superan la indagación** a
 > nivel nacional; las grandes ciudades quedan **por debajo** del promedio (Bogotá 5,6 %). Es una señal de
@@ -245,7 +245,7 @@ nombres oficiales y únicos (`BOGOTÁ, D.C.`, `MEDELLÍN`). De DIVIPOLA se toma 
 la cabecera municipal** (tipo `CM`) para el mapa del tablero. Implementado en
 [`ml/vigia/etl/divipola.py`](../ml/vigia/etl/divipola.py).
 
-## Población municipal — denominador para tasas por 100k (DANE)
+## Población municipal — denominador para tasas por 100.000 habitantes (DANE)
 
 Para expresar la criminalidad como **tasa por 100.000 habitantes** (comparable entre Bogotá y un municipio
 pequeño) y como **feature exógena** del pronóstico, se incorpora la población municipal oficial del DANE.
@@ -356,6 +356,7 @@ en [`ml/vigia/rag/documents.py`](../ml/vigia/rag/documents.py).
 Ciudadana 2022-2026*, Ministerio de Defensa Nacional) es la **copia íntegra y sin modificaciones** del
 documento oficial publicado por la Policía Nacional en
 [policia.gov.co](https://www.policia.gov.co/sites/default/files/2024-12/Pol%C3%ADtica%20de%20Seguridad%20Defensa%20y%20Convivencia%20Ciudadna.pdf)
+*[sic: la errata «Ciudadna» de la URL es del sitio de origen]*
 (verificado: mismo tamaño byte a byte, 47.785.152 bytes, que el original en línea; descargado en junio de
 2026). Documento público oficial, redistribuido con cita de su fuente para que el pilar de datos no
 estructurados sea **reproducible en un clon** sin depender de la disponibilidad del sitio de origen.

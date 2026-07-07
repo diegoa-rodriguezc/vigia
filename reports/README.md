@@ -1,7 +1,7 @@
 # `reports/` — Cifras auditables del proyecto
 
 Esta carpeta contiene los **reportes reproducibles** que el pipeline y los comandos de evaluación
-emiten en cada corrida. A diferencia del lago de datos y los modelos (regenerables y no versionados),
+emiten en cada ejecución. A diferencia del lago de datos y los modelos (regenerables y no versionados),
 **estos JSON sí se versionan a propósito**: son las cifras que cita la documentación
 ([README.md](../README.md), [docs/CRISP-ML-Q.md](../docs/CRISP-ML-Q.md), [docs/IMPACTO.md](../docs/IMPACTO.md)) y permiten
 **auditar el modelo y los datos sin ejecutar el pipeline**.
@@ -17,16 +17,16 @@ emiten en cada corrida. A diferencia del lago de datos y los modelos (regenerabl
 
 ## Cómo leerlos
 
-- Cada archivo es la **instantánea de la corrida que lo generó** (los cuatro primeros se refrescan con
+- Cada archivo es la **instantánea de la ejecución que lo generó** (los cuatro primeros se refrescan con
   `make docker-pipeline`; los dos últimos, a mano cuando se requieren).
-- Las métricas del boosting pueden fluctuar **~1 % entre corridas** por ruido numérico multi-hilo; las
+- Las métricas del boosting pueden fluctuar **~1 % entre ejecuciones** por ruido numérico multi-hilo; las
   conclusiones cualitativas son estables (detalle en
   [docs/CRISP-ML-Q.md](../docs/CRISP-ML-Q.md#3-ingeniería-del-modelo)).
 - Si una cifra de la documentación no coincide exactamente con el JSON, **el JSON regenerado es la
-  fuente autoritativa** — la documentación cita la corrida de referencia.
+  fuente autoritativa** — la documentación cita la ejecución de referencia.
 
 ## Recomendación operativa
 
-Para comparación longitudinal (¿el modelo mejora o se degrada mes a mes?), archive cada corrida con
+Para comparación longitudinal (¿el modelo mejora o se degrada mes a mes?), archive cada ejecución con
 marca temporal (p. ej. `reports/history/model_report_<trained_at>.json`) antes de sobreescribirla —
 es la práctica sugerida en [docs/CRISP-ML-Q.md](../docs/CRISP-ML-Q.md#63-versionado-de-modelos-y-trazabilidad).

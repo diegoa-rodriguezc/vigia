@@ -24,7 +24,7 @@ VigIA cierra el bucle **dato → conocimiento → decisión → acción → resu
 
 | Eslabón | Sin VigIA | Con VigIA |
 |---|---|---|
-| **Dato** | 16 fuentes de eventos dispersas (13 de delito), crudas | Un modelo unificado de eventos, tasas/100k comparables |
+| **Dato** | 16 fuentes de eventos dispersas (13 de delito), crudas | Un modelo unificado de eventos, tasas por 100.000 habitantes comparables |
 | **Conocimiento** | Reactivo: "¿cuántos hubo el mes pasado?" | Anticipatorio: pronóstico a 6 meses + alerta de anomalías + asistente que cita la fuente |
 | **Decisión** | Por intuición o presión mediática | Priorización por municipio/categoría con evidencia y banda de incertidumbre |
 | **Acción** | Despliegue homogéneo de pie de fuerza | Reasignación preventiva focalizada donde el riesgo proyectado sube |
@@ -86,9 +86,9 @@ las **modela con dato oficial** y hace visible su subregistro.
 
 | Región | Municipios modelados | Series modeladas | Hechos delictivos | Población |
 |---|---|---|---|---|
-| **Amazonía** | 44 / 56 | 498 | 118.731 | 1,13 M |
-| **Orinoquía** | 58 / 60 | 768 | 313.726 | 2,12 M |
-| **San Andrés y Providencia** | 2 / 2 | 21 | 14.300 | 62 k |
+| **Amazonía** | 44 / 56 | 498 | 118.731 | 1,13 millones |
+| **Orinoquía** | 58 / 60 | 768 | 313.726 | 2,12 millones |
+| **San Andrés y Providencia** | 2 / 2 | 21 | 14.300 | 62.000 |
 
 - Por construir sobre el **código DANE/DIVIPOLA** (no sobre los nombres inconsistentes de las fuentes), VigIA
   ubica correctamente municipios que un cruce por nombre —el atajo habitual— pierde por errores de escritura.

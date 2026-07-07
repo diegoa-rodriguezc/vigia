@@ -67,17 +67,20 @@ Detalle narrativo en [../docs/DATA_DICTIONARY.md](../docs/DATA_DICTIONARY.md) y 
 
 **Los 20 conjuntos de datos.gov.co se publican bajo licencia _Creative Commons Attribution — Share Alike
 4.0 International_ (CC BY-SA 4.0)**, verificado **dataset a dataset** contra la API de metadatos del
-portal el **2026-07-06** (no asumido del valor por defecto del portal). Verificación reproducible:
+portal el **2026-07-06** (no asumido del valor por defecto del portal). Verificación reproducible
+(requiere `curl` y [`jq`](https://jqlang.org/); la tercera columna emite la fecha con la que se regenera
+la tabla de vigencia de abajo):
 
 ```bash
 for id in m8fd-ahd9 csb4-y6v2 vuyt-mqpw meew-mguv d4fr-sbn2 4rxi-8m8d 7mn7-vzqp bz43-8ahq \
           4v6r-wu98 q2ib-t9am d7zw-hpf4 yi5j-5fe9 95c7-mm6s 3jdh-nmwu 2iz5-9bbz dhy3-732k \
           yiu6-gjbe 4uxk-dt6c xaxy-8nri dbdv-iihs; do
-  curl -s "https://www.datos.gov.co/api/views/$id.json" | jq -r '[.id, .license.name] | @tsv'
+  curl -s "https://www.datos.gov.co/api/views/$id.json" \
+    | jq -r '[.id, .license.name, (.rowsUpdatedAt | todate)] | @tsv'
 done
 ```
 
-La misma API expone `rowsUpdatedAt` (última actualización de filas en el portal). Estado al 2026-07-06
+El campo `rowsUpdatedAt` es la última actualización de filas en el portal. Estado al 2026-07-06
 (el **corte temporal del contenido** —hasta qué mes llegan los hechos— es distinto: 2026-05 para la serie
 unificada, ver `reports/silver_quality.json`):
 
@@ -161,8 +164,8 @@ provienen siempre de los datasets de arriba.
 
 | Recurso | Ubicación en el repo | Procedencia | Nota de uso |
 |---|---|---|---|
-| Límites departamentales (GeoJSON) | `frontend/public/colombia-departamentos.json` | Derivado de los límites departamentales oficiales del **Marco Geoestadístico Nacional (MGN, DANE)**, vía distribución comunitaria de esos límites; simplificado para uso web (propiedades `DPTO`/`NOMBRE_DPT`, coordenadas a 3 decimales, 33 entidades) | Solo geometría del mapa coroplético; el cruce estadístico es por código DANE (`DPTO`) |
-| *Política de Seguridad, Defensa y Convivencia Ciudadana 2022-2026* (PDF) | `data/kb_docs/` | **Copia íntegra** del documento oficial del Ministerio de Defensa publicado por la Policía Nacional: [policia.gov.co](https://www.policia.gov.co/sites/default/files/2024-12/Pol%C3%ADtica%20de%20Seguridad%20Defensa%20y%20Convivencia%20Ciudadna.pdf) (verificado: mismo tamaño byte a byte, 47.785.152 bytes; descargado 2026-06) | Documento público oficial, redistribuido sin modificaciones y con cita, para reproducibilidad del pilar no estructurado |
+| Límites departamentales (GeoJSON) | `frontend/public/colombia-departamentos.json` | Derivado de los límites departamentales oficiales del **Marco Geoestadístico Nacional (MGN, DANE)**, vía la distribución comunitaria de John Alexis Guerra Gómez ([gist `43c7656821069d00dcbc`](https://gist.github.com/john-guerra/43c7656821069d00dcbc), `colombia.geo.json`, revisión `be6a6e2`; descargado 2026-06); simplificado para uso web (propiedades reducidas a `DPTO`/`NOMBRE_DPT`, coordenadas redondeadas a 3 decimales, 33 entidades) | Solo geometría del mapa coroplético; el cruce estadístico es por código DANE (`DPTO`) |
+| *Política de Seguridad, Defensa y Convivencia Ciudadana 2022-2026* (PDF) | `data/kb_docs/` | **Copia íntegra** del documento oficial del Ministerio de Defensa publicado por la Policía Nacional: [policia.gov.co](https://www.policia.gov.co/sites/default/files/2024-12/Pol%C3%ADtica%20de%20Seguridad%20Defensa%20y%20Convivencia%20Ciudadna.pdf) *[sic: errata «Ciudadna» del sitio de origen]* (verificado: mismo tamaño byte a byte, 47.785.152 bytes; descargado 2026-06) | Documento público oficial, redistribuido sin modificaciones y con cita, para reproducibilidad del pilar no estructurado |
 | Teselas del mapa | (servicio externo en runtime) | © OpenStreetMap contributors / © CARTO (`basemaps.cartocdn.com`) | Atribución visible en la interfaz del mapa (Leaflet) |
 | newsdata.io (señal de prensa) | (API externa en runtime, `backend/internal/realtime/newsdata.go`) | API comercial de noticias (`newsdata.io/api/1/latest`), plan gratuito con `NEWSDATA_API_KEY` | Fuente primaria de la señal de prensa si hay key; noticias, **no** cifras oficiales; cacheada en Redis |
 | GDELT (señal de prensa) | (API externa en runtime, `backend/internal/realtime/gdelt.go`) | *Global Database of Events, Language and Tone* (`api.gdeltproject.org`), sin token | Respaldo sin key; rate-limit duro (~1 req/5 s), degradación controlada; noticias, **no** cifras oficiales |

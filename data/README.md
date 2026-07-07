@@ -49,4 +49,4 @@ Se versiona a propósito, para que el pilar de **datos no estructurados** sea re
 
 - Diccionario de datos (campos, fuentes, esquemas): [docs/DATA_DICTIONARY.md](../docs/DATA_DICTIONARY.md)
 - Inventario de fuentes con URLs: [docs/DATASETS.md](../docs/DATASETS.md)
-- Calidad de la corrida vigente (conteos, placeholders, rangos): [reports/silver_quality.json](../reports/silver_quality.json)
+- Calidad de la ejecución vigente (conteos, placeholders, rangos): [reports/silver_quality.json](../reports/silver_quality.json)

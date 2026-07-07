@@ -249,7 +249,7 @@ def naturaleza(categoria: str) -> str:
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Capa "Justicia" — Fiscalía General de la Nación (independiente de la Policía).
-# Es MICRO-DATO anonimizado (~23 M filas, una por proceso). NO entra a la serie de delitos
+# Es MICRO-DATO anonimizado (~23 millones de filas, una por proceso). NO entra a la serie de delitos
 # (silver/CATALOG) porque "noticia criminal / proceso" ≠ "hecho registrado" por la Policía →
 # sería doble conteo; vive como capa PARALELA. Su valor diferencial es la columna `etapa`
 # (Indagación → Investigación → Juicio → Ejecución de Penas), que da el EMBUDO DE
@@ -259,7 +259,7 @@ def naturaleza(categoria: str) -> str:
 # agregación `count(1)`+`$group` NO es viable (hasta un `count(*)` tarda ~80 s y cualquier
 # `$group` revienta el timeout; un app token no lo arregla — es límite de cómputo, no de cuota).
 # Por eso se traen SOLO las columnas de grupo por keyset (:id) y se agrega LOCALMENTE (ver
-# `soda.fetch_streamed_aggregate`): páginas estrechas de 50 k filas en ~2-3 s, ~13 min el total,
+# `soda.fetch_streamed_aggregate`): páginas estrechas de 50.000 filas en ~2-3 s, ~13 min el total,
 # reproducible SIN token. Esquema verificado contra la API.
 @dataclass(frozen=True)
 class AggregatedSpec:
@@ -287,7 +287,7 @@ JUSTICIA_PROCESOS = AggregatedSpec(
     # año/código se filtra después, en `etl/justicia.py`.
     group_cols=("cod_dane_hecho", "etapa", "a_o_hecho"),
     count_as="n_procesos",
-    notes="micro-dato anonimizado (~23 M filas) agregado por streaming keyset; "
+    notes="micro-dato anonimizado (~23 millones de filas) agregado por streaming keyset; "
     "'etapa' = embudo de judicialización",
 )
 

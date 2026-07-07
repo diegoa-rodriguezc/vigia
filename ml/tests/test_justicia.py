@@ -8,9 +8,17 @@ from vigia.etl import justicia as J
 
 
 def test_clasifica_etapa_judicializacion():
-    et = pd.Series(["Indagación", "Investigación", "Juicio", "Ejecución De Penas", "Sin Información"])
+    et = pd.Series(
+        ["Indagación", "Investigación", "Juicio", "Ejecución De Penas", "Sin Información"]
+    )
     clases = J._clasifica_etapa(et).tolist()
-    assert clases == ["indagacion", "judicializado", "judicializado", "judicializado", "desconocido"]
+    assert clases == [
+        "indagacion",
+        "judicializado",
+        "judicializado",
+        "judicializado",
+        "desconocido",
+    ]
 
 
 def _bronze():
@@ -21,8 +29,15 @@ def _bronze():
         {
             "cod_dane_hecho": ["11001", "11001", "11001", "05001", "05001", "11001", "00000"],
             "a_o_hecho": ["2024", "2024", "2024", "2024", "2024", "Sin Información", "2024"],
-            "etapa": ["Indagación", "Juicio", "Ejecución De Penas", "Indagación",
-                      "Investigación", "Juicio", "Indagación"],
+            "etapa": [
+                "Indagación",
+                "Juicio",
+                "Ejecución De Penas",
+                "Indagación",
+                "Investigación",
+                "Juicio",
+                "Indagación",
+            ],
             "n_procesos": ["100", "25", "25", "80", "20", "999", "999"],
         }
     )
@@ -54,7 +69,9 @@ def test_build_justicia_tasa_y_descarte(tmp_path, monkeypatch):
     assert set(anual["cod_municipio"].unique()) == {"11001", "05001"}
     assert int(anual["n_procesos"].sum()) == 250  # 150 + 100 (sin las basura 999+999)
 
-    resumen = pd.read_parquet(settings.gold_dir / "justicia_resumen.parquet").set_index("cod_municipio")
+    resumen = pd.read_parquet(settings.gold_dir / "justicia_resumen.parquet").set_index(
+        "cod_municipio"
+    )
     assert resumen.loc["11001", "tasa_judicializacion_pct"] == 33.33  # (25+25)/150
     assert resumen.loc["05001", "tasa_judicializacion_pct"] == 20.0  # 20/100
 

@@ -107,7 +107,7 @@ export default function Justicia() {
     <>
       <h2 className="section-title">Justicia</h2>
       <p className="section-sub">
-        Embudo de judicialización de la <b>Fiscalía General de la Nación</b> (≈23 M de procesos): qué
+        Embudo de judicialización de la <b>Fiscalía General de la Nación</b> (≈23 millones de procesos): qué
         fracción de las noticias criminales supera la indagación y avanza en la cadena penal.
       </p>
       <p className="section-sub" style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>

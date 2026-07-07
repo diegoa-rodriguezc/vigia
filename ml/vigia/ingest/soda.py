@@ -98,10 +98,11 @@ def fetch_streamed_aggregate(
 ) -> pd.DataFrame:
     """Agrega un dataset SODA2 ENORME trayendo solo las columnas de grupo y contando LOCALMENTE.
 
-    Para micro-dato gigante (p. ej. ~23 M de procesos de la Fiscalía) la agregación server-side
-    (`count(1)`+`$group`) **no es viable**: el backend de esos datasets es tan lento que hasta un
-    `count(*)` tarda ~80 s y cualquier `$group` revienta el timeout (500 / >120 s). Un app token
-    NO lo arregla (sube la cuota de FRECUENCIA, no el límite de CÓMPUTO por consulta).
+    Para micro-dato gigante (p. ej. ~23 millones de procesos de la Fiscalía) la agregación
+    server-side (`count(1)`+`$group`) **no es viable**: el backend de esos datasets es tan
+    lento que hasta un `count(*)` tarda ~80 s y cualquier `$group` revienta el timeout
+    (500 / >120 s). Un app token NO lo arregla (sube la cuota de FRECUENCIA, no el límite
+    de CÓMPUTO por consulta).
 
     La alternativa que SÍ escala: paginar por **keyset** (`:id > último`, no `$offset`, que se
     degrada en profundidad) trayendo **solo `group_cols`** (columnas estrechas → páginas de 50.000

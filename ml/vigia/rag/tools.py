@@ -44,7 +44,7 @@ class Tool:
 
 
 # ───────────── Carga perezosa de gold (con invalidación por mtime) ─────────────
-# Las herramientas leen las tablas gold. La serie mensual es grande (~3 M filas); se cachea
+# Las herramientas leen las tablas gold. La serie mensual (~3 millones de filas) se cachea
 # y se invalida por la marca de tiempo del parquet, igual que el caché del API (`api/main.py`),
 # para que un re-pipeline se refleje sin reiniciar el proceso.
 _cache: dict[str, dict] = {}

@@ -44,7 +44,7 @@ def make_features(series: pd.DataFrame) -> pd.DataFrame:
 
     # Población (DANE) como señal EXÓGENA: da al modelo la escala demográfica real del
     # municipio (mejor que el proxy `media_hist`) y, vía `tasa_hist`, la incidencia POR
-    # 100k habitantes —comparable entre Bogotá y un municipio pequeño—. Es la primera
+    # 100.000 habitantes —comparable entre Bogotá y un municipio pequeño—. Es la primera
     # feature no autorregresiva del pronóstico. Sin fuga: la población es una proyección
     # exógena conocida de antemano; `tasa_hist` usa solo el pasado (media_hist).
     if "poblacion" in df.columns:

@@ -48,7 +48,7 @@ class ForecastModel:
     # se asumía el cuantil normal (1.2816), que con la dispersión cuasi-Poisson daba una banda
     # demasiado ANCHA (cobertura ~94%). Default = cuantil normal para modelos antiguos sin el campo.
     pi_scale: float = 1.2816
-    # Variable que modela el estimador: "rate" (hechos por 100k hab.) cuando hay población, o
+    # Variable que modela el estimador: "rate" (hechos por 100.000 hab.) cuando hay población, o
     # "count" (conteos) si no. El pronóstico SIEMPRE se sirve en conteos: en modo "rate" se
     # convierte multiplicando por la población. Modelar tasas iguala la escala entre municipios
     # (Bogotá vs uno pequeño) y mejora MAE y sMAPE frente a modelar conteos (ver bitácora).
@@ -85,9 +85,9 @@ def _has_population(series: pd.DataFrame) -> bool:
 
 
 def _as_modeling_target(series: pd.DataFrame, mode: str) -> pd.DataFrame:
-    """Copia de la serie cuyo TARGET es la variable a modelar (conteo o tasa/100k).
+    """Copia de la serie cuyo TARGET es la variable a modelar (conteo o tasa).
 
-    En modo "rate" se sustituye el conteo por su tasa por 100k habitantes para que las
+    En modo "rate" se sustituye el conteo por su tasa por 100.000 habitantes para que las
     features de rezago/medias se computen sobre la tasa; la población se conserva para
     reconvertir la predicción a conteo.
     """
@@ -140,7 +140,7 @@ def _new_estimator(overrides: dict | None = None) -> HistGradientBoostingRegress
     Nota empírica (bitácora en docs/CRISP-ML-Q.md): `loss="poisson"` extrapola por su enlace
     logarítmico y dispara el MAE en la recursión multipaso —de forma CATASTRÓFICA sobre conteos
     (errores ~1e73), confirmado al re-probarlo incluso con población—. La pérdida cuadrática es
-    estable; la escala de los conteos se aborda modelando TASAS por 100k (no cambiando la pérdida).
+    estable; la escala de los conteos se aborda modelando TASAS (no cambiando la pérdida).
     """
     params = {**_HGB_PARAMS, **(overrides or {})}
     return HistGradientBoostingRegressor(random_state=settings.seed, **params)
@@ -290,7 +290,7 @@ def _walk_forward(
     for oi in range(first_origin, last_origin + 1):
         origin = periodos[oi]
         train_df = s[s["periodo"] < origin]  # conteos + poblacion
-        # Entrena en el ESPACIO DE MODELADO (tasa/100k en modo "rate"); features sobre la tasa.
+        # Entrena en el ESPACIO DE MODELADO (tasa en modo "rate"); features sobre la tasa.
         tf = make_features(_as_modeling_target(train_df, mode)).dropna(subset=[f"lag_{max_lag}"])
         if len(tf) < min_train:
             continue
@@ -401,7 +401,7 @@ def train(
     ignorar los meses más recientes.
     """
     series = _filter_active_series(series, min_nonzero=min_nonzero)
-    # Modela TASAS por 100k habitantes si hay población (mejora MAE y sMAPE frente a conteos);
+    # Modela TASAS por 100.000 habitantes si hay población (mejora MAE y sMAPE frente a conteos);
     # si la población no está disponible, cae a conteos (comportamiento previo). El backtest,
     # el reporte y `predict` operan en CONTEOS: la tasa es solo el espacio interno de modelado.
     mode = "rate" if _has_population(series) else "count"
@@ -415,8 +415,8 @@ def train(
     if len(feats) < 50:
         raise RuntimeError(
             f"Datos insuficientes para entrenar ({len(feats)} muestras tras filtrar series "
-            f"con <{min_nonzero} meses no nulos). Ingesta datasets completos "
-            "(`vigia ingest` sin SODA_MAX_ROWS) o reduce min_nonzero."
+            f"con <{min_nonzero} meses no nulos). Ingestar los datasets completos "
+            "(`vigia ingest` sin SODA_MAX_ROWS) o reduzca min_nonzero."
         )
 
     # Backtest walk-forward RECURSIVO multi-paso contra la línea base ingenua (persistencia).
@@ -540,12 +540,30 @@ def train(
         target_mode=mode,
     )
     settings.ensure_dirs()
+    # El meta se invalida ANTES de reescribir el artefacto y se repone DESPUÉS con escritura a
+    # archivo temporal + `replace` (atómico en el mismo directorio): un fallo a mitad de camino
+    # deja joblib sin meta (el error de carga degrada al mensaje base), nunca un meta de una
+    # ejecución anterior que atribuya el artefacto a una versión equivocada.
+    META_PATH.unlink(missing_ok=True)
     joblib.dump(fitted, MODEL_PATH)
-    META_PATH.write_text(
-        json.dumps({"sklearn": sklearn.__version__, "trained_at": fitted.trained_at}),
+    meta_tmp = META_PATH.with_suffix(".tmp")
+    meta_tmp.write_text(
+        json.dumps(
+            {
+                "sklearn": sklearn.__version__,
+                "numpy": np.__version__,
+                "trained_at": fitted.trained_at,
+            }
+        ),
         encoding="utf-8",
     )
-    log.info("Modelo guardado en %s (sklearn %s)", MODEL_PATH, sklearn.__version__)
+    meta_tmp.replace(META_PATH)
+    log.info(
+        "Modelo guardado en %s (sklearn %s, numpy %s)",
+        MODEL_PATH,
+        sklearn.__version__,
+        np.__version__,
+    )
     return fitted
 
 
@@ -558,24 +576,24 @@ def load_model() -> ForecastModel:
     mensaje indica reentrenar para regenerar el artefacto con la versión instalada.
     """
     if not MODEL_PATH.exists():
-        raise RuntimeError("Modelo ausente. Ejecuta primero `vigia train`.")
+        raise RuntimeError("Modelo ausente. Ejecute primero `vigia train`.")
     try:
         return joblib.load(MODEL_PATH)
     except Exception as exc:  # noqa: BLE001 — cualquier fallo de carga = artefacto inservible
         origen = ""
         try:
             meta = json.loads(META_PATH.read_text(encoding="utf-8"))
-            origen = (
-                f"; el artefacto fue entrenado con scikit-learn {meta['sklearn']}"
-                f" el {meta.get('trained_at', '¿fecha desconocida?')}"
-            )
-        except Exception:  # noqa: BLE001 — sin meta (artefacto anterior a la guarda) el mensaje base sigue siendo accionable
+            origen = f"; el artefacto fue entrenado con scikit-learn {meta['sklearn']}"
+            if meta.get("numpy"):
+                origen += f" y numpy {meta['numpy']}"
+            origen += f" el {meta.get('trained_at', '¿fecha desconocida?')}"
+        except Exception:  # noqa: BLE001 — sin meta (artefacto anterior al registro de origen) el mensaje base sigue siendo accionable
             pass
         log.error("No se pudo deserializar el modelo (%s): %s", MODEL_PATH, exc)
         raise RuntimeError(
-            "Modelo incompatible con la versión instalada de scikit-learn "
-            f"({sklearn.__version__}){origen}. Reentrena con `vigia train` "
-            "(o `make docker-pipeline`) para regenerarlo."
+            "Modelo incompatible con las versiones instaladas de scikit-learn "
+            f"({sklearn.__version__}) / numpy ({np.__version__}){origen}. Reentrene con "
+            "`vigia train` (o `make docker-pipeline`) para regenerarlo."
         ) from exc
 
 
@@ -596,7 +614,7 @@ def predict(
     if hist.empty:
         return []
 
-    # En modo "rate" la recursión opera sobre la TASA/100k (espacio de modelado); cada paso se
+    # En modo "rate" la recursión opera sobre la TASA (espacio de modelado); cada paso se
     # reconvierte a conteo con la población para servir/banda. La población es ~constante intra-año
     # y se arrastra en la última fila.
     mode = getattr(model, "target_mode", "count")

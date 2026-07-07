@@ -2,7 +2,7 @@
 
 Persiste en `reports/model_report.json` las métricas de backtesting y las
 estadísticas del conjunto modelado, de modo que las cifras de la bitácora
-metodológica (`docs/CRISP-ML-Q.md`) se **regeneren** en cada corrida y sean
+metodológica (`docs/CRISP-ML-Q.md`) se **regeneren** en cada ejecución y sean
 auditables por el jurado, en lugar de vivir escritas a mano en el documento.
 """
 

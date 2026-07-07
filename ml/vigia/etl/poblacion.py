@@ -1,4 +1,4 @@
-"""Población municipal (DANE) — denominador para tasas por 100k habitantes.
+"""Población municipal (DANE) — denominador para tasas por 100.000 habitantes.
 
 Fuente oficial: *proyecciones y retroproyecciones de población municipal por área*
 del DANE (CNPV 2018, actualización post-COVID). datos.gov.co NO publica una versión
@@ -8,7 +8,7 @@ dato abierto de una entidad pública.
 Cubre 2005-2035; los años previos de la serie delictiva (2003-2004)
 se respaldan con el primer año disponible al cruzar en `gold` (clip de año).
 
-La población habilita el modelado en TASAS por 100k habitantes (comparables entre Bogotá
+La población habilita el modelado en TASAS por 100.000 habitantes (comparables entre Bogotá
 y un municipio pequeño) y entra como feature exógena al pronóstico —la primera señal del
 modelo que no es autorregresiva—.
 """
@@ -151,6 +151,6 @@ def load_poblacion() -> pd.DataFrame:
     src = settings.bronze_dir / "poblacion.parquet"
     if not src.exists():
         raise RuntimeError(
-            "Población ausente en bronze. Ejecuta `vigia ingest` (o `ingest_poblacion`)."
+            "Población ausente en bronze. Ejecute `vigia ingest` (o `ingest_poblacion`)."
         )
     return pd.read_parquet(src)

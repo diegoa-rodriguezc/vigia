@@ -187,3 +187,19 @@ def test_load_model_ilegible_sin_meta_degrada_con_elegancia(monkeypatch, tmp_pat
     msg = str(excinfo.value)
     assert sklearn.__version__ in msg
     assert "vigia train" in msg
+
+
+def test_load_model_ausente_pide_entrenar(monkeypatch, tmp_path):
+    """Sin artefacto en disco, el error pide entrenar (rama distinta de la de ilegible).
+
+    Se usa un subdirectorio VACÍO: el `tmp_path` raíz es el mismo del fixture de aislamiento
+    (conftest), que ya copió allí el modelo real si existe.
+    """
+    import pytest
+
+    vacio = tmp_path / "vacio"
+    vacio.mkdir()
+    monkeypatch.setattr(forecasting, "MODEL_PATH", vacio / "forecaster.joblib")
+    with pytest.raises(RuntimeError) as excinfo:
+        forecasting.load_model()
+    assert "vigia train" in str(excinfo.value)

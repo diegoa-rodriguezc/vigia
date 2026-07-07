@@ -225,7 +225,7 @@ def build_silver(only: list[str] | None = None) -> pd.DataFrame:
         frames.append(norm)
 
     if not frames:
-        raise RuntimeError("No hay datos en bronze. Ejecuta primero `vigia ingest`.")
+        raise RuntimeError("No hay datos en bronze. Ejecute primero `vigia ingest`.")
 
     eventos = pd.concat(frames, ignore_index=True)
     eventos = _apply_official_names(eventos)

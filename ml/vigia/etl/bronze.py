@@ -57,7 +57,7 @@ def ingest_one(spec: DatasetSpec) -> pd.DataFrame:
 def ingest_aggregated(spec: AggregatedSpec) -> pd.DataFrame:
     """Ingiere una fuente ENORME por streaming de columnas + agregación LOCAL, con linaje.
 
-    Para micro-dato inviable de agregar server-side (p. ej. ~23 M de procesos de la Fiscalía,
+    Para micro-dato inviable de agregar server-side (p. ej. ~23 millones de procesos de la Fiscalía,
     cuyo backend revienta el timeout en cualquier `$group`): se traen solo `group_cols` por
     keyset y se cuentan en memoria (ver `soda.fetch_streamed_aggregate`).
     """
@@ -104,7 +104,7 @@ def ingest_all(only: list[str] | None = None) -> None:
             log.error("Fallo ingestando %s: %s", spec.id, exc)
 
     # Población municipal DANE (no SODA: archivo oficial dane.gov.co). Habilita las tasas
-    # por 100k y la feature exógena del pronóstico. Se trata aparte del catálogo SODA.
+    # por 100.000 hab. y la feature exógena del pronóstico. Se trata aparte del catálogo SODA.
     if only is None or "poblacion" in only:
         try:
             from vigia.etl.poblacion import ingest_poblacion

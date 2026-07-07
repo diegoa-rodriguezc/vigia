@@ -40,7 +40,7 @@ _series_cache: dict = {"mtime": None, "df": None}
 def _series() -> pd.DataFrame:
     path = settings.gold_dir / "serie_mensual.parquet"
     if not path.exists():
-        raise RuntimeError("Datos gold ausentes. Ejecuta el pipeline ETL.")
+        raise RuntimeError("Datos gold ausentes. Ejecute el pipeline ETL.")
     mtime = path.stat().st_mtime
     if _series_cache["mtime"] != mtime:
         _series_cache["df"] = pd.read_parquet(path)
@@ -117,7 +117,7 @@ def monitoring() -> dict:
 
     path = settings.reports_dir / "model_health.json"
     if not path.exists():
-        raise HTTPException(status_code=404, detail="Sin reporte de salud. Ejecuta `vigia health`.")
+        raise HTTPException(status_code=404, detail="Sin reporte de salud. Ejecute `vigia health`.")
     return json.loads(path.read_text(encoding="utf-8"))
 
 

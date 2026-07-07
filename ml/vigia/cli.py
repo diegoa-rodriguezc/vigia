@@ -261,7 +261,7 @@ def brief(
 
     result = generate_brief(cod)
     if result is None:
-        typer.echo("Sin datos para ese municipio. ¿Ejecutaste el pipeline?")
+        typer.echo("Sin datos para ese municipio. ¿Ejecutó el pipeline?")
         raise typer.Exit(code=1)
     typer.echo(
         f"# Informe de seguridad — {result.municipio} "

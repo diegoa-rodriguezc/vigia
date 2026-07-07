@@ -47,7 +47,7 @@ def load_municipios() -> pd.DataFrame:
     """
     src = settings.bronze_dir / "divipola.parquet"
     if not src.exists():
-        raise RuntimeError("DIVIPOLA ausente en bronze. Ejecuta `vigia ingest --only divipola`.")
+        raise RuntimeError("DIVIPOLA ausente en bronze. Ejecute `vigia ingest --only divipola`.")
     df = pd.read_parquet(src)
 
     out = pd.DataFrame()

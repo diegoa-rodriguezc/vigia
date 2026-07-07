@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from vigia.config import settings
+from vigia.ml import forecasting
 from vigia.rag.hybrid import (
     forecast_context,
     has_forecast_intent,
@@ -92,7 +93,7 @@ def test_categoria_no_reconocida_no_se_inventa():
 def test_forecast_context_con_datos_reales_si_estan_presentes():
     # Camino feliz del híbrido: requiere los artefactos del pipeline (gold + modelo).
     gold_ok = (settings.gold_dir / "serie_mensual.parquet").exists()
-    model_ok = (settings.models_dir / "forecaster.joblib").exists()
+    model_ok = forecasting.MODEL_PATH.exists()
     if not (gold_ok and model_ok):
         pytest.skip("requiere artefactos del pipeline (make pipeline/deploy)")
     card = forecast_context("pronóstico de homicidios en Bogotá")
@@ -105,7 +106,7 @@ def test_forecast_context_sin_categoria_reconocida_degrada_a_rag():
     # Municipio reconocible + intención de futuro, pero SIN categoría reconocible:
     # el híbrido no debe inventar un pronóstico (devuelve None → RAG clásico).
     gold_ok = (settings.gold_dir / "serie_mensual.parquet").exists()
-    model_ok = (settings.models_dir / "forecaster.joblib").exists()
+    model_ok = forecasting.MODEL_PATH.exists()
     if not (gold_ok and model_ok):
         pytest.skip("requiere artefactos del pipeline (make pipeline/deploy)")
     assert forecast_context("qué se espera para Bogotá el próximo mes") is None

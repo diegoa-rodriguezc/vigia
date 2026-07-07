@@ -85,7 +85,7 @@ def build_justicia() -> pd.DataFrame:
     src = settings.bronze_dir / "justicia_procesos.parquet"
     if not src.exists():
         raise RuntimeError(
-            "No hay bronze de Justicia. Ejecuta `vigia ingest --only justicia_procesos`."
+            "No hay bronze de Justicia. Ejecute `vigia ingest --only justicia_procesos`."
         )
     raw = pd.read_parquet(src)
     log.info("Justicia: %d filas agregadas en bronze", len(raw))

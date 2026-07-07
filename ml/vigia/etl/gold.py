@@ -20,12 +20,12 @@ log = get_logger(__name__)
 def _load_silver() -> pd.DataFrame:
     src = settings.silver_dir / "eventos.parquet"
     if not src.exists():
-        raise RuntimeError("Silver ausente. Ejecuta primero `vigia clean`.")
+        raise RuntimeError("Silver ausente. Ejecute primero `vigia clean`.")
     return pd.read_parquet(src)
 
 
 def _attach_poblacion(series: pd.DataFrame) -> pd.DataFrame:
-    """Añade `poblacion` (DANE) por `(cod_municipio, anio)` para habilitar tasas por 100k.
+    """Añade `poblacion` (DANE) por `(cod_municipio, anio)`; habilita tasas por 100.000 hab.
 
     La proyección DANE cubre 2005-2035; los años fuera de rango (2003-2004, o futuros) se
     respaldan con el año disponible más cercano (clip), evitando nulos en los extremos de la
@@ -37,7 +37,7 @@ def _attach_poblacion(series: pd.DataFrame) -> pd.DataFrame:
 
         pob = load_poblacion()
     except RuntimeError as exc:
-        log.warning("Población no añadida (%s); se modela sin tasas por 100k", exc)
+        log.warning("Población no añadida (%s); se modela sin tasas por 100.000 hab.", exc)
         series["poblacion"] = pd.NA
         return series
 

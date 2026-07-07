@@ -75,7 +75,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 // rate-limit estricto, como el login) para que la ciudadanía pueda usar el asistente y el
 // pronóstico sin depender de la cuenta administradora.
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
-	// Guarda autoritativa: si el despliegue deshabilitó el registro, se rechaza aquí (la UI
+	// Validación definitiva: si el despliegue deshabilitó el registro, se rechaza aquí (la UI
 	// además oculta el botón, pero el servidor no confía en el cliente).
 	if !h.registrationEnabled {
 		writeError(w, http.StatusForbidden, "el registro de nuevas cuentas está deshabilitado")

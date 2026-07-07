@@ -294,13 +294,13 @@ extremos (2003-2004 → 2005; años futuros → 2035). Cobertura del cruce: **10
 > partir de `categoria` (`datasets.naturaleza`, ver `RESPONSE_CATEGORIES`), para separar la incidencia
 > delictiva de la respuesta institucional (capturas/incautaciones/recuperaciones) en los agregados.
 
-## Esquema gold y tablas servidas en PostgreSQL
+## Esquema gold y tablas en PostgreSQL
 
 `gold` produce tres parquet (`serie_mensual`, `resumen_municipio`, `resumen_categoria`) y `etl/load.py`
 carga **cinco tablas** a PostgreSQL: las **tres de la capa de delito** que se documentan abajo
 (`serie_mensual`, `resumen_municipio`, `anomalias`) más las **dos de la capa Justicia** (`justicia_resumen`,
 `justicia_anual`, documentadas en su propia [sección](#capa-justicia--fiscalía-general-de-la-nación-fuente-de-otra-entidad-capa-paralela)).
-`resumen_categoria` se computa pero hoy **no** se sirve/consume; el backend deriva sus agregados de las tablas
+`resumen_categoria` se computa pero hoy **no** se expone ni se consume; el backend deriva sus agregados de las tablas
 de abajo. Los esquemas viven en el código que las inserta (`etl/load.py`), no en migraciones aparte.
 
 **`serie_mensual`** — serie `municipio × categoría` mensual. Clave lógica `(cod_municipio, categoria, anio, mes)`.
@@ -316,8 +316,8 @@ de abajo. Los esquemas viven en el código que las inserta (`etl/load.py`), no e
 | `anio`, `mes` | INT | Derivados de `periodo` |
 
 > El parquet `serie_mensual.parquet` lleva además la columna **`poblacion`** (DANE, por `cod_municipio×anio`)
-> que usa el modelo para las tasas/feature exógena; **no** se carga a la tabla PostgreSQL (no la sirve el
-> backend), por eso no figura en la lista de columnas de `etl/load.py`.
+> que usa el modelo para las tasas/feature exógena; **no** se carga a la tabla PostgreSQL (el backend no la
+> expone), por eso no figura en la lista de columnas de `etl/load.py`.
 
 **`resumen_municipio`** — agregado por municipio (KPIs, ranking y mapa).
 

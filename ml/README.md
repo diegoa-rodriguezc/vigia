@@ -79,5 +79,5 @@ usa **Ollama local** (cero costo, sin enviar datos a terceros). Ver `.env.exampl
 > **Anthropic/OpenAI**); con **Ollama local** —el camino por defecto— el asistente cae con elegancia
 > al **RAG clásico** (`rag/pipeline.py`), sin regresión pero **sin encadenado de herramientas**. Para la
 > demo del agente, usar `LLM_PROVIDER=anthropic` u `openai`. La única **red neuronal** del proyecto (`MLPRegressor`
-> en `ml/challenger.py`) es un **arnés de evaluación**: no se sirve en producción —el modelo servido es
+> en `ml/challenger.py`) es un **arnés de evaluación**: no llega a producción —el modelo en producción es
 > *gradient boosting* (`HistGradientBoostingRegressor`)—.

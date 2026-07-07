@@ -8,7 +8,7 @@ y una cuarta carpeta (`kb_docs/`) guarda los documentos de la base de conocimien
 |---|---|---|
 | `bronze/` | **Crudo fiel** por fuente: un `<fuente>.parquet` + un `<fuente>.meta.json` de **linaje** (id SODA2, URL de origen, nº de filas, hash SHA-256 y fecha de ingesta) | No, se regenera con `vigia ingest` |
 | `silver/` | El modelo **unificado** de eventos (`eventos.parquet`): las dos familias de esquema y los dos formatos de fecha de las fuentes, normalizados a un único esquema | No, se regenera con `vigia clean` |
-| `gold/` | Los artefactos **servidos**: `serie_mensual`, `resumen_municipio`, `resumen_categoria`, `anomalias` y la capa Justicia (`justicia_anual`, `justicia_resumen`), en Parquet | No, se regenera con `vigia gold` / `vigia justicia` |
+| `gold/` | Los agregados **finales que consume la aplicación**: `serie_mensual`, `resumen_municipio`, `resumen_categoria`, `anomalias` y la capa Justicia (`justicia_anual`, `justicia_resumen`), en Parquet | No, se regenera con `vigia gold` / `vigia justicia` |
 | `kb_docs/` | **Documentos no estructurados** (PDF/Word) que el RAG indexa y cita por página | **Sí** (ver abajo) |
 
 ## Cómo regenerar las capas no versionadas

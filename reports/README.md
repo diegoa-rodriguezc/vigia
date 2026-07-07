@@ -13,7 +13,7 @@ emiten en cada ejecución. A diferencia del lago de datos y los modelos (regener
 | `justicia.json` | Cifras de la capa Justicia (Fiscalía): embudo de judicialización por etapa y **tasa de judicialización nacional** | `vigia justicia` (parte del pipeline) |
 | `anomaly_validation.json` | Validación de las anomalías **reales**: recall@ventana contra el catálogo de eventos documentados y **corroboración interna** (fracción respaldada por otra categoría en el mismo municipio-mes) | `vigia validate-anomalies` (parte del pipeline) |
 | `model_health.json` | **Salud del modelo** (semáforo): frescura del dato, deriva vía PSI y backtest extendido a 12 meses; alimenta la pestaña *Salud del modelo* del tablero | `vigia health` / `make docker-health` (**offline**, lento — no va en el pipeline) |
-| `challenger.json` | Comparación **champion vs challenger**: el HGB de producción frente a un desafiante neuronal (MLP) bajo el mismo backtest; solo evalúa, no cambia el modelo servido | `vigia challenger` (offline, bajo demanda) |
+| `challenger.json` | Comparación **champion vs challenger**: el HGB de producción frente a un desafiante neuronal (MLP) bajo el mismo backtest; solo evalúa, no cambia el modelo en producción | `vigia challenger` (offline, bajo demanda) |
 
 ## Cómo leerlos
 

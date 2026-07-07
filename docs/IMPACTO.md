@@ -44,7 +44,7 @@ traduce el dato en recomendación operativa.
 1. **Señal.** En el tablero, la analista de la Secretaría de Seguridad de un municipio ve que el **pronóstico
    de hurto a personas** para el próximo trimestre sube de forma sostenida **en su municipio**, y que la pestaña
    de **Alertas** marcó una anomalía al alza el mes anterior **en ese municipio** para esa categoría. *(El
-   horizonte servido es de 6 meses; el "próximo trimestre" se lee dentro de esa proyección.)*
+   pronóstico cubre 6 meses; el "próximo trimestre" se lee dentro de esa proyección.)*
 2. **Contexto.** Consulta al **asistente** ("¿cómo viene el hurto a personas este año y cómo se compara con el
    resto del departamento?") y obtiene cifras citadas a la fuente oficial, sin tener que cruzar planillas.
 3. **Decisión.** Lleva al Consejo de Seguridad una recomendación con evidencia: priorizar el **hurto a

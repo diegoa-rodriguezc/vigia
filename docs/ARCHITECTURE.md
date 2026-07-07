@@ -17,7 +17,7 @@
 4. **Portabilidad** — `docker-compose` levanta el sistema completo en cualquier ambiente; la
    configuración vive en variables de entorno (`.env`).
 5. **Escalabilidad** — los componentes están desacoplados por contratos REST; el almacenamiento
-   (PostgreSQL + pgvector) sirve tanto los agregados como el índice semántico del RAG.
+   (PostgreSQL + pgvector) alberga tanto los agregados como el índice semántico del RAG.
 
 ## 2. Vista de componentes
 
@@ -68,7 +68,7 @@ data/gold/justicia_*.parquet
 models/forecaster.joblib
    │  vigia load-db          (gold de delito + Justicia + anomalías → PostgreSQL: 5 tablas)
    ▼
-PostgreSQL (tablas servidas por Go)
+PostgreSQL (tablas que expone Go)
    │  vigia rag-index        (data cards + embudo Justicia + documentos → embeddings → pgvector)
    ▼
 PostgreSQL (tabla kb_chunks con columna vector)
@@ -160,7 +160,7 @@ los normaliza a un único modelo de evento:
 ### API Go (`:8080`)
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
-| GET | `/api/v1/health` | público | Liveness (200 si el proceso sirve; `db` refleja la conectividad real) |
+| GET | `/api/v1/health` | público | Liveness (200 si el proceso responde; `db` refleja la conectividad real) |
 | GET | `/api/v1/ready` | público | Readiness (503 si la BD es inalcanzable); la usa el healthcheck del contenedor |
 | GET | `/api/v1/config` | público | Flags de runtime para el frontend (p. ej. `registration_enabled`) |
 | POST | `/api/v1/auth/register` | público (rate-limit) | Crea una cuenta ciudadana (rol `citizen`) y la deja autenticada |
@@ -212,8 +212,8 @@ los normaliza a un único modelo de evento:
 - **ADR-06 — Redis también como caché de respuestas de IA.** Los endpoints de IA (`/forecast`, `/simulate`,
   `/assistant`, `/brief`) son caros (el LLM local en CPU tarda ~30–90 s). El backend cachea sus respuestas `200` en Redis: el pronóstico por
   `(municipio, categoría, horizonte)` (TTL `CACHE_FORECAST_TTL`, def. 6 h, pues solo cambia al reentrenar)
-  y el asistente por hash SHA-256 de la pregunta normalizada (TTL `CACHE_ASSISTANT_TTL`, def. 1 h). Sirve
-  respuestas repetidas en milisegundos y mitiga el cuello de botella de concurrencia. La caché es
+  y el asistente por hash SHA-256 de la pregunta normalizada (TTL `CACHE_ASSISTANT_TTL`, def. 1 h). Responde
+  las consultas repetidas en milisegundos y mitiga el cuello de botella de concurrencia. La caché es
   *fail-open* (si Redis cae, se reenvía como siempre) y se puede saltar con `?nocache=1`. Las respuestas se
   devuelven con cabecera `X-Cache: HIT|MISS`.
 - **ADR-07 — Aceleración CPU/GPU como override de infraestructura.** El RAG corre

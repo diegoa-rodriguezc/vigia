@@ -1,6 +1,6 @@
 # `models/` — Artefactos de modelo entrenados
 
-Esta carpeta guarda los modelos **serializados** que sirve la API de ML. No se versionan en git
+Esta carpeta guarda los modelos **serializados** que utiliza la API de ML para responder. No se versionan en git
 (son regenerables y pesados).
 
 | Artefacto | Qué es |

@@ -134,7 +134,7 @@ base propio de cada serie sin fuga de datos.
 - **Backtesting walk-forward RECURSIVO (rolling origin), sin fuga:** para cada uno de los últimos
   `n_splits` orígenes se entrena solo con el pasado y se pronostica el horizonte completo (`test_months`,
   por defecto 6) **de forma recursiva — igual que en producción —**, comparando contra los valores reales.
-  Así se valida el **horizonte que de verdad se sirve**, no solo 1 paso (`ml/vigia/ml/forecasting.py`,
+  Así se valida el **horizonte que de verdad se entrega al usuario**, no solo 1 paso (`ml/vigia/ml/forecasting.py`,
   `_walk_forward`).
 - **Métricas:** MAE, **MASE** y sMAPE del modelo frente a **DOS líneas base ingenuas** —la **persistencia**
   (último valor arrastrado por el horizonte) y la **estacional-ingenua** (mismo mes del año anterior, `tp−12`,
@@ -189,14 +189,14 @@ base propio de cada serie sin fuga de datos.
 - **sMAPE:** promedio **simple** (no ponderado) sobre las series con historia suficiente. Se conserva por
   comparabilidad, pero **no** es el criterio primario (ver el artefacto arriba): el titular es el **MASE**.
 - **Criterio de aceptación (múltiple, no una sola métrica):** el modelo debe (a) superar a la persistencia en
-  **sMAPE multi-paso** —el horizonte que efectivamente se sirve, 6 meses recursivos— (`supera_linea_base_smape_multipaso`);
+  **sMAPE multi-paso** —el horizonte que efectivamente se entrega, 6 meses recursivos— (`supera_linea_base_smape_multipaso`);
   y hoy además (b) la bate en **MAE y MASE a 1 paso y multipaso** (`supera_linea_base_mae`) y (c) supera a la
   **estacional-ingenua** en MAE a 1 paso y multipaso (`supera_linea_base_estacional_mae[_multipaso]`).
   **Dónde cede (declarado):** el sMAPE a 1 paso (≈126 vs ≈118 — el artefacto de los conteos ~0 ya explicado,
   no una debilidad real del pronóstico), el **paso 2 en MAE frente a la estacional** (2,32 vs 2,31 — la
   ventaja sobre esta línea base no es monótona por paso), el **empate práctico con la estacional en sMAPE
   multipaso** (≈113,4 vs 113,5) y el tercil de volumen ínfimo (ver `por_volumen`). La ventaja **crece con el
-  horizonte frente a la persistencia**, que es justo lo que se sirve.
+  horizonte frente a la persistencia**, que es justo lo que se entrega.
 
 **Validación de la detección de anomalías.** No se evalúa por error sino por **precisión/recall contra picos
 inyectados** (ground truth) en un panel sintético (`tests/test_anomaly.py`,
@@ -289,7 +289,7 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
 
 - **Iteración 6 (validación multi-paso + reconciliación del MAE):** dos refuerzos de rigor pedidos por una
    autoevaluación crítica. 
-   - (a) **Validar el horizonte que se sirve:** el backtest a 1 paso no decía nada del
+   - (a) **Validar el horizonte que se entrega:** el backtest a 1 paso no decía nada del
    pronóstico recursivo a 6 meses que ve el usuario. Se reescribió el backtest a **walk-forward recursivo
    multi-paso** (espeja `predict`): reporta el error agregado del horizonte, su **degradación por paso** y la
    **cobertura empírica de la banda** de incertidumbre. *Hallazgo:* contra la **persistencia multi-paso** el
@@ -322,7 +322,7 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
     autorregresivas— y el MAE multipaso cayó a ≈2,45 (ya batía a la línea base), a costa de algo de sMAPE. 
     - (b) **Objetivo en TASA por 100.000 habitantes:** modelar la
     incidencia por 100.000 habitantes (no el conteo crudo) iguala la escala entre Bogotá y un municipio pequeño;
-    el pronóstico se **sirve en conteos** (se reconvierte con la población). Mejoró MAE **y** sMAPE frente a
+    el pronóstico se **entrega en conteos** (se reconvierte con la población). Mejoró MAE **y** sMAPE frente a
     modelar conteos (multipaso 2,26 / 111,0). 
     - (c) **Re-test de Poisson:** se reprobó `loss="poisson"` ahora
     con población — **vuelve a explotar** sobre conteos (MAE ~1e73 en la recursión, confirmando la Iteración
@@ -346,7 +346,7 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
     **walk-forward temporal** (sin fuga), **no `cross_val_score`/k-fold aleatorio** —que barajaría el tiempo y
     filtraría el futuro, dando métricas engañosamente buenas—. Se parametrizó `_new_estimator(overrides)` y se
     puntuaron **8 configuraciones** (variando learning-rate, profundidad, iteraciones, regularización y nº de
-    hojas) por el **MAE multipaso servido** (modo tasa+mezcla, 2 orígenes), con la persistencia como referencia
+    hojas) por el **MAE multipaso de la predicción entregada** (modo tasa+mezcla, 2 orígenes), con la persistencia como referencia
     común. *Hallazgo:* las 8 configuraciones cayeron **dentro del 1,4 %** entre sí; la mejor alternativa
     (`learning_rate=0,03`, `max_iter=800`) mejoraba el MAE multipaso solo **−0,8 %** al validarla a 3 orígenes
     (2,215→2,197), **a costa de 2× el tiempo de entrenamiento** y con leve regresión a 1 paso → **no se adopta**.
@@ -361,9 +361,9 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
     producción bajo **exactamente el mismo** backtest walk-forward recursivo sin fuga (mismo filtro de series,
     mismo modo tasa/conteo, mismas features, mismos orígenes). Para reusar el backtest se generalizó
     `_walk_forward` con un parámetro `make_estimator` (su valor por defecto es el HGB de producción, así que el
-    cambio **no altera** el modelo servido ni la HPO (*Hyperparameter Optimization*) previa). El MLP exige escalado de features (a diferencia de
+    cambio **no altera** el modelo en producción ni la HPO (*Hyperparameter Optimization*) previa). El MLP exige escalado de features (a diferencia de
     los árboles), de ahí el `StandardScaler` en el pipeline. **El arnés solo EVALÚA**: no toca el artefacto
-    servido; cablear al ganador sería una decisión aparte y explícita. El veredicto y las métricas paralelas se
+    en producción; cablear al ganador sería una decisión aparte y explícita. El veredicto y las métricas paralelas se
     regeneran de forma reproducible en `reports/challenger.json` (`champion` vs `challenger`, MAE/sMAPE a 1 paso
     y multipaso, con margen relativo). *Resultado sobre los datos reales (18.262 series, 2 orígenes, h=6):* el
     **champion HGB mantiene la ventaja** —MAE multipaso **2,276 vs 2,325** del MLP (**+2,2 %** a favor del HGB), y
@@ -382,7 +382,7 @@ revirtiendo la antigua derrota en MAE. **A 1 paso mantiene una ventaja modesta e
 ejecución vigente, +1,3 %; la ventaja fluctúa **entre ≈+1 y ≈+3 % según la ejecución** — al ser una diferencia
 pequeña entre errores casi iguales, el ruido multi-hilo ~1 % del MAE se amplifica a puntos porcentuales del
 margen — entre el empate técnico y la ligera ventaja) **y cede en sMAPE** (la persistencia es casi
-imbatible en error relativo a un mes sobre conteos ínfimos), pero ese no es el horizonte servido. El desglose `por_volumen` muestra que el modelo gana en MAE y sMAPE en el tercil
+imbatible en error relativo a un mes sobre conteos ínfimos), pero ese no es el horizonte que se entrega. El desglose `por_volumen` muestra que el modelo gana en MAE y sMAPE en el tercil
 **medio**, y gana en sMAPE en el **alto** (donde empata en MAE por muy poco, gracias a la mezcla con
 persistencia); el de **volumen ínfimo** queda por detrás en ambas (error absoluto diminuto, "repetir el último
 valor" es casi imbatible ahí). El aporte del modelo es
@@ -439,7 +439,7 @@ El desglose `por_volumen` que el reporte
   detrás en ambas (≈0,48 vs 0,48; error absoluto diminuto, "repetir el último valor" es casi imbatible ahí). El
   flag `gana_modelo` por tercil lo registra (el medio gana de forma estable; el alto oscila entre ejecuciones por
   la fluctuación de ~1 %).
-- **`multipaso`** (horizonte recursivo de 6 meses, lo que se sirve): contra la **persistencia multi-paso**
+- **`multipaso`** (horizonte recursivo de 6 meses, lo que se entrega): contra la **persistencia multi-paso**
   el modelo gana **tanto en MAE (≈2,20 vs 2,57) como en sMAPE (≈113,4 vs 114,7)**, con ventaja **creciente**
   por paso, porque la persistencia se degrada rápido con el horizonte (a 1 paso el modelo aún cede en sMAPE;
   la ventaja se abre al proyectar). Contra la **estacional multi-paso** gana en MAE (≈2,20 vs 2,44) pero el
@@ -474,7 +474,7 @@ estándar 0,1/0,25, sobre los conteos de delito recientes vs. una **ventana roll
 —no toda la historia, que por el crecimiento secular de 20 años dejaría la deriva siempre en rojo—) y un **backtest extendido a 12
 meses** que valida el horizonte largo (el que el entrenamiento a 6 no cubre) con el mismo walk-forward sin
 fuga—. El estado global es el peor de las tres. El backtest a 12 meses es costoso (recalcula features por
-paso sobre todo el panel), por eso es un comando **offline** y la API solo sirve el JSON ya escrito.
+paso sobre todo el panel), por eso es un comando **offline** y la API solo entrega el JSON ya escrito.
 
 ### 6.1 Deriva de datos (entrada)
 Comparar `silver_quality.json` entre ejecuciones consecutivas. **Señales y umbrales de revisión:**
@@ -515,7 +515,7 @@ Comparar `metricas_backtest` entre ejecuciones. **Disparadores de alerta:**
 - **Implementado:** `/health` (estado de la BD gold), *logs* estructurados, cabecera `X-Cache` (HIT/MISS),
   *rate-limiting* y *timeouts* alineados (~240s) por la latencia del LLM local en CPU (~30–90s/respuesta).
   **Healthchecks de contenedor en los 6 servicios** (db/redis/ollama/ml/backend/frontend) con `depends_on:
-  service_healthy` encadenado, de modo que `make up` (`--wait`) solo retorna cuando la plataforma sirve de
+  service_healthy` encadenado, de modo que `make up` (`--wait`) solo retorna cuando la plataforma responde de
   verdad (el backend distroless se autoconsulta vía subcomando `/api healthcheck`).
 
 ### 6.6 Runbook mensual (operación mínima sin automatización)

@@ -1,0 +1,232 @@
+{
+  "experimento": "barrido de _BLEND_W (Iteración 12) — backtest único con peso 1.0, re-mezcla exacta a posteriori",
+  "generado": "2026-07-08T15:52:05",
+  "n_origins": 3,
+  "horizon": 6,
+  "modo": "rate",
+  "nota_ruido": "HGB con early_stopping multi-hilo: las cifras fluctúan ~1% entre ejecuciones; comparar w=0.7 contra reports/model_report.json valida el arnés dentro de esa banda",
+  "lineas_base": {
+    "persistencia_mae_1paso": 2.5968,
+    "persistencia_mae_multipaso": 3.4778,
+    "estacional_mae_1paso": 2.7168,
+    "estacional_mae_multipaso": 3.2028
+  },
+  "barrido": [
+    {
+      "peso_modelo": 1.0,
+      "paso1": {
+        "n": 30606,
+        "mae": 2.7162,
+        "smape": 125.98,
+        "baseline_mae": 2.5968,
+        "baseline_smape": 120.13,
+        "baseline_estacional_mae": 2.7168,
+        "baseline_estacional_smape": 123.3,
+        "mase": 1.3813,
+        "baseline_mase": 1.4489
+      },
+      "multipaso": {
+        "n": 146835,
+        "mae": 2.9112,
+        "smape": 112.32,
+        "baseline_mae": 3.4778,
+        "baseline_smape": 116.9,
+        "baseline_estacional_mae": 3.2028,
+        "baseline_estacional_smape": 115.51,
+        "mase": 1.4656,
+        "baseline_mase": 1.664
+      },
+      "skill_mae_1paso_vs_persistencia_pct": -4.6,
+      "skill_mae_multipaso_vs_persistencia_pct": 16.3
+    },
+    {
+      "peso_modelo": 0.9,
+      "paso1": {
+        "n": 30606,
+        "mae": 2.6472,
+        "smape": 125.91,
+        "baseline_mae": 2.5968,
+        "baseline_smape": 120.13,
+        "baseline_estacional_mae": 2.7168,
+        "baseline_estacional_smape": 123.3,
+        "mase": 1.3621,
+        "baseline_mase": 1.4489
+      },
+      "multipaso": {
+        "n": 146835,
+        "mae": 2.8944,
+        "smape": 112.69,
+        "baseline_mae": 3.4778,
+        "baseline_smape": 116.9,
+        "baseline_estacional_mae": 3.2028,
+        "baseline_estacional_smape": 115.51,
+        "mase": 1.46,
+        "baseline_mase": 1.664
+      },
+      "skill_mae_1paso_vs_persistencia_pct": -1.9,
+      "skill_mae_multipaso_vs_persistencia_pct": 16.8
+    },
+    {
+      "peso_modelo": 0.8,
+      "paso1": {
+        "n": 30606,
+        "mae": 2.5906,
+        "smape": 126.37,
+        "baseline_mae": 2.5968,
+        "baseline_smape": 120.13,
+        "baseline_estacional_mae": 2.7168,
+        "baseline_estacional_smape": 123.3,
+        "mase": 1.3509,
+        "baseline_mase": 1.4489
+      },
+      "multipaso": {
+        "n": 146835,
+        "mae": 2.899,
+        "smape": 113.56,
+        "baseline_mae": 3.4778,
+        "baseline_smape": 116.9,
+        "baseline_estacional_mae": 3.2028,
+        "baseline_estacional_smape": 115.51,
+        "mase": 1.462,
+        "baseline_mase": 1.664
+      },
+      "skill_mae_1paso_vs_persistencia_pct": 0.2,
+      "skill_mae_multipaso_vs_persistencia_pct": 16.6
+    },
+    {
+      "peso_modelo": 0.7,
+      "paso1": {
+        "n": 30606,
+        "mae": 2.5453,
+        "smape": 127.25,
+        "baseline_mae": 2.5968,
+        "baseline_smape": 120.13,
+        "baseline_estacional_mae": 2.7168,
+        "baseline_estacional_smape": 123.3,
+        "mase": 1.3467,
+        "baseline_mase": 1.4489
+      },
+      "multipaso": {
+        "n": 146835,
+        "mae": 2.9195,
+        "smape": 114.89,
+        "baseline_mae": 3.4778,
+        "baseline_smape": 116.9,
+        "baseline_estacional_mae": 3.2028,
+        "baseline_estacional_smape": 115.51,
+        "mase": 1.4712,
+        "baseline_mase": 1.664
+      },
+      "skill_mae_1paso_vs_persistencia_pct": 2.0,
+      "skill_mae_multipaso_vs_persistencia_pct": 16.1
+    },
+    {
+      "peso_modelo": 0.6,
+      "paso1": {
+        "n": 30606,
+        "mae": 2.5108,
+        "smape": 128.52,
+        "baseline_mae": 2.5968,
+        "baseline_smape": 120.13,
+        "baseline_estacional_mae": 2.7168,
+        "baseline_estacional_smape": 123.3,
+        "mase": 1.3488,
+        "baseline_mase": 1.4489
+      },
+      "multipaso": {
+        "n": 146835,
+        "mae": 2.9569,
+        "smape": 116.63,
+        "baseline_mae": 3.4778,
+        "baseline_smape": 116.9,
+        "baseline_estacional_mae": 3.2028,
+        "baseline_estacional_smape": 115.51,
+        "mase": 1.4869,
+        "baseline_mase": 1.664
+      },
+      "skill_mae_1paso_vs_persistencia_pct": 3.3,
+      "skill_mae_multipaso_vs_persistencia_pct": 15.0
+    },
+    {
+      "peso_modelo": 0.5,
+      "paso1": {
+        "n": 30606,
+        "mae": 2.4863,
+        "smape": 130.15,
+        "baseline_mae": 2.5968,
+        "baseline_smape": 120.13,
+        "baseline_estacional_mae": 2.7168,
+        "baseline_estacional_smape": 123.3,
+        "mase": 1.3566,
+        "baseline_mase": 1.4489
+      },
+      "multipaso": {
+        "n": 146835,
+        "mae": 3.0094,
+        "smape": 118.76,
+        "baseline_mae": 3.4778,
+        "baseline_smape": 116.9,
+        "baseline_estacional_mae": 3.2028,
+        "baseline_estacional_smape": 115.51,
+        "mase": 1.5085,
+        "baseline_mase": 1.664
+      },
+      "skill_mae_1paso_vs_persistencia_pct": 4.3,
+      "skill_mae_multipaso_vs_persistencia_pct": 13.5
+    },
+    {
+      "peso_modelo": 0.4,
+      "paso1": {
+        "n": 30606,
+        "mae": 2.4762,
+        "smape": 132.16,
+        "baseline_mae": 2.5968,
+        "baseline_smape": 120.13,
+        "baseline_estacional_mae": 2.7168,
+        "baseline_estacional_smape": 123.3,
+        "mase": 1.3692,
+        "baseline_mase": 1.4489
+      },
+      "multipaso": {
+        "n": 146835,
+        "mae": 3.08,
+        "smape": 121.28,
+        "baseline_mae": 3.4778,
+        "baseline_smape": 116.9,
+        "baseline_estacional_mae": 3.2028,
+        "baseline_estacional_smape": 115.51,
+        "mase": 1.5344,
+        "baseline_mase": 1.664
+      },
+      "skill_mae_1paso_vs_persistencia_pct": 4.6,
+      "skill_mae_multipaso_vs_persistencia_pct": 11.4
+    },
+    {
+      "peso_modelo": 0.3,
+      "paso1": {
+        "n": 30606,
+        "mae": 2.4865,
+        "smape": 134.57,
+        "baseline_mae": 2.5968,
+        "baseline_smape": 120.13,
+        "baseline_estacional_mae": 2.7168,
+        "baseline_estacional_smape": 123.3,
+        "mase": 1.3858,
+        "baseline_mase": 1.4489
+      },
+      "multipaso": {
+        "n": 146835,
+        "mae": 3.1638,
+        "smape": 124.19,
+        "baseline_mae": 3.4778,
+        "baseline_smape": 116.9,
+        "baseline_estacional_mae": 3.2028,
+        "baseline_estacional_smape": 115.51,
+        "mase": 1.5639,
+        "baseline_mase": 1.664
+      },
+      "skill_mae_1paso_vs_persistencia_pct": 4.2,
+      "skill_mae_multipaso_vs_persistencia_pct": 9.0
+    }
+  ]
+}

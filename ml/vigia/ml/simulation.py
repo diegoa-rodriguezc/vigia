@@ -1,8 +1,8 @@
 """Simulación de escenarios "¿y si…?" sobre el pronóstico.
 
-Capa contrafactual encima del modelo de pronóstico (`forecasting.predict`). Permite
-explorar trayectorias alternativas moviendo palancas explícitas, separando con honestidad
-la procedencia de cada una:
+Capa de escenarios hipotéticos encima del modelo de pronóstico (`forecasting.predict`).
+Permite explorar trayectorias alternativas moviendo palancas explícitas, separando con
+honestidad la procedencia de cada una:
 
 - **Palanca del MODELO** — un *shock de población* (migración, crecimiento, retorno): escala
   la población del municipio y el modelo re-deriva `log_poblacion` y reconvierte tasa→conteo.
@@ -88,7 +88,7 @@ def simulate(
     horizon: int = 6,
     model: ForecastModel | None = None,
 ) -> dict | None:
-    """Compara el pronóstico base con un escenario contrafactual.
+    """Compara el pronóstico base con un escenario hipotético («¿y si…?»).
 
     Devuelve un dict con la trayectoria base, la del escenario, el delta por mes y el acumulado
     de hechos evitados/adicionales, o None si no hay historia/modelo. La incertidumbre de la

@@ -77,6 +77,31 @@ def match_municipio(query: str, resumen: pd.DataFrame) -> dict | None:
     largo). Si dos municipios distintos empatan en el token más largo, se considera
     ambiguo y no se arriesga una coincidencia (devuelve None).
     """
+    # 0) Igualdad del NOMBRE OFICIAL COMPLETO como frase dentro de la consulta (sin acentos ni
+    # puntuación). Resuelve los compuestos que el cruce por token declara ambiguos: en
+    # "Santiago de Cali" el token más largo (SANTIAGO) empata con Santiago de Tolú o
+    # Santiago (Putumayo) y se descartaría; la frase completa es inequívoca. Se prefiere el
+    # nombre más largo casado (frase más específica) y no relaja ninguna guarda: solo añade
+    # un camino de mayor prioridad ANTES de la heurística de tokens.
+    qphrase = f" {' '.join(re.findall(r'[A-Z0-9]+', _norm(query)))} "
+    full: list[tuple[int, dict]] = []
+    for _, r in resumen.iterrows():
+        name = " ".join(re.findall(r"[A-Z0-9]+", _norm(r["municipio"])))
+        if len(name) >= 4 and f" {name} " in qphrase:
+            full.append(
+                (
+                    len(name),
+                    {
+                        "cod_municipio": r["cod_municipio"],
+                        "municipio": r["municipio"],
+                        "departamento": r["departamento"],
+                    },
+                )
+            )
+    if full:
+        full.sort(key=lambda c: -c[0])
+        return full[0][1]
+
     qwords = set(re.findall(r"[A-Z0-9]+", _norm(query)))
     candidates: list[tuple[int, str, dict]] = []
     for _, r in resumen.iterrows():

@@ -29,8 +29,13 @@ def _is_text(s: pd.Series) -> bool:
     )
 
 
-def quality_report(df: pd.DataFrame) -> str:
-    """Construye un informe de calidad serializado en JSON."""
+def quality_report(df: pd.DataFrame, procedencia: dict[str, dict] | None = None) -> str:
+    """Construye un informe de calidad serializado en JSON.
+
+    `procedencia` (opcional) es la conciliación crudo→silver por fuente que aporta
+    `build_silver` ({fuente: {filas_crudas, filas_validas, descartadas_pct}}), para que la
+    diferencia entre el volumen del portal y el de silver sea auditable sin correr el pipeline.
+    """
     # % de valores que son el placeholder "NO REPORTADO" en cada campo de texto donde aparece.
     # `completitud_pct` da 100% por construcción (silver imputa el placeholder en vez de dejar
     # nulos); este desglose muestra el subregistro REAL por campo, sin maquillarlo.
@@ -46,6 +51,17 @@ def quality_report(df: pd.DataFrame) -> str:
     report: dict = {
         "filas": int(len(df)),
         "fuentes": df["fuente"].value_counts().to_dict(),
+        # Conciliación crudo→silver por fuente (la aporta build_silver). Silver NO elimina
+        # filas repetidas: en las fuentes a grano de evento las filas idénticas son hechos
+        # distintos con atributos gruesos (las fuentes pre-agregadas no traen filas repetidas y
+        # la serie de homicidios con las repetidas conservadas reproduce la cifra oficial anual
+        # de la Policía).
+        "procedencia": procedencia or {},
+        "nota_procedencia": (
+            "filas_crudas → filas_validas por fuente; los descartes provienen solo de fecha o "
+            "código de municipio inválidos. No se eliminan filas repetidas: una fila idéntica "
+            "a otra es un hecho distinto con atributos gruesos, no un duplicado del publicador."
+        ),
         "rango_fechas": {
             "min": str(df["fecha"].min().date()) if len(df) else None,
             "max": str(df["fecha"].max().date()) if len(df) else None,

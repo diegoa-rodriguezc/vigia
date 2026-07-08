@@ -230,6 +230,37 @@ def health(horizon: int = 12) -> None:
         )
 
 
+@app.command(name="rag-eval")
+def rag_eval(
+    modo: str = typer.Option(
+        "auto",
+        help=(
+            "Camino a evaluar: auto (producción: agente si el proveedor admite "
+            "herramientas, si no RAG clásico) | agente | clasico. Funciona con ambos "
+            "proveedores (openai/anthropic → agente; Ollama local → clásico, más lento)."
+        ),
+    ),
+) -> None:
+    """Evalúa el asistente con preguntas de referencia DERIVADAS de gold/reports (no quemadas):
+    exactitud de cifras, abstención ante lo fuera de alcance (guardarraíl medido), citación
+    de fuentes y resolución de municipios con errores de tipeo. Requiere BD + proveedor LLM
+    activos; escribe reports/rag_eval.json."""
+    from vigia.rag import evaluation
+
+    rep = evaluation.write_report(modo=modo)
+    pct = lambda v: f"{v:.0%}" if v is not None else "n/d"  # noqa: E731
+    typer.echo(
+        f"Asistente evaluado ({rep['n_preguntas']} preguntas, modo {rep['modo_efectivo']}): "
+        f"exactitud de cifras {pct(rep['exactitud_cifras'])} · "
+        f"abstención correcta {pct(rep['abstencion_correcta'])} · "
+        f"citación en aciertos {pct(rep['citacion_en_aciertos'])} · "
+        f"latencia media {rep['latencia_media_s']} s"
+    )
+    fallos = [d["id"] for d in rep["detalle"] if not d.get("acierto")]
+    if fallos:
+        typer.echo(f"Fallos: {', '.join(fallos)} (detalle en reports/rag_eval.json)")
+
+
 @app.command()
 def ask(pregunta: str) -> None:
     """Consulta al asistente ciudadano desde la terminal (agente con herramientas si el proveedor

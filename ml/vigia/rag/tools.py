@@ -46,7 +46,7 @@ class Tool:
 # ───────────── Carga perezosa de gold (con invalidación por mtime) ─────────────
 # Las herramientas leen las tablas gold. La serie mensual (~3 millones de filas) se cachea
 # y se invalida por la marca de tiempo del parquet, igual que el caché del API (`api/main.py`),
-# para que un re-pipeline se refleje sin reiniciar el proceso.
+# para que una re-ejecución del pipeline se refleje sin reiniciar el proceso.
 _cache: dict[str, dict] = {}
 
 
@@ -93,7 +93,7 @@ def _periodo_str(value: object) -> str:
 def _run_resolver_municipio(texto: str) -> dict:
     resumen = _load_gold("resumen_municipio")
     if resumen is None:
-        return {"error": "Datos no disponibles. Ejecuta el pipeline ETL."}
+        return {"error": "Datos no disponibles. Ejecute el pipeline ETL."}
     muni = match_municipio(texto, resumen[["cod_municipio", "municipio", "departamento"]])
     if muni is None:
         return {"encontrado": False, "nota": "No se reconoció un municipio en el texto."}
@@ -108,7 +108,7 @@ def _run_resolver_municipio(texto: str) -> dict:
 def _run_pronostico(cod_municipio: str, categoria: str, horizonte: int = 6) -> dict:
     serie = _load_gold("serie_mensual")
     if serie is None:
-        return {"error": "Datos no disponibles. Ejecuta el pipeline ETL."}
+        return {"error": "Datos no disponibles. Ejecute el pipeline ETL."}
     cod = str(cod_municipio)
     sub = serie[serie["cod_municipio"] == cod]
     if sub.empty:
@@ -153,7 +153,7 @@ def _run_pronostico(cod_municipio: str, categoria: str, horizonte: int = 6) -> d
 def _run_serie_historica(cod_municipio: str, categoria: str, meses: int = 12) -> dict:
     serie = _load_gold("serie_mensual")
     if serie is None:
-        return {"error": "Datos no disponibles. Ejecuta el pipeline ETL."}
+        return {"error": "Datos no disponibles. Ejecute el pipeline ETL."}
     cod = str(cod_municipio)
     sub = serie[serie["cod_municipio"] == cod]
     if sub.empty:
@@ -184,7 +184,7 @@ def _run_serie_historica(cod_municipio: str, categoria: str, meses: int = 12) ->
 def _run_anomalias(cod_municipio: str) -> dict:
     an = _load_gold("anomalias")
     if an is None:
-        return {"encontrado": False, "nota": "No hay anomalías calculadas. Ejecuta el pipeline."}
+        return {"encontrado": False, "nota": "No hay anomalías calculadas. Ejecute el pipeline."}
     cod = str(cod_municipio)
     sub = an[an["cod_municipio"] == cod].copy()
     if sub.empty:
@@ -208,10 +208,24 @@ def _run_anomalias(cod_municipio: str) -> dict:
     }
 
 
-def _run_embudo_justicia(cod_municipio: str) -> dict:
+def _run_embudo_justicia(cod_municipio: str | None = None) -> dict:
     jr = _load_gold("justicia_resumen")
     if jr is None:
-        return {"encontrado": False, "nota": "Capa de Justicia no disponible. Ejecuta el pipeline."}
+        return {"encontrado": False, "nota": "Capa de Justicia no disponible. Ejecute el pipeline."}
+    if not cod_municipio:
+        # Sin código = embudo NACIONAL, calculado del mismo gold que alimenta el tablero
+        # (una cifra insignia no debe depender de la recuperación semántica: el agente
+        # llegaba a responder con la fila de Bogotá del ranking como si fuera el país).
+        total = int(jr["total_procesos"].sum())
+        jud = int(jr["n_judicializados"].sum())
+        return {
+            "encontrado": True,
+            "nivel": "nacional",
+            "total_procesos": total,
+            "n_judicializados": jud,
+            "tasa_judicializacion_pct": round(100 * jud / total, 2) if total else None,
+            "nota": "Tasa = procesos que superan la indagación / total con etapa conocida.",
+        }
     cod = str(cod_municipio)
     row = jr[jr["cod_municipio"] == cod]
     if row.empty:
@@ -293,9 +307,11 @@ TOOLS: list[Tool] = [
     Tool(
         name="serie_historica",
         description=(
-            "Cifras históricas registradas de un delito en un municipio (últimos N meses). Úsala "
-            "para el PASADO o el presente ('cuántos hubo', 'cómo ha evolucionado'). Requiere el "
-            "código DANE del municipio."
+            "Evolución MENSUAL reciente de un delito en un municipio (últimos N meses). Úsala "
+            "para el pasado reciente ('cuántos hubo el último mes', 'cómo ha evolucionado'). NO "
+            "devuelve totales históricos acumulados (para totales usa 'buscar_conocimiento'). "
+            "Requiere el código DANE y una categoría LISTADA por 'resolver_municipio' (no "
+            "inventes categorías)."
         ),
         parameters=_obj(
             {
@@ -326,13 +342,22 @@ TOOLS: list[Tool] = [
     Tool(
         name="embudo_justicia",
         description=(
-            "Tasa de judicialización (eje Justicia, Fiscalía) de un municipio: qué fracción de los "
-            "procesos supera la indagación. Úsala para preguntas sobre justicia, judicialización o "
-            "impunidad. Requiere el código DANE del municipio."
+            "Tasa de judicialización (eje Justicia, Fiscalía): qué fracción de los procesos supera "
+            "la indagación. Úsala SOLO para justicia, judicialización, impunidad o procesos de la "
+            "Fiscalía. Si la pregunta nombra un municipio, PRIMERO obtén su código con "
+            "'resolver_municipio' y pásalo aquí; el modo SIN argumentos (total NACIONAL: procesos "
+            "del país y tasa nacional) es SOLO para preguntas del país entero. NO sirve para "
+            "conteos de delitos u operativos de la Policía (homicidios, hurtos, capturas…): eso va "
+            "por 'buscar_conocimiento' aunque la pregunta diga 'nacional'."
         ),
         parameters=_obj(
-            {"cod_municipio": {"type": "string", "description": "Código DANE del municipio."}},
-            ["cod_municipio"],
+            {
+                "cod_municipio": {
+                    "type": "string",
+                    "description": "Código DANE del municipio; omítalo para el total nacional.",
+                }
+            },
+            [],
         ),
         run=_run_embudo_justicia,
     ),
@@ -340,8 +365,10 @@ TOOLS: list[Tool] = [
         name="buscar_conocimiento",
         description=(
             "Búsqueda semántica en la base de conocimiento (resúmenes de datos oficiales y "
-            "documentos de política pública). Úsala para definiciones, contexto, marco normativo o "
-            "cuando la pregunta NO encaje con las demás herramientas."
+            "documentos de política pública). Es LA herramienta para: TOTALES históricos "
+            "acumulados por municipio, RANKINGS y superlativos ('¿qué municipio tiene más X?'), "
+            "definiciones, contexto y marco normativo — y cuando la pregunta NO encaje con las "
+            "demás herramientas. No requiere código de municipio."
         ),
         parameters=_obj(
             {"consulta": {"type": "string", "description": "La consulta en lenguaje natural."}},

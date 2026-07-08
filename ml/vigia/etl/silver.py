@@ -210,18 +210,29 @@ def build_silver(only: list[str] | None = None) -> pd.DataFrame:
     """Lee bronze, normaliza cada fuente de eventos y consolida `silver/eventos.parquet`."""
     settings.ensure_dirs()
     frames: list[pd.DataFrame] = []
+    procedencia: dict[str, dict[str, int | float]] = {}
     specs = [s for s in EVENT_DATASETS.values() if only is None or s.id in only]
 
     for spec in specs:
         src = settings.bronze_dir / f"{spec.id}.parquet"
         if not src.exists():
-            log.warning("Bronze ausente para %s (%s); omitido", spec.id, src.name)
+            log.warning(
+                "Sin datos de la fuente %s en la capa bronze (%s); fuente omitida",
+                spec.id, src.name,
+            )
             continue
         raw = pd.read_parquet(src)
         if raw.empty:
             continue
         norm = normalize(raw, spec)
         log.info("Normalizado %s: %d filas -> %d válidas", spec.id, len(raw), len(norm))
+        # Conciliación crudo→silver auditable desde el repo (va al informe de calidad):
+        # los descartes provienen SOLO de fecha/código de municipio inválidos (ver normalize).
+        procedencia[spec.id] = {
+            "filas_crudas": int(len(raw)),
+            "filas_validas": int(len(norm)),
+            "descartadas_pct": round(100 * (1 - len(norm) / len(raw)), 2),
+        }
         frames.append(norm)
 
     if not frames:
@@ -229,13 +240,22 @@ def build_silver(only: list[str] | None = None) -> pd.DataFrame:
 
     eventos = pd.concat(frames, ignore_index=True)
     eventos = _apply_official_names(eventos)
-    eventos = eventos.drop_duplicates()
+    # AQUÍ NO SE ELIMINAN FILAS REPETIDAS (a propósito): el grano de silver es el del publicador
+    # y una fila idéntica a otra es un hecho DISTINTO con atributos gruesos, no un duplicado. Un
+    # `drop_duplicates()` global llegó a borrar ~30 % de las filas (homicidios −21 %,
+    # capturas −66 %) y deflactaba todas las cifras. Evidencia de que las repetidas son
+    # legítimas: (1) las fuentes que el publicador entrega PRE-AGREGADAS (`cantidad`>1:
+    # hurto_personas, hurto_vehiculos, violencia_intrafamiliar) traen 0 filas repetidas — la
+    # repetición solo existe donde el grano es evento (`cantidad`≈1) y el esquema es estrecho;
+    # (2) la serie anual de homicidios con las repetidas conservadas reproduce la cifra oficial
+    # de la Policía (p. ej. 2023 ≈ 13,6 mil) y al eliminarlas queda 15-30 % por debajo; (3) la
+    # paginación SODA es estable (`$order=:id`) y no reintroduce filas. No restaurar el borrado.
 
     out = settings.silver_dir / "eventos.parquet"
     eventos.to_parquet(out, index=False)
-    log.info("Silver consolidado: %d eventos -> %s", len(eventos), out)
+    log.info("Capa silver consolidada: %d eventos -> %s", len(eventos), out)
 
     # Informe de calidad de datos (QA de CRISP-ML(Q))
-    report = quality_report(eventos)
+    report = quality_report(eventos, procedencia=procedencia)
     (settings.reports_dir / "silver_quality.json").write_text(report, encoding="utf-8")
     return eventos

@@ -310,7 +310,7 @@ def build_index() -> int:
         + document_cards()  # documentos no estructurados (PDF/Word) de settings.rag_docs_dir
     )
     if not cards:
-        log.warning("No hay datos gold para indexar. Ejecuta el pipeline ETL primero.")
+        log.warning("No hay datos gold para indexar. Ejecute el pipeline ETL primero.")
         return 0
 
     log.info("Vectorizando %d fragmentos…", len(cards))

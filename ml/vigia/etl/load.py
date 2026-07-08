@@ -126,7 +126,7 @@ def load_gold() -> None:
                 "lon",
             ],
         )
-        log.info("Cargado resumen_municipio: %d filas", len(resumen))
+        log.info("Tabla resumen_municipio cargada en PostgreSQL: %d filas", len(resumen))
 
         serie = pd.read_parquet(gold / "serie_mensual.parquet")
         serie = serie.assign(periodo=pd.to_datetime(serie["periodo"]).dt.date)
@@ -147,7 +147,7 @@ def load_gold() -> None:
                 "mes",
             ],
         )
-        log.info("Cargado serie_mensual: %d filas", len(serie))
+        log.info("Tabla serie_mensual cargada en PostgreSQL: %d filas", len(serie))
 
         anom_path = gold / "anomalias.parquet"
         if anom_path.exists():
@@ -169,7 +169,7 @@ def load_gold() -> None:
                     "severidad",
                 ],
             )
-            log.info("Cargado anomalias: %d filas", len(anom))
+            log.info("Tabla anomalias cargada en PostgreSQL: %d filas", len(anom))
 
         # Capa "Justicia" (Fiscalía): se carga si su gold existe (degrada con elegancia si no).
         jr_path = gold / "justicia_resumen.parquet"
@@ -190,7 +190,7 @@ def load_gold() -> None:
                     "tasa_judicializacion_pct",
                 ],
             )
-            log.info("Cargado justicia_resumen: %d filas", len(jr))
+            log.info("Tabla justicia_resumen cargada en PostgreSQL: %d filas", len(jr))
 
             ja = pd.read_parquet(ja_path)
             _copy_df(
@@ -208,7 +208,7 @@ def load_gold() -> None:
                     "cod_departamento",
                 ],
             )
-            log.info("Cargado justicia_anual: %d filas", len(ja))
+            log.info("Tabla justicia_anual cargada en PostgreSQL: %d filas", len(ja))
         else:
-            log.info("Capa Justicia no encontrada en gold; se omite su carga.")
+            log.info("Justicia (Fiscalía) no encontrada en la capa gold; se omite su carga.")
     log.info("Carga a PostgreSQL completada.")

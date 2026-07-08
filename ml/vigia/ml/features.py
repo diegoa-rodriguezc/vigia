@@ -14,6 +14,15 @@ LAGS = [1, 2, 3, 6, 12]
 ROLL_WINDOWS = [3, 6, 12]
 KEY = ["cod_municipio", "categoria"]
 TARGET = "cantidad"
+# Ventana (meses) de la media histórica de identidad (`media_hist`). NO es expansiva a
+# propósito: sobre 20+ años, una media de TODA la historia arrastra el nivel de épocas
+# superadas y tira el pronóstico hacia arriba en series con caída secular (p. ej. el
+# homicidio de Medellín cayó ~90 % desde 2003: la media expansiva casi triplicaba su nivel
+# actual y producía sobreestimaciones de +120 %). Con 60 meses la identidad de la serie se
+# conserva (con `min_periods=1`, las series más cortas que la ventana obtienen exactamente
+# su media expansiva) y el backtest mejora en MAE 1 paso, multipaso, MASE y el tercil alto
+# (barrido medido en la bitácora de docs/CRISP-ML-Q.md). No volver a la expansiva sin re-medir.
+HIST_WINDOW = 60
 
 
 def make_features(series: pd.DataFrame) -> pd.DataFrame:
@@ -32,14 +41,18 @@ def make_features(series: pd.DataFrame) -> pd.DataFrame:
     for w in ROLL_WINDOWS:
         df[f"roll_mean_{w}"] = gr.rolling(w).mean().reset_index(level=KEY, drop=True)
         df[f"roll_std_{w}"] = gr.rolling(w).std().reset_index(level=KEY, drop=True)
-    df = df.drop(columns="_t1")
 
-    # Identidad/escala de la serie: media expansiva de los valores PASADOS y nº de
-    # observaciones previas. Dan al modelo global el nivel base propio de cada
-    # (municipio, categoría) —p. ej. distinguir homicidios en Bogotá de un hurto en un
-    # municipio pequeño— sin fuga de datos (ambas excluyen el valor en t).
+    # Identidad/escala de la serie: media de los últimos `HIST_WINDOW` valores PASADOS
+    # (ver la nota del constante arriba: una media expansiva sobre 20+ años arrastra épocas
+    # superadas y sobreestima las series con caída secular) y nº de observaciones previas.
+    # Dan al modelo global el nivel base propio de cada (municipio, categoría) —p. ej.
+    # distinguir homicidios en Bogotá de un hurto en un municipio pequeño— sin fuga de
+    # datos (ambas excluyen el valor en t: la media opera sobre el target desplazado).
+    df["media_hist"] = (
+        gr.rolling(HIST_WINDOW, min_periods=1).mean().reset_index(level=KEY, drop=True)
+    )
+    df = df.drop(columns="_t1")
     gpast = df.groupby(KEY, dropna=False)[TARGET]
-    df["media_hist"] = (gpast.cumsum() - df[TARGET]) / gpast.cumcount().replace(0, np.nan)
     df["meses_activos"] = gpast.cumcount().astype("float64")
 
     # Población (DANE) como señal EXÓGENA: da al modelo la escala demográfica real del

@@ -46,7 +46,7 @@ def _series() -> pd.DataFrame:
         _series_cache["df"] = pd.read_parquet(path)
         _series_cache["mtime"] = mtime
         log.info(
-            "Serie gold (re)cargada: %d filas, %d categorías",
+            "Serie mensual de la capa gold cargada: %d filas, %d categorías",
             len(_series_cache["df"]),
             _series_cache["df"]["categoria"].nunique(),
         )

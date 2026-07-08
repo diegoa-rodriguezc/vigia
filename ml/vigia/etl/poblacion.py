@@ -98,8 +98,8 @@ def _read_one(content: bytes) -> pd.DataFrame:
 def ingest_poblacion() -> pd.DataFrame:
     """Descarga y consolida la población municipal del DANE en `bronze/poblacion.parquet`.
 
-    Concatena los archivos histórico (2005-2019) y proyectado (2020-2035), deduplicando por
-    `(cod_municipio, anio)`. Persiste el linaje en `poblacion.meta.json`.
+    Concatena los archivos histórico (2005-2019) y proyectado (2020-2035), conservando una sola
+    fila por `(cod_municipio, anio)`. Persiste el linaje en `poblacion.meta.json`.
     """
     settings.ensure_dirs()
     frames: list[pd.DataFrame] = []

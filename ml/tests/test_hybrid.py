@@ -50,6 +50,40 @@ def test_sin_municipio_reconocible_devuelve_none():
     assert match_municipio("pronóstico de homicidios en el país", _RESUMEN) is None
 
 
+def test_nombre_oficial_completo_gana_a_la_ambiguedad_de_token():
+    """El NOMBRE OFICIAL COMPLETO en la consulta resuelve aunque su token más largo empate
+    entre municipios distintos: en "Santiago de Cali" el token SANTIAGO es compartido con
+    Santiago de Tolú y Santiago (Putumayo) — por tokens sería ambiguo y devolvería None."""
+    resumen = pd.concat(
+        [
+            _RESUMEN,
+            pd.DataFrame(
+                [
+                    {
+                        "cod_municipio": "70820",
+                        "municipio": "SANTIAGO DE TOLÚ",
+                        "departamento": "SUCRE",
+                    },
+                    {
+                        "cod_municipio": "86568",
+                        "municipio": "SANTIAGO",
+                        "departamento": "PUTUMAYO",
+                    },
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    m = match_municipio("total de hechos registrados en Santiago de Cali", resumen)
+    assert m is not None and m["cod_municipio"] == "76001"
+    # Y el nombre corto exacto de otro municipio del empate también resuelve:
+    m2 = match_municipio("homicidios en Santiago de Tolú", resumen)
+    assert m2 is not None and m2["cod_municipio"] == "70820"
+    # "Santiago" a secas casa el municipio cuyo nombre completo es exactamente ese:
+    m3 = match_municipio("qué pasa en Santiago", resumen)
+    assert m3 is not None and m3["cod_municipio"] == "86568"
+
+
 def test_fuzzy_match_tolera_typos():
     """Fallback difuso: un nombre mal escrito casa con el municipio correcto."""
     m = match_municipio("pronóstico de homicidios en Medallin", _RESUMEN)  # MEDELLÍN

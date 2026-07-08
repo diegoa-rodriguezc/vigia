@@ -113,7 +113,7 @@ def build_gold() -> dict[str, pd.DataFrame]:
 
     series = build_monthly_series(eventos)
     series.to_parquet(settings.gold_dir / "serie_mensual.parquet", index=False)
-    log.info("Gold serie_mensual: %d filas", len(series))
+    log.info("Serie mensual de la capa gold escrita: %d filas", len(series))
 
     # KPIs por municipio. Se agrupa por el código DANE (clave estable) y se elige el
     # nombre canónico (el más frecuente), evitando duplicar municipios por variaciones
@@ -173,7 +173,7 @@ def build_gold() -> dict[str, pd.DataFrame]:
     resumen_cat.to_parquet(settings.gold_dir / "resumen_categoria.parquet", index=False)
 
     log.info(
-        "Gold listo: %d municipios, %d categorías",
+        "Capa gold lista: %d municipios, %d categorías",
         len(resumen_mpio),
         eventos["categoria"].nunique(),
     )

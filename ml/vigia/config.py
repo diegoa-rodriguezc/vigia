@@ -80,6 +80,11 @@ class Settings(BaseSettings):
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-4o-mini", alias="OPENAI_MODEL")
     openai_embed_model: str = Field(default="text-embedding-3-small", alias="OPENAI_EMBED_MODEL")
+    # Temperatura de los proveedores GESTIONADOS (openai/anthropic); Ollama usa la suya
+    # (OLLAMA_TEMPERATURE). 0 = respuestas deterministas y más apegadas al prompt del sistema:
+    # sin fijarla, la de defecto (1.0) hacía que el guardarraíl de alcance fallara de forma
+    # intermitente en la evaluación del asistente (misma pregunta, distinta obediencia).
+    llm_temperature: float = Field(default=0.0, alias="LLM_TEMPERATURE")
 
     # Umbral de similitud mínima para que un fragmento recuperado se considere relevante en el RAG
     # (anti-alucinación). Es la perilla de CALIBRACIÓN del guardarraíl: subirlo rehúsa más (más

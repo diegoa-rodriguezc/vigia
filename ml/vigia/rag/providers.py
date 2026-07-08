@@ -246,6 +246,7 @@ class AnthropicLLM(LLMProvider):
         msg = self.client.messages.create(
             model=self.model,
             max_tokens=1024,
+            temperature=settings.llm_temperature,
             system=system,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -255,6 +256,7 @@ class AnthropicLLM(LLMProvider):
         msg = self.client.messages.create(
             model=self.model,
             max_tokens=1024,
+            temperature=settings.llm_temperature,
             system=system,
             tools=tools,
             messages=_to_anthropic_messages(transcript),
@@ -281,6 +283,7 @@ class OpenAILLM(LLMProvider):
     def generate(self, system: str, prompt: str) -> str:
         resp = self.client.chat.completions.create(
             model=self.model,
+            temperature=settings.llm_temperature,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt},
@@ -291,6 +294,7 @@ class OpenAILLM(LLMProvider):
     def turn(self, system: str, transcript: list[dict], tools: list[dict]) -> Turn:
         resp = self.client.chat.completions.create(
             model=self.model,
+            temperature=settings.llm_temperature,
             tools=tools,
             messages=_to_openai_messages(system, transcript),
         )

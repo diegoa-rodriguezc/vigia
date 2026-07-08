@@ -88,7 +88,7 @@ def build_justicia() -> pd.DataFrame:
             "No hay bronze de Justicia. Ejecute `vigia ingest --only justicia_procesos`."
         )
     raw = pd.read_parquet(src)
-    log.info("Justicia: %d filas agregadas en bronze", len(raw))
+    log.info("Justicia (Fiscalía): %d filas agregadas leídas de la capa bronze", len(raw))
 
     df = pd.DataFrame(index=raw.index)
     df["cod_municipio"] = _to_dane5(raw["cod_dane_hecho"], "A")
@@ -140,7 +140,7 @@ def build_justicia() -> pd.DataFrame:
     resumen.to_parquet(settings.gold_dir / "justicia_resumen.parquet", index=False)
     _write_report(anual, resumen)
     log.info(
-        "Justicia gold: %d filas anuales, %d municipios",
+        "Justicia (Fiscalía) escrita en la capa gold: %d filas anuales, %d municipios",
         len(anual), resumen["cod_municipio"].nunique(),
     )
     return anual

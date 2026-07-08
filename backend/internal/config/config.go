@@ -77,7 +77,8 @@ func Load() Config {
 
 		JWTSecret:            secret,
 		JWTExpiration:        envDuration("JWT_EXPIRATION", 15*time.Minute),
-		JWTRefreshExpiration: envDuration("JWT_REFRESH_EXPIRATION", 168*time.Hour),
+		// 48h: postura conservadora (el refresco vive en localStorage); alineado con .env.example.
+		JWTRefreshExpiration: envDuration("JWT_REFRESH_EXPIRATION", 48*time.Hour),
 		RedisURL:             env("REDIS_URL", "redis://localhost:6379/0"),
 		AdminUsername:        env("ADMIN_USERNAME", "admin"),
 		// Default de DEMO (cumple la política) solo para arranque local; en producción DEBE

@@ -4,7 +4,7 @@ import {
   getJusticiaResumen, getJusticiaMunicipios, getJusticiaDepartamentos,
   type JusticiaResumenNacional, type JusticiaMunicipio, type JusticiaDepartamento,
 } from "../api";
-import { StatTile, SkeletonRows, Pagination, ExportButton, ChartTooltip, usePagination, nfmt } from "./ui";
+import { StatTile, SkeletonRows, Pagination, ExportButton, ChartTooltip, usePagination, nfmt, dfmt } from "./ui";
 import { Icon } from "./icons";
 
 // Orden canónico de la cadena penal (Indagación → … → Ejecución), independiente del conteo,
@@ -23,7 +23,7 @@ const COLOR_CLASE: Record<string, string> = {
 const colorEtapa = (etapa: string, clase: string) =>
   etapa.toLowerCase() === "ejecución de penas" ? "#22c55e" : (COLOR_CLASE[clase] ?? "#475569");
 
-const pct = (n: number) => `${n.toFixed(2)}%`;
+const pct = (n: number) => `${dfmt(n, 2)} %`;
 
 type SortKey = "municipio" | "departamento" | "total_procesos" | "n_judicializados" | "tasa_judicializacion_pct";
 

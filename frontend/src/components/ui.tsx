@@ -30,6 +30,11 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
 // para que todas las cifras del tablero se vean igual.
 export const nfmt = (n: number) => n.toLocaleString("es-CO");
 
+// Formato decimal es-CO (coma decimal) con un número fijo de decimales; sin él,
+// `toFixed` pinta el punto inglés y en una misma tabla el punto significaría dos cosas.
+export const dfmt = (n: number, dec = 1) =>
+  n.toLocaleString("es-CO", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+
 // Presenta un código de categoría de forma legible (HURTO_AUTOMOTORES → Hurto automotores).
 export const prettyCat = (c: string) =>
   c.replace(/_/g, " ").toLowerCase().replace(/^\w/, (m) => m.toUpperCase());

@@ -226,7 +226,7 @@ export default function Panorama({
 
         <div style={{ gridColumn: "1 / -1", display: "flex", flexWrap: "wrap", gap: 16, alignItems: "stretch" }}>
           <div className="card" style={{ flex: "3 1 380px", minWidth: 0 }}>
-            <h3><Icon name="map" /> Mapa de calor por departamento</h3>
+            <h3><Icon name="map" /> Mapa coroplético por departamento</h3>
             <p className="card-sub">
               Intensidad de color según los delitos registrados del departamento (clases por cuantiles).{" "}
               Haz clic en un departamento para ver sus señales de prensa recientes.

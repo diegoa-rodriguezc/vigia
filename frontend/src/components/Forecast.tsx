@@ -175,6 +175,11 @@ export default function Forecast({ initialCod }: { initialCod?: string | null })
                 <Line type="monotone" dataKey="pronostico" name="Pronóstico" stroke="#fbbf24" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 3 }} />
               </ComposedChart>
             </ResponsiveContainer>
+            <p className="muted" style={{ marginTop: 6, fontSize: "0.8rem" }}>
+              Límite declarado: en delitos de gran volumen con caída sostenida (p. ej. el homicidio en las
+              grandes ciudades) el pronóstico puede quedar por encima del nivel de los últimos meses; el
+              detalle, con sus cifras, está en la metodología (CRISP-ML(Q), «Dónde cede»).
+            </p>
           </>
         )}
       </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAnomalies, getStats, type Anomalia, type Stats } from "../api";
-import { StatTile, SkeletonRows, Pagination, LiveRegion, ExportButton, nfmt, prettyCat } from "./ui";
+import { StatTile, SkeletonRows, Pagination, LiveRegion, ExportButton, nfmt, dfmt, prettyCat } from "./ui";
 import { Icon } from "./icons";
 
 type SortKey = "periodo" | "departamento" | "municipio" | "categoria" | "cantidad" | "score_z" | "severidad";
@@ -193,7 +193,7 @@ export default function Alertas() {
                     <td>{a.municipio}</td>
                     <td>{prettyCat(a.categoria)}</td>
                     <td className="num text-right">{nfmt(a.cantidad)}</td>
-                    <td className="num text-right">{a.score_z.toFixed(1)}</td>
+                    <td className="num text-right">{dfmt(a.score_z, 1)}</td>
                     <td className="text-center"><span className={`badge ${a.severidad}`}>{a.severidad}</span></td>
                   </tr>
                 ))}

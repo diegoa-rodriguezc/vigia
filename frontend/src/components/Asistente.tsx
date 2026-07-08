@@ -44,7 +44,7 @@ export default function Asistente() {
     setMensajes((m) => [...m, { rol: "user", texto: pregunta }]);
     setTexto("");
     setCargando(true);
-    setAnuncio("Consultando el asistente, puede tardar hasta un minuto.");
+    setAnuncio("Consultando el asistente, puede tardar uno o dos minutos.");
     try {
       const res = await askAssistant(pregunta);
       setMensajes((m) => [...m, { rol: "bot", texto: res.respuesta, fuentes: res.fuentes }]);

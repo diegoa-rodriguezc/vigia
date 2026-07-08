@@ -3,7 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import { getMonitoring, type ModelHealth, type Estado } from "../api";
-import { ChartTooltip, nfmt } from "./ui";
+import { ChartTooltip, nfmt, dfmt } from "./ui";
 import { Icon } from "./icons";
 
 const LABEL: Record<Estado, string> = { verde: "Saludable", amarillo: "Atención", rojo: "Crítico" };
@@ -69,9 +69,9 @@ export default function SaludModelo() {
             <span className="kpi-label">Deriva de datos (PSI)</span>
             <Semaforo estado={dr.estado} />
           </div>
-          <div className="kpi-value">{dr.psi.toFixed(3)}</div>
+          <div className="kpi-value">{dfmt(dr.psi, 3)}</div>
           <div className="kpi-hint">
-            {dr.nota ?? `cambio de volumen ${dr.cambio_volumen_pct ?? "—"}% (últimos ${dr.ventana_meses} m)`}
+            {dr.nota ?? `cambio de volumen ${dr.cambio_volumen_pct != null ? dfmt(dr.cambio_volumen_pct, 1) : "—"} % (últimos ${dr.ventana_meses} m)`}
           </div>
         </div>
 
@@ -81,9 +81,9 @@ export default function SaludModelo() {
               <span className="kpi-label">Backtest a {bt.horizon} meses</span>
               <Semaforo estado={bt.estado} />
             </div>
-            <div className="kpi-value">{bt.mae.toFixed(2)}</div>
+            <div className="kpi-value">{dfmt(bt.mae, 2)}</div>
             <div className="kpi-hint">
-              MAE vs {bt.baseline_mae.toFixed(2)} persistencia ·{" "}
+              MAE vs {dfmt(bt.baseline_mae, 2)} persistencia ·{" "}
               {bt.supera_baseline_mae ? "supera la línea base" : "no la supera"}
             </div>
           </div>

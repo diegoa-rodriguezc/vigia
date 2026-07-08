@@ -215,7 +215,9 @@ los normaliza a un único modelo de evento:
   `(municipio, categoría, horizonte)` (TTL `CACHE_FORECAST_TTL`, def. 6 h, pues solo cambia al reentrenar)
   y el asistente por hash SHA-256 de la pregunta normalizada (TTL `CACHE_ASSISTANT_TTL`, def. 1 h). Responde
   las consultas repetidas en milisegundos y mitiga el cuello de botella de concurrencia. La caché es
-  *fail-open* (si Redis cae, se reenvía como siempre) y se puede saltar con `?nocache=1`. Las respuestas se
+  *fail-open* (si Redis cae, se reenvía como siempre) y se puede saltar con `?nocache=1` — un privilegio
+  del **rol admin** (para las cuentas ciudadanas el parámetro se ignora: un bypass abierto permitiría
+  forzar cómputo caro en bucle, una denegación de servicio barata). Las respuestas se
   devuelven con cabecera `X-Cache: HIT|MISS`.
 - **ADR-07 — Aceleración CPU/GPU como override de infraestructura.** El RAG corre
   por defecto en **CPU** (portable a cualquier host; ~30–90 s por respuesta y hasta ~2 min en frío

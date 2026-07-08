@@ -607,7 +607,7 @@ Comparar `metricas_backtest` entre ejecuciones. **Disparadores de alerta:**
   **re-ejecutable** y reproducible (semilla fija).
 - **Disparado:** si (Sección [6.1](#61-deriva-de-datos-entrada)/[6.2](#62-deriva-de-concepto--degradación-del-modelo)) superan umbral.
 - **Post-reentrenamiento:** invalidar la **caché de IA en Redis** (pronóstico cacheado por TTL; forzar con
-  `?nocache=1`) para no servir proyecciones del modelo anterior.
+  `?nocache=1`, privilegio del rol admin) para no entregar proyecciones del modelo anterior.
 
 ### 6.5 Monitoreo de servicio (SLOs)
 - **Implementado:** `/health` (estado de la BD gold), *logs* estructurados, cabecera `X-Cache` (HIT/MISS),

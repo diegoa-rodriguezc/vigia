@@ -28,7 +28,9 @@ gasto hacia la prevención tiene alto retorno social y fiscal: ahí actúa VigIA
 [README](../README.md#-impacto-escalabilidad-y-enfoque-territorial)).
 
 **Criterios de éxito de negocio.**
-- Pronósticos con error (sMAPE) competitivo frente a una línea base ingenua (último valor / media móvil).
+- Pronósticos con error competitivo frente a las líneas base ingenuas que usa la evaluación —persistencia
+  (último valor) y estacional (mismo mes del año anterior)—, medido con MAE y MASE en validación
+  retrospectiva temporal (ver [4](#4-evaluación-del-modelo); el sMAPE se reporta como métrica complementaria).
 - Anomalías verificables contra picos históricos conocidos.
 - Asistente que responde con datos oficiales y cita su fuente.
 
@@ -124,8 +126,8 @@ base propio de cada serie sin fuga de datos.
   todas las fuentes de azar están sembradas (`random_state=SEED` en el HGB y en la importancia por
   permutación, RNG sembrado en el muestreo), el `HistGradientBoostingRegressor` con `early_stopping='auto'`
   corta según un score de validación sensible a las reducciones de punto flotante **multi-hilo** (OpenMP, no
-  asociativas) → el nº de iteraciones y las métricas fluctúan ~1 % (p. ej. MAE 1-paso ≈1,92-1,95 entre
-  ejecuciones). **Advertencia — amplificación del ruido:** en las métricas derivadas de la **diferencia entre
+  asociativas) → el nº de iteraciones y las métricas fluctúan ~1 % entre ejecuciones (p. ej. el MAE a 1 paso,
+  **2,5453** en el reporte vigente, se mueve unas centésimas de una corrida a otra). **Advertencia — amplificación del ruido:** en las métricas derivadas de la **diferencia entre
   dos cantidades casi iguales** —el caso del *skill* frente a la persistencia a 1 paso— ese ~1 % del MAE se
   traduce en **puntos porcentuales** del margen (entre ≈+1 y ≈+3 % según la ejecución); por eso la
   documentación cita esa cifra como **banda**, no como valor puntual, y la cifra exacta de la ejecución
@@ -281,7 +283,7 @@ Evalúa el **camino de producción** y funciona con **ambos modos** del asistent
 (proveedor openai/anthropic) y RAG clásico (p. ej. Ollama local, más lento); `--modo clasico|agente|auto`
 permite forzar y comparar, y el reporte registra el modo real de cada respuesta. El arnés está probado
 sin BD ni LLM (`tests/test_rag_evaluation.py`, respuestas inyectadas); la evaluación real exige la base
-indexada y el proveedor activos (`docker compose exec ml python -m vigia rag-eval`).
+indexada y el proveedor activos (`make docker-rag-eval`).
 
 ### Bitácora de iteración (hallazgos reales)
 
@@ -450,9 +452,16 @@ indexada y el proveedor activos (`docker compose exec ml python -m vigia rag-eva
     tiraba la predicción hacia arriba. *Experimento (sin tocar producción):* como la recursión del backtest
     realimenta la predicción **cruda** (la mezcla se aplica solo al servir), un único backtest con peso 1,0
     permite evaluar cualquier peso **a posteriori de forma exacta**; se midieron dos variantes × seis pesos
-    (1,0→0,3). Hallazgos: (a) el **barrido de `_BLEND_W`** confirma que **0,7 es el óptimo del horizonte
-    entregado** —bajar el peso mejora el 1 paso (+4,5 % en 0,4) pero degrada monótonamente el MAE multipaso
-    (de +15,6 % a +9,1 %) y el MASE— y que la mezcla sola **no** corrige la sobreestimación (con 0,7 Medellín
+    (1,0→0,3). Hallazgos: (a) el **barrido de `_BLEND_W`** confirma **0,7 como el peso elegido** y separa el
+    mérito del modelo del de la persistencia embebida — sobre el modelo final, el barrido **versionado en
+    [`reports/blend_sweep.json`](../reports/blend_sweep.json)** (regenerable con `make docker-blend-sweep`;
+    con peso 0,7 reproduce `model_report.json` cifra por cifra, lo que valida el arnés) muestra que el
+    **modelo puro** (peso 1,0) **pierde contra la persistencia a 1 paso** (MAE 2,716 vs 2,597, −4,6 %) pero
+    **gana con holgura el horizonte multipaso** (+16,3 %); el MAE multipaso es casi plano entre 0,9 y 0,7
+    (2,894-2,920, óptimo estricto en 0,9) y **se degrada de forma monótona por debajo** (hasta +9,0 % en
+    0,3), mientras que bajar el peso sigue mejorando el 1 paso (máximo +4,6 % en 0,4) a costa del horizonte
+    entregado → **0,7 es el mayor peso de modelo que gana con claridad en ambos frentes** (+2,0 % a 1 paso,
+    +16,1 % multipaso). Además, la mezcla sola **no** corrige la sobreestimación (con 0,7 Medellín
     seguía en +123 %); (b) **`media_hist` con ventana de 60 meses** (`min_periods=1`: una serie más corta que
     la ventana conserva exactamente su media expansiva — solo se adaptan las largas con deriva secular)
     elimina el tirón en la propia feature (razón de Medellín 2,84 → **1,08**) y, con el mismo peso 0,7,
@@ -542,7 +551,7 @@ El desglose `por_volumen` que el reporte
   por paso, porque la persistencia se degrada rápido con el horizonte (a 1 paso el modelo aún cede en sMAPE;
   la ventaja se abre al proyectar). Contra la **estacional multi-paso** gana en MAE (≈2,92 vs 3,20) y
   ligeramente en sMAPE (≈114,9 vs 115,5), pero la ventaja en MAE **no es monótona por paso** (a 2-3
-  meses la estacional queda por delante: 2,89 vs 3,12 en el paso 2). Se reporta además la **cobertura empírica** de la banda: **80,0 %**, igual
+  meses la estacional queda por delante: 2,89 vs 3,07 en el paso 2). Se reporta además la **cobertura empírica** de la banda: **80,0 %**, igual
   al 80 % nominal tras la **calibración conformal** de `pi_scale` (antes 94,4 %; ver [4](#4-evaluación-del-modelo)).
 
 > Mejora futura para series de gran volumen: modelos por nivel de volumen o LightGBM/Prophet; pérdida de
@@ -653,7 +662,7 @@ vez de simularlo. Lo que sí hace es **acotar el riesgo por diseño**:
 - **Las "respuestas" no son alertas.** Capturas/incautaciones/recuperaciones se excluyen de las alertas
   (`RESPONSE_CATEGORIES`): un alza de actividad policial **no** dispara una "alerta de inseguridad" que
   pida más policía → se rompe un eslabón del bucle.
-- **Aviso en el punto de uso.** La pestaña **Alertas** advierte explícitamente que las anomalías son
+- **Aviso en el punto de uso.** La pestaña **Alertas tempranas** advierte explícitamente que las anomalías son
   relativas a cada territorio, reflejan hechos registrados (pueden seguir el despliegue) y **no deben usarse
   para estigmatizar territorios ni vigilar personas**; el asistente lleva la misma cláusula de **uso
   responsable** en su *system prompt* (`rag/pipeline.py`) y reencuadra peticiones de perfilamiento individual.

@@ -67,6 +67,10 @@ data/gold/justicia_*.parquet
    │  vigia train            (forecasting + anomalías → models/)
    ▼
 models/forecaster.joblib
+   │  vigia validate-anomalies (valida las anomalías reales: recall contra eventos documentados
+   │                          + corroboración multi-delito → reports/anomaly_validation.json)
+   ▼
+reports/anomaly_validation.json
    │  vigia load-db          (gold de delito + Justicia + anomalías → PostgreSQL: 5 tablas)
    ▼
 PostgreSQL (tablas que expone Go)

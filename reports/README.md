@@ -1,10 +1,14 @@
 # `reports/` — Cifras auditables del proyecto
 
-Esta carpeta contiene los **reportes reproducibles** que el pipeline y los comandos de evaluación
-emiten en cada ejecución. A diferencia del lago de datos y los modelos (regenerables y no versionados),
+Esta carpeta contiene los **reportes reproducibles** que generan el pipeline y los comandos de evaluación
+del proyecto. A diferencia del lago de datos y los modelos (regenerables y no versionados),
 **estos JSON sí se versionan a propósito**: son las cifras que cita la documentación
 ([README.md](../README.md), [docs/CRISP-ML-Q.md](../docs/CRISP-ML-Q.md), [docs/IMPACTO.md](../docs/IMPACTO.md)) y permiten
 **auditar el modelo y los datos sin ejecutar el pipeline**.
+
+> **Licencia:** estos reportes son **obras derivadas** de los datos abiertos de origen (CC BY-SA 4.0) y
+> se comparten bajo esa **misma licencia**, con atribución a las entidades publicadoras (ver la sección
+> Licencia del [README](../README.md#-licencia)); el código que los genera es MIT.
 
 | Archivo | Qué contiene | Se regenera con |
 |---|---|---|
@@ -13,13 +17,14 @@ emiten en cada ejecución. A diferencia del lago de datos y los modelos (regener
 | `justicia.json` | Cifras de la capa Justicia (Fiscalía): embudo de judicialización por etapa y **tasa de judicialización nacional** | `vigia justicia` (parte del pipeline) |
 | `anomaly_validation.json` | Validación de las anomalías **reales**: recall@ventana contra el catálogo de eventos documentados y **corroboración interna** (fracción respaldada por otra categoría en el mismo municipio-mes) | `vigia validate-anomalies` (parte del pipeline) |
 | `model_health.json` | **Salud del modelo** (semáforo): frescura del dato, deriva vía PSI y backtest extendido a 12 meses; alimenta la pestaña *Salud del modelo* del tablero | `vigia health` / `make docker-health` (**offline**, lento — no va en el pipeline) |
-| `challenger.json` | Comparación **champion vs challenger**: el HGB de producción frente a un desafiante neuronal (MLP) bajo el mismo backtest; solo evalúa, no cambia el modelo en producción | `vigia challenger` (offline, bajo demanda) |
-| `rag_eval.json` | **Evaluación del asistente** (RAG/agente) con preguntas de referencia derivadas de gold/reports: exactitud de cifras, **abstención correcta** ante lo fuera de alcance (el guardarraíl, medido), citación de fuentes y latencia; funciona en modo agente (openai/anthropic) y RAG clásico | `vigia rag-eval` (offline; requiere BD + proveedor LLM) |
+| `challenger.json` | Comparación **champion vs challenger**: el HGB de producción frente a un desafiante neuronal (MLP) bajo el mismo backtest; solo evalúa, no cambia el modelo en producción | `make docker-challenger` (offline, bajo demanda) |
+| `blend_sweep.json` | **Barrido del peso de la mezcla** modelo/persistencia (`_BLEND_W`): MAE/MASE/sMAPE a 1 paso y multipaso para cada peso de 1,0 a 0,3. Es la evidencia de por qué se fijó **0,7** —el mayor peso del modelo que gana a la persistencia tanto a 1 paso como en el horizonte completo— y con ese peso reproduce `model_report.json`; sustenta la Iteración 12 de la bitácora | `make docker-blend-sweep` (experimento puntual con `ml/scripts/blend_sweep.py`, **no** forma parte del pipeline; se relanza a mano si el modelo cambia de forma sustancial) |
+| `rag_eval.json` | **Evaluación del asistente** (RAG/agente) con preguntas de referencia derivadas de gold/reports: exactitud de cifras, **abstención correcta** ante lo fuera de alcance (el guardarraíl, medido), citación de fuentes y latencia; funciona en modo agente (openai/anthropic) y RAG clásico | `make docker-rag-eval` (offline; requiere BD + proveedor LLM) |
 
 ## Cómo leerlos
 
 - Cada archivo es la **instantánea de la ejecución que lo generó** (los cuatro primeros se refrescan con
-  `make docker-pipeline`; los dos últimos, a mano cuando se requieren).
+  `make docker-pipeline`; los cuatro últimos se ejecutan a mano cuando se requieren).
 - Las métricas del boosting pueden fluctuar **~1 % entre ejecuciones** por ruido numérico multi-hilo; las
   conclusiones cualitativas son estables (detalle en
   [docs/CRISP-ML-Q.md](../docs/CRISP-ML-Q.md#3-ingeniería-del-modelo)).

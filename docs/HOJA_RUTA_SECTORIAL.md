@@ -28,7 +28,9 @@ tipo de delito — recomendación que `silver.py` ejecuta. Verificación reprodu
 *Hoja de Ruta Sectorial de Datos Abiertos Estratégicos — Sector de Justicia 2024-2026* (Ministerio de
 Justicia y del Derecho, 36 págs.; **copia de evidencia**:
 [hoja-ruta-sectorial-justicia.pdf](hoja-ruta-sectorial-justicia.pdf), redistribuida sin modificaciones
-para reproducibilidad — el enlace oficial de SharePoint puede caducar). Dos hallazgos verificables:
+para reproducibilidad — el enlace oficial de SharePoint puede caducar; SHA-256
+`08b360251d3c8790828a87859688de8d5fc0bb0907c678e0a6330ab12cdc1b26`, 1.079.708 bytes; declarada como
+material de terceros en la sección Licencia del [README](../README.md#-licencia)). Dos hallazgos verificables:
 
 1. **Los 25 conjuntos priorizados por el sector (Tabla 3, págs. 26-27) no cubren la criminalidad.**
    Pertenecen al Ministerio de Justicia (licencias de cannabis, contratación), la Agencia Nacional de

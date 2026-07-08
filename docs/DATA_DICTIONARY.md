@@ -356,14 +356,18 @@ contenedor) y `docker-rag-index` los procesa (`pypdf`/`python-docx`), los parte 
 (~800 caracteres, solape 150) y los indexa en `kb_chunks` junto a las *data cards* de gold. Implementado
 en [`ml/vigia/rag/documents.py`](../ml/vigia/rag/documents.py).
 
-**Procedencia del documento incluido.** El PDF versionado (*Política de Seguridad, Defensa y Convivencia
-Ciudadana 2022-2026*, Ministerio de Defensa Nacional) es la **copia íntegra y sin modificaciones** del
-documento oficial publicado por la Policía Nacional en
+**Procedencia del documento incluido (versionado, integridad verificable).** El PDF (*Política de
+Seguridad, Defensa y Convivencia Ciudadana 2022-2026*, Ministerio de Defensa Nacional) es la **copia
+íntegra y sin modificaciones** del documento oficial publicado por la Policía Nacional en
 [policia.gov.co](https://www.policia.gov.co/sites/default/files/2024-12/Pol%C3%ADtica%20de%20Seguridad%20Defensa%20y%20Convivencia%20Ciudadna.pdf)
-*[sic: la errata «Ciudadna» de la URL es del sitio de origen]*
-(verificado: mismo tamaño byte a byte, 47.785.152 bytes, que el original en línea; descargado en junio de
-2026). Documento público oficial, redistribuido con cita de su fuente para que el pilar de datos no
-estructurados sea **reproducible en un clon** sin depender de la disponibilidad del sitio de origen.
+*[sic: la errata «Ciudadna» de la URL es del sitio de origen]*, versionada con cita de su fuente —al
+amparo de la reproducción de textos oficiales (art. 41, Ley 23 de 1982)— para que el pilar de datos no
+estructurados sea **reproducible en un clon**. `make kb-docs` (script
+[`ml/scripts/fetch_kb_docs.py`](../ml/scripts/fetch_kb_docs.py), incluido en `make deploy`) **verifica
+su integridad** contra el original en línea (SHA-256
+`5b169a5a87ec7f9de57d7879ee4fa22fc83e9f288e1e0a903939a666b9f6af1a` y tamaño exacto, 47.785.152 bytes;
+verificado 2026-07-08) y lo re-obtiene si faltara. Sin el documento, `document_cards` devuelve una lista
+vacía y el índice opera solo con las data cards de las cifras (degradación con elegancia).
 
 | Campo (metadata del chunk) | Valor | Uso |
 |---|---|---|

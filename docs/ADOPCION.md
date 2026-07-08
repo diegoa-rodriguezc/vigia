@@ -31,7 +31,8 @@ también las de menor capacidad analítica instalada — donde una herramienta y
 ### Dimensionamiento y costo de operación (órdenes de magnitud)
 
 - **Servidor:** 4 vCPU / **16 GB de RAM** / ~30 GB de disco corren la plataforma completa, incluido el LLM
-  local. En nube, una máquina de ese tamaño cuesta ≈ **USD 50–100/mes** (~$2,5–5 millones COP/año); también
+  local (la plataforma ocupa ~20 GB —el requisito mínimo declarado en el [README](../README.md#-instalación)—;
+  el resto es margen operativo para logs y crecimiento del lago de datos). En nube, una máquina de ese tamaño cuesta ≈ **USD 50–100/mes** (~$2,5–5 millones COP/año); también
   sirve hardware propio reutilizado. Con un **proveedor gestionado de LLM** (`LLM_PROVIDER=anthropic|openai`
   por `.env`) el requisito baja a ~8 GB de RAM (sin Ollama) y el asistente cuesta **centavos de dólar por
   consulta**, amortiguado por la caché en Redis (cada respuesta se computa una vez por TTL).

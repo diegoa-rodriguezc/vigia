@@ -19,7 +19,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Renovación de token con deduplicación: si varias peticiones reciben 401 a la vez,
+// Renovación de token sin llamadas repetidas: si varias peticiones reciben 401 a la vez,
 // solo se dispara UN refresh y todas esperan su resultado.
 let refreshing: Promise<string | null> | null = null;
 

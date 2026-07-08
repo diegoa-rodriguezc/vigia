@@ -14,6 +14,7 @@ emiten en cada ejecución. A diferencia del lago de datos y los modelos (regener
 | `anomaly_validation.json` | Validación de las anomalías **reales**: recall@ventana contra el catálogo de eventos documentados y **corroboración interna** (fracción respaldada por otra categoría en el mismo municipio-mes) | `vigia validate-anomalies` (parte del pipeline) |
 | `model_health.json` | **Salud del modelo** (semáforo): frescura del dato, deriva vía PSI y backtest extendido a 12 meses; alimenta la pestaña *Salud del modelo* del tablero | `vigia health` / `make docker-health` (**offline**, lento — no va en el pipeline) |
 | `challenger.json` | Comparación **champion vs challenger**: el HGB de producción frente a un desafiante neuronal (MLP) bajo el mismo backtest; solo evalúa, no cambia el modelo en producción | `vigia challenger` (offline, bajo demanda) |
+| `rag_eval.json` | **Evaluación del asistente** (RAG/agente) con preguntas de referencia derivadas de gold/reports: exactitud de cifras, **abstención correcta** ante lo fuera de alcance (el guardarraíl, medido), citación de fuentes y latencia; funciona en modo agente (openai/anthropic) y RAG clásico | `vigia rag-eval` (offline; requiere BD + proveedor LLM) |
 
 ## Cómo leerlos
 

@@ -33,6 +33,8 @@ Se muestran en contexto dentro de [ARCHITECTURE.md](ARCHITECTURE.md) y el [READM
 ## Otros recursos
 
 - [`screenshots/`](screenshots/) — capturas de las 8 vistas del tablero (usadas en el README principal).
+- [`../notebooks/`](../notebooks/README.md) — los tres notebooks del proceso (exploración de fuentes,
+  limpieza silver y modelo) con su índice y guía de re-ejecución.
 - [`img/`](img/) — imágenes de los términos del concurso (criterios, cronograma).
 - [`../reports/`](../reports/) — **métricas reproducibles** en JSON que el pipeline regenera en cada ejecución/despliegue
   (`model_report.json`, `silver_quality.json`, `justicia.json`, `model_health.json`, `challenger.json`,

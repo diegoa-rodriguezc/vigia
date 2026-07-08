@@ -74,18 +74,32 @@ verificado en [DATA_DICTIONARY.md](DATA_DICTIONARY.md#alineación-con-la-hoja-de
   - Normalización de códigos DANE a 5 dígitos (municipio) y 2 (departamento).
   - Normalización de texto (mayúsculas, *trim*, remoción de sufijos `(CT)`).
   - Tipado de `cantidad` a entero; descarte de negativos.
-  - Deduplicación y unificación al esquema de eventos común.
+  - Unificación al esquema de eventos común, **conservando el grano del publicador — sin
+    eliminar filas repetidas**. La decisión está medida, no asumida: en las fuentes a grano de evento
+    (`cantidad`≈1) dos hechos del mismo día/municipio con los mismos atributos producen filas
+    idénticas **legítimas**, porque el esquema publicado es estrecho (6-11 columnas). Tres
+    evidencias lo confirman: (1) las fuentes que el publicador entrega pre-agregadas
+    (`cantidad`>1: hurto a personas, hurto de vehículos, violencia intrafamiliar) traen **0 filas
+    repetidas** — la repetición solo existe donde el grano es evento; (2) la serie anual de
+    homicidios **con las filas repetidas conservadas reproduce la cifra oficial** de la Policía
+    (2023 ≈ 13,6 mil), mientras que al eliminarlas queda un 15-30 % por debajo; (3) la paginación SODA2 es estable
+    (`$order=:id`) y no reintroduce filas. Una versión anterior del pipeline aplicaba un
+    `drop_duplicates()` global que borraba ~30 % de las filas (homicidios −21 %, capturas −66 %):
+    era subconteo sistemático y se retiró. La conciliación crudo→silver por fuente queda
+    auditable en `reports/silver_quality.json` (bloque `procedencia`).
   - **Controles de calidad** (`etl/quality.py`): completitud por columna, **`placeholders_pct`** (% real de
   `NO REPORTADO` por campo, para no sobrevender el 100 % estructural), rango de fechas, conteos de fuentes y
   *checks* de nulos/cantidades≤0/fechas futuras. Se emite un informe por ejecución en
   `reports/silver_quality.json`. `placeholders_pct` detecta los campos de texto sea cual sea su dtype
-  (`object` o pandas `StringDtype`, que es como silver convierte el tipo del texto). El resultado **expone el subregistro real** que el 100 % estructural oculta: en la ejecución de referencia, **`zona` ≈81 %, `arma_medio` ≈74 %, `grupo_etario` ≈53 % y `sexo` ≈42 %
+  (`object` o pandas `StringDtype`, que es como silver convierte el tipo del texto). El resultado **expone el subregistro real** que el 100 % estructural oculta: en la ejecución de referencia, **`zona` ≈87 %, `arma_medio` ≈82 %, `grupo_etario` ≈43 % y `sexo` ≈34 %
   de valores `NO REPORTADO`** — un dato de calidad relevante para no sobreinterpretar los desagregados por
   esas dimensiones.
 
 - **Capa gold (`etl/gold.py`).** Agregación a serie mensual `municipio × categoría` + *features* de
 modelado: rezagos, medias/desviaciones móviles, calendario (estacionalidad y tendencia) y **features de
-identidad de la serie** (media histórica expansiva y meses activos), que dan al modelo global el nivel
+identidad de la serie** (media histórica con **ventana de 60 meses** —no expansiva: sobre 20+ años
+arrastraría el nivel de épocas superadas en series con caída secular, ver bitácora Iteración 12— y meses
+activos), que dan al modelo global el nivel
 base propio de cada serie sin fuga de datos.
 
 ## 3. Ingeniería del modelo
@@ -142,24 +156,25 @@ base propio de cada serie sin fuga de datos.
   *headline*— y (b) **multi-paso** agregado + **por paso** (degradación del error con el horizonte). Cada
   ejecución persiste un reporte reproducible en **`reports/model_report.json`** (`ml/vigia/ml/evaluate.py`).
 - **MASE, la métrica de cabecera para conteos (y por qué el sMAPE engaña):** el **sMAPE** de estas series
-  ronda **>100 %** (≈126 % a 1 paso) — **no** es "126 % de error" sino un **artefacto**: en conteos casi nulos
+  ronda **>100 %** (≈127 % a 1 paso) — **no** es "127 % de error" sino un **artefacto**: en conteos casi nulos
   (0/1) el denominador `|y|+|ŷ|` colapsa y el sMAPE se satura cerca de su tope (200 %). Por eso la métrica
   primaria es el **MASE** (*Mean Absolute Scaled Error*, Hyndman): el MAE **escalado por el MAE ingenuo
   1-paso _dentro de muestra_ de cada serie**, adimensional y comparable entre territorios. El MASE del modelo
-  (**≈1,36** a 1 paso, **≈1,49** multipaso) queda **por debajo** del de la persistencia (**≈1,44 / ≈1,66**);
+  (**≈1,35** a 1 paso, **≈1,48** multipaso) queda **por debajo** del de la persistencia (**≈1,45 / ≈1,66**);
   el reporte **no publica el MASE de la estacional** — frente a ella la comparación se hace en MAE. Que el
   MASE sea **>1** es honesto —pronosticar fuera de muestra estos conteos ruidosos
   es más difícil que el naive dentro de muestra—; lo relevante es que el modelo **bate a la persistencia en la
   misma escala**. *Skill* en MAE: **+1 a +3 % según la ejecución** vs. persistencia (banda por el ruido
-  multi-hilo, ver [Reproducibilidad](#3-ingeniería-del-modelo)) y ≈**+9 %** vs. estacional a
-  1 paso; ≈**+14 %** / ≈**+10 %** multipaso (`skill_mae_vs_*` en el reporte, con la cifra exacta vigente).
+  multi-hilo, ver [Reproducibilidad](#3-ingeniería-del-modelo)) y ≈**+6 %** vs. estacional a
+  1 paso; ≈**+16 %** / ≈**+9 %** multipaso (`skill_mae_vs_*` en el reporte, con la cifra exacta vigente).
 - **Desglose por volumen de serie (`por_volumen`):** MAE/sMAPE/MASE del modelo vs. líneas base por **tercil de
   volumen mensual**. Reconcilia la lectura del agregado: en el tercil de **volumen ínfimo** (conteos
   esporádicos donde el error absoluto es diminuto y domina el agregado) **ambas** líneas base son imbatibles
-  —la persistencia y, aún mejor, la estacional— y el modelo **no gana** (MASE ≈1,87, el peor); en el tercil
-  **medio** gana con holgura en MAE y sMAPE (≈0,82 vs ≈0,94 persistencia / ≈0,92 estacional; MASE ≈1,17); y en
-  el **alto** también gana (≈4,46 vs ≈4,50 persistencia / ≈5,04 estacional; MASE ≈1,04, el mejor). El flag
-  `gana_modelo` por tercil lo registra explícitamente. El valor del modelo se concentra
+  —la persistencia y, aún mejor, la estacional— y el modelo **no gana** (MASE ≈1,88, el peor); en el tercil
+  **medio** gana con holgura en MAE y sMAPE (≈0,90 vs ≈1,03 persistencia / ≈1,01 estacional; MASE ≈1,16); y en
+  el **alto** también gana: a la estacional con holgura (≈6,23 vs ≈6,64) y a la persistencia por margen fino
+  (≈6,23 vs ≈6,25 — puede oscilar entre ejecuciones), con **MASE ≈1,01, el mejor** y clara ventaja en sMAPE
+  (≈75 vs 83). El flag `gana_modelo` por tercil lo registra explícitamente. El valor del modelo se concentra
   donde hay **señal recurrente** (volumen medio/alto, justo donde importa la planeación preventiva); en las
   series ultra-dispersas el naive es casi óptimo **por construcción** y no hay margen que ganar.
 - **Calibración de la incertidumbre (conformal):** la banda conserva su forma heteroscedástica
@@ -169,7 +184,7 @@ base propio de cada serie sin fuga de datos.
   con el pasado). Así la cobertura iguala el nivel nominal **por construcción y de forma honesta**. *Efecto
   medido:* antes se asumía el cuantil normal (`1,2816`), que con la dispersión cuasi-Poisson inflada por las
   series de alto volumen daba una banda **demasiado ancha** —cobertura empírica **94,4 %** frente al 80 %
-  nominal, fuera del rango [70 %, 90 %] de [6.2](#62-deriva-de-concepto--degradación-del-modelo)—; tras la calibración `pi_scale ≈ 0,71` y la cobertura cae a
+  nominal, fuera del rango [70 %, 90 %] de [6.2](#62-deriva-de-concepto--degradación-del-modelo)—; tras la calibración `pi_scale ≈ 0,67` y la cobertura cae a
   **80,0 %** (1 paso y multipaso), dentro de umbral. El punto del pronóstico (MAE/sMAPE) no cambia: la
   calibración solo dimensiona el ancho del intervalo. **Acotación (para no sobre-afirmar):** la cobertura del
   80,0 % se mide sobre el **mismo backtest** con el que se calibró `pi_scale` — los residuos son out-of-fold
@@ -180,23 +195,26 @@ base propio de cada serie sin fuga de datos.
   (`sklearn.inspection.permutation_importance`, puntuación = −MAE) sobre una muestra del conjunto modelado.
   El `HistGradientBoostingRegressor` no expone `feature_importances_`; la permutación es agnóstica al
   modelo y mide cuánto **se degrada el MAE al barajar cada feature**. Resultado explicable y auditable (ejecución
-  actual): domina la **media móvil anual** (`roll_mean_12`, ≈1,28), seguida del **nivel histórico de la serie**
-  (`media_hist`, ≈0,31), la media móvil corta (`roll_mean_3` ≈0,15), el último mes (`lag_1` ≈0,14) y la media
-  móvil semestral (`roll_mean_6` ≈0,09). Es decir, **el modelo se apoya en el nivel y la tendencia suavizada
+  actual): domina la **media móvil anual** (`roll_mean_12`, ≈1,30), seguida del **nivel de la serie en su
+  ventana histórica** (`media_hist`, ≈0,66 — más informativa desde que es una ventana de 60 meses y no la
+  media de toda la historia), el último mes (`lag_1` ≈0,14), la media móvil corta (`roll_mean_3` ≈0,13) y la
+  semestral (`roll_mean_6` ≈0,12). Es decir, **el modelo se apoya en el nivel y la tendencia suavizada
   de cada serie**, no en los rezagos crudos individuales: los `lag_2…lag_12` y las desviaciones móviles tienen
-  importancia ~0 (redundantes con las medias móviles), y el calendario (`mes`/`mes_sin`) aporta de forma
-  marginal. Esto hace **auditable** en qué se apoya cada pronóstico, no una caja negra.
+  importancia ~0 (redundantes con las medias móviles), y del calendario solo `mes` aporta de forma
+  moderada (`mes_sin`/`mes_cos`/`trimestre`, ~0). Esto hace **auditable** en qué se apoya cada pronóstico, no una caja negra.
 - **sMAPE:** promedio **simple** (no ponderado) sobre las series con historia suficiente. Se conserva por
   comparabilidad, pero **no** es el criterio primario (ver el artefacto arriba): el titular es el **MASE**.
 - **Criterio de aceptación (múltiple, no una sola métrica):** el modelo debe (a) superar a la persistencia en
   **sMAPE multi-paso** —el horizonte que efectivamente se entrega, 6 meses recursivos— (`supera_linea_base_smape_multipaso`);
   y hoy además (b) la bate en **MAE y MASE a 1 paso y multipaso** (`supera_linea_base_mae`) y (c) supera a la
   **estacional-ingenua** en MAE a 1 paso y multipaso (`supera_linea_base_estacional_mae[_multipaso]`).
-  **Dónde cede (declarado):** el sMAPE a 1 paso (≈126 vs ≈118 — el artefacto de los conteos ~0 ya explicado,
-  no una debilidad real del pronóstico), el **paso 2 en MAE frente a la estacional** (2,32 vs 2,31 — la
-  ventaja sobre esta línea base no es monótona por paso), el **empate práctico con la estacional en sMAPE
-  multipaso** (≈113,4 vs 113,5) y el tercil de volumen ínfimo (ver `por_volumen`). La ventaja **crece con el
-  horizonte frente a la persistencia**, que es justo lo que se entrega.
+  **Dónde cede (declarado):** el sMAPE a 1 paso (≈127 vs ≈120 — el artefacto de los conteos ~0 ya explicado,
+  no una debilidad real del pronóstico), los **pasos 2-3 en MAE frente a la estacional** (3,07 vs 2,89 en el
+  paso 2 — la ventaja sobre esta línea base no es monótona por paso), el tercil de volumen ínfimo (ver
+  `por_volumen`) y un **sobrenivel residual en el homicidio metropolitano** (≈+40 % sobre la media reciente
+  en Bogotá; era el doble antes de la Iteración 12, que lo redujo con la ventana de `media_hist` — límite
+  declarado de un modelo global sobre series con caída secular).
+  La ventaja **crece con el horizonte frente a la persistencia**, que es justo lo que se entrega.
 
 **Validación de la detección de anomalías.** No se evalúa por error sino por **precisión/recall contra picos
 inyectados** (ground truth) en un panel sintético (`tests/test_anomaly.py`,
@@ -208,9 +226,9 @@ inyectados** (ground truth) en un panel sintético (`tests/test_anomaly.py`,
 - **Justificación de `contamination=0,03`:** fija la prevalencia *esperada* de outliers del IsolationForest;
   el **consenso** de dos señales (z robusto **y** bosque) + el filtro de *solo picos al alza* la tensan aún
   más, de modo que la **tasa real** de alertas queda **muy por debajo** de ese 3 %. El reporte
-  (`anomalias.tasa_alertas_pct`, `alertas_por_serie`) lo evidencia: el total (18.588) es **<1 % de los
-  meses-serie** evaluados y representa un **catálogo histórico desde 2003** (≈1–2 alertas por serie en ~20
-  años), no un muro de alertas simultáneas. Las perillas (`contamination`, `z_threshold`) están expuestas en
+  (`anomalias.tasa_alertas_pct`, `alertas_por_serie`) lo evidencia: el total (22.867) es **<1 % de los
+  meses-serie** evaluados (0,85 %) y representa un **catálogo histórico desde 2003** (≈1–2 alertas por serie
+  en ~20 años), no un muro de alertas simultáneas. Las perillas (`contamination`, `z_threshold`) están expuestas en
   `anomaly.detect` para ajustar el punto de operación sin tocar el código.
 
 **Validación sobre anomalías REALES** (`ml/vigia/ml/anomaly_validation.py`, `vigia validate-anomalies`). El
@@ -225,20 +243,45 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
   catálogo no está montado). El reporte emite **dos modos** para no sobrevender los aciertos triviales de las
   metrópolis (donde casi todo mes tiene *alguna* anomalía): *por municipio-mes* y *exigiendo además que
   coincida la categoría*. **Resultado sobre el catálogo de referencia (11 hitos, 2003-2025, ±1 mes):**
-  **recall 0,64 por municipio-mes (7/11)** y **0,36 exigiendo categoría (4/11)**. El
-  detector **sí captura los deterioros municipales reales** —los enfrentamientos de **Arauca 2022** (Tame,
-  Saravena, Arauquita) y la **crisis del Catatumbo 2025** (Tibú, El Tarra) aciertan en ambos modos—, pero
-  **no marca** (a) atentados puntuales **pequeños frente a la línea base de una metrópoli** (las bombas de
-  Bogotá del Club El Nogal/Andino solo "aciertan" por municipio-mes vía otra categoría, y la Escuela General
-  Santander no aparece), (b) ataques en **municipios de conflicto crónico** con línea base alta (Toribío), ni
-  (c) la **masacre de Samaniego 2020** (un *miss* genuino). No es prueba causal: es **validez de cara**, con
-  sus límites declarados. La corroboración interna (abajo) opera sobre las anomalías reales.
+  **recall 0,91 por municipio-mes (10/11)** y **0,55 exigiendo categoría (6/11)**. El detector captura los
+  deterioros municipales reales —los enfrentamientos de **Arauca 2022** (Tame, Saravena, Arauquita), la
+  **crisis del Catatumbo 2025** (Tibú, El Tarra), la **masacre de Samaniego 2020**, el **Club El Nogal 2003**
+  y la **Brigada 30 de Cúcuta 2021**— y el único *miss* por municipio-mes es **Toribío 2011** (municipio de
+  conflicto crónico cuya línea base ya es alta: un ataque más no destaca estadísticamente). En el modo
+  estricto por categoría caen además los atentados **pequeños frente a la línea base de una metrópoli**
+  (Andino, Escuela General Santander: aciertan por municipio-mes vía el deterioro concurrente de otra
+  categoría, no por la propia). No es prueba causal: es **validez de cara**, con sus límites declarados. *(La
+  corrección del subconteo de la Iteración 11 elevó este recall de 7/11 a 10/11: al eliminar erróneamente
+  las filas repetidas se perdían precisamente los picos de hechos que estos eventos generan.)* La corroboración interna (abajo)
+  opera sobre las anomalías reales.
 - **Corroboración interna** (sin datos externos): fracción de anomalías respaldadas por **otra categoría de
   delito en el mismo municipio-mes**. Un deterioro real suele ser multi-delito; un artefacto aislado, no.
-  *Resultado sobre el catálogo actual (18.588 anomalías): **20,6 % corroboradas** (3.825 anomalías respaldadas
-  por otra categoría, agrupadas en 1.793 clústeres multi-delito)* — muy por encima de lo esperable si las
+  *Resultado sobre el catálogo actual (22.867 anomalías): **23,3 % corroboradas** (5.337 anomalías respaldadas
+  por otra categoría, agrupadas en 2.484 clústeres multi-delito)* — muy por encima de lo esperable si las
   alertas fueran ruido aislado. NO es prueba causal:
   es **validez de cara**, declarada como tal. Reporte en `reports/anomaly_validation.json`.
+
+**Evaluación del asistente (RAG/agente).** El componente de IA generativa también se mide, no solo se
+guarda con rieles (`ml/vigia/rag/evaluation.py`, CLI `vigia rag-eval`, reporte reproducible en
+[`reports/rag_eval.json`](../reports/rag_eval.json)). Las **preguntas de referencia** —preguntas cuya
+respuesta correcta se conoce de antemano— **se derivan de gold/reports en el momento de evaluar**:
+municipios, categorías y cifras esperadas salen de los mismos artefactos que alimentan
+las data cards y las herramientas del agente, así que no hay respuestas quemadas que caduquen con la
+actualización mensual. Se puntúan cuatro señales sin juicio humano:
+- **Exactitud de cifras:** la respuesta contiene la cifra esperada (totales por municipio, conteos
+  nacionales por categoría y año, superlativos de ranking, tasa y volúmenes de la capa Justicia; el
+  comparador tolera los separadores de miles y el decimal con coma o punto).
+- **Abstención correcta:** ante preguntas **fuera del alcance** (capital de Francia, precio del dólar,
+  elecciones…) o municipios inexistentes, el asistente debe **rehusar sin inventar cifras** — es el
+  guardarraíl anti-alucinación convertido en métrica.
+- **Citación:** las respuestas que aciertan la cifra deben traer al menos una fuente (trazabilidad).
+- **Resolución difusa:** un municipio con error de tipeo ("Medallin") debe resolverse al oficial y
+  responder con su cifra.
+Evalúa el **camino de producción** y funciona con **ambos modos** del asistente: agente con herramientas
+(proveedor openai/anthropic) y RAG clásico (p. ej. Ollama local, más lento); `--modo clasico|agente|auto`
+permite forzar y comparar, y el reporte registra el modo real de cada respuesta. El arnés está probado
+sin BD ni LLM (`tests/test_rag_evaluation.py`, respuestas inyectadas); la evaluación real exige la base
+indexada y el proveedor activos (`docker compose exec ml python -m vigia rag-eval`).
 
 ### Bitácora de iteración (hallazgos reales)
 
@@ -256,7 +299,7 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
 - **Iteración 2 (datasets completos):** con el calendario por serie corregido, sobre el universo real
    *de entonces* (**1.118 municipios DANE**, ~4,6 millones de hechos; ~7.400 series con ≥12 meses de actividad —
    **cifras históricas de esta iteración, con el catálogo de 8 datasets**; el universo vigente tras ampliar
-   a 16 fuentes es mayor en series y hechos: 1.106 municipios modelados, 13.089 series, 9,21 millones de hechos, ver **Estado actual**),
+   a 16 fuentes es mayor en series y hechos: 1.106 municipios modelados, 13.089 series, 12,98 millones de hechos, ver **Estado actual**),
    el modelo **supera a la línea base en sMAPE** (≈97 vs ≈111). **Honestidad
    metodológica:** en **MAE absoluto el modelo NO bate a la línea base ingenua** (≈2,6 vs ≈2,4): "repetir
    el último valor" es muy difícil de superar en series estables de alto volumen. El aporte del modelo
@@ -365,26 +408,74 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
     los árboles), de ahí el `StandardScaler` en el pipeline. **El arnés solo EVALÚA**: no toca el artefacto
     en producción; cablear al ganador sería una decisión aparte y explícita. El veredicto y las métricas paralelas se
     regeneran de forma reproducible en `reports/challenger.json` (`champion` vs `challenger`, MAE/sMAPE a 1 paso
-    y multipaso, con margen relativo). *Resultado sobre los datos reales (18.262 series, 2 orígenes, h=6):* el
-    **champion HGB mantiene la ventaja** —MAE multipaso **2,276 vs 2,325** del MLP (**+2,2 %** a favor del HGB), y
-    también gana a 1 paso (2,07 vs 2,23) y en sMAPE multipaso (111,6 vs 115,1)—. *Conclusión:* **no se justifica
+    y multipaso, con margen relativo). *Resultado sobre los datos reales (medición original: 2 orígenes, h=6):*
+    el **champion HGB mantiene la ventaja** —MAE multipaso **2,276 vs 2,325** del MLP (**+2,2 %** a favor del
+    HGB), y también gana a 1 paso y en sMAPE multipaso—. *Re-medido tras las Iteraciones 11-12* (filas
+    repetidas conservadas, `media_hist` con ventana, 3 orígenes): el veredicto se sostiene y **la ventaja del HGB se
+    amplía a +3,9 %** en MAE multipaso (**2,920 vs 3,034**; `reports/challenger.json` regenerado — el MAE del
+    campeón calza exactamente con `model_report.json`), ganando también a 1 paso (2,545 vs 2,565) y en sMAPE
+    multipaso (114,9 vs 115,7). *Conclusión:* **no se justifica
     cambiar de familia de modelo**; el gradient boosting es mejor Y más barato (el MLP tardó ~1,5 h de CPU vs
     minutos del HGB). Hallazgo honesto que cierra la pregunta "¿una red neuronal lo haría mejor?" con datos, no
     con intuición. Junto con la **simulación de escenarios** "¿y si…?"
-    (`ml/vigia/ml/simulation.py`, endpoint `POST /simulate`) —una capa contrafactual sobre `predict` con palancas
+    (`ml/vigia/ml/simulation.py`, endpoint `POST /simulate`) —una capa de escenarios hipotéticos sobre
+    `predict` con palancas
     de intervención (supuesto del usuario) y de shock de población (palanca del modelo, vía tasa)—, esta
     iteración eleva la analítica de *predicción* a *prescripción explorable*, manteniendo la honestidad sobre lo
     que el modelo sí estima y lo que es un supuesto del usuario.
 
-**Estado actual:** modelo aceptado y **reforzado**: tras la Iteración 8 **supera a la persistencia en MAE
-multipaso y sMAPE multipaso** (`supera_linea_base_mae = true`, `supera_linea_base_smape_multipaso = true`),
-revirtiendo la antigua derrota en MAE. **A 1 paso mantiene una ventaja modesta en MAE** (≈1,95 vs 1,97 en la
-ejecución vigente, +1,3 %; la ventaja fluctúa **entre ≈+1 y ≈+3 % según la ejecución** — al ser una diferencia
-pequeña entre errores casi iguales, el ruido multi-hilo ~1 % del MAE se amplifica a puntos porcentuales del
-margen — entre el empate técnico y la ligera ventaja) **y cede en sMAPE** (la persistencia es casi
-imbatible en error relativo a un mes sobre conteos ínfimos), pero ese no es el horizonte que se entrega. El desglose `por_volumen` muestra que el modelo gana en MAE y sMAPE en el tercil
-**medio**, y gana en sMAPE en el **alto** (donde empata en MAE por muy poco, gracias a la mezcla con
-persistencia); el de **volumen ínfimo** queda por detrás en ambas (error absoluto diminuto, "repetir el último
+- **Iteración 11 (corrección del subconteo: silver deja de eliminar filas repetidas):** una auditoría interna
+    detectó que el `drop_duplicates()` global de `build_silver` borraba **~3,77 millones de filas (~30 %)**:
+    en las fuentes a grano de **evento** (`cantidad`≈1) dos hechos del mismo día y municipio con los mismos
+    atributos son filas idénticas **legítimas** (el esquema publicado es estrecho), no duplicados del
+    publicador. *Evidencia (triple, medida):* (a) las fuentes **pre-agregadas** por el publicador
+    (`cantidad`>1) traen **0 filas repetidas** — la repetición solo existe donde el grano es evento; (b) la
+    serie anual de homicidios **con las filas repetidas conservadas reproduce la cifra oficial** de la Policía
+    (2003 ≈22,6 mil, 2023 ≈13,6 mil) y al eliminarlas quedaba un **15-30 % por debajo** (2003: 15,6 mil — imposible); (c) la
+    paginación SODA2 es estable (`$order=:id`) y no reintroduce filas. *Impacto:* el universo pasa de ≈9,2 a
+    **≈13,0 millones de hechos** (homicidios +21 %, capturas +66 %); las métricas del modelo se mueven a la
+    nueva escala (MAE 1 paso ≈2,55 vs 2,60 persistencia, +1,6 %, dentro de la banda +1-3 %; multipaso
+    **+15,6 %** y ahora gana también el **sMAPE multipaso a ambas líneas base**) y el **recall de la
+    validación de anomalías salta de 7/11 a 10/11** — al eliminar las filas repetidas se perdían justamente los picos que los
+    eventos documentados generan (Samaniego y la Brigada 30 pasan a detectarse). Se añadió un **test de
+    regresión** (las filas idénticas se conservan) y el informe de calidad ganó el bloque **`procedencia`**
+    (conciliación crudo→silver por fuente: descartes reales ≤0,06 %, solo fechas/códigos inválidos).
+
+- **Iteración 12 (sobreestimación metropolitana: barrido de mezcla + ventana de `media_hist`):** la
+    verificación territorial tras la Iteración 11 mostró que el pronóstico de HOMICIDIO en las grandes
+    ciudades quedaba muy por encima del nivel reciente (Bogotá +59 %, Medellín +123 % sobre la media de los
+    últimos 6 meses) aunque el agregado batiera a las líneas base. *Causa medida:* `media_hist` era una media
+    **expansiva** de toda la historia; en series con caída secular (el homicidio de Medellín cayó ~90 % desde
+    2003) esa "identidad" casi triplicaba el nivel actual (razón `media_hist/roll_mean_12` = **2,84**) y
+    tiraba la predicción hacia arriba. *Experimento (sin tocar producción):* como la recursión del backtest
+    realimenta la predicción **cruda** (la mezcla se aplica solo al servir), un único backtest con peso 1,0
+    permite evaluar cualquier peso **a posteriori de forma exacta**; se midieron dos variantes × seis pesos
+    (1,0→0,3). Hallazgos: (a) el **barrido de `_BLEND_W`** confirma que **0,7 es el óptimo del horizonte
+    entregado** —bajar el peso mejora el 1 paso (+4,5 % en 0,4) pero degrada monótonamente el MAE multipaso
+    (de +15,6 % a +9,1 %) y el MASE— y que la mezcla sola **no** corrige la sobreestimación (con 0,7 Medellín
+    seguía en +123 %); (b) **`media_hist` con ventana de 60 meses** (`min_periods=1`: una serie más corta que
+    la ventana conserva exactamente su media expansiva — solo se adaptan las largas con deriva secular)
+    elimina el tirón en la propia feature (razón de Medellín 2,84 → **1,08**) y, con el mismo peso 0,7,
+    **domina a la variante expansiva en todo el agregado**: MAE 1 paso 2,545 vs 2,554 (skill **+2,0 %**), MAE
+    multipaso 2,920 vs 2,934 (**+16,1 %**), MASE 1,347/1,471, y el **tercil alto pasa a ganar** (6,23 vs
+    6,25; MASE 1,006, el mejor) — a cambio de ~0,4 pt de sMAPE multipaso (114,9, aún por delante de ambas
+    líneas base). El desvío metropolitano cae a la mitad o más: Bogotá +59 → +42 %, Medellín +123 → **+48 %**,
+    Cali +20 → **+5 %**. *Se cablea la ventana* (constante `HIST_WINDOW` en `features.py`, con un test que
+    fija que una época alta fuera de la ventana ya no contamina la media) y **se conserva 0,7** — el barrido
+    queda documentado y reproducible. *Límite declarado:* el sobrenivel metropolitano no desaparece del todo
+    (Bogotá ≈+42 % sobre la media reciente; parte es estacionalidad legítima —los primeros meses del año son
+    más bajos— y parte, el costo de un modelo global); se declara en vez de ocultarse.
+
+**Estado actual:** modelo aceptado y **reforzado**: tras las Iteraciones 8-12 **supera a la persistencia en
+MAE 1 paso y multipaso y en sMAPE multipaso** (`supera_linea_base_mae = true`,
+`supera_linea_base_smape_multipaso = true`). **A 1 paso mantiene una ventaja modesta en MAE** (≈2,55 vs 2,60
+en la ejecución vigente, +2,0 %; la ventaja fluctúa **entre ≈+1 y ≈+3 % según la ejecución** — al ser una
+diferencia pequeña entre errores casi iguales, el ruido multi-hilo ~1 % del MAE se amplifica a puntos
+porcentuales del margen) **y cede en sMAPE** (la persistencia
+es casi imbatible en error relativo a un mes sobre conteos ínfimos), pero ese no es el horizonte que se
+entrega. El desglose `por_volumen` muestra que el modelo gana en MAE y sMAPE en los terciles
+**medio** y **alto** (en el alto, MAE por margen fino —≈6,23 vs 6,25— y sMAPE con holgura —≈75 vs 83—, con el
+mejor MASE, ≈1,01); el de **volumen ínfimo** queda por detrás en ambas (error absoluto diminuto, "repetir el último
 valor" es casi imbatible ahí). El aporte del modelo es
 la **proyección del horizonte completo** con tasas comparables entre territorios. **Las métricas
 vigentes — sMAPE/MAE
@@ -394,8 +485,8 @@ quedan en [`reports/model_report.json`](../reports/model_report.json) y
 tabla siguiente es una ejecución de referencia (no sustituye al artefacto regenerado):
 
 Ejecución de referencia (16 datasets, backtest **walk-forward**; regenerada por `make deploy`, ver
-`reports/model_report.json`): **13.089 series** modeladas, 1.106 municipios, 20 categorías, **9,21 millones**
-de hechos modelados, periodo 2003-01 → 2026-05, **18.588 anomalías** (7.409 alta / 11.179 media). Tras la
+`reports/model_report.json`): **13.089 series** modeladas, 1.106 municipios, 20 categorías, **12,98 millones**
+de hechos modelados, periodo 2003-01 → 2026-05, **22.867 anomalías** (10.088 alta / 12.779 media). Tras la
 Iteración 6 el reporte añade `por_volumen` (terciles), `multipaso` (agregado + `por_paso`) y
 `pi_cobertura_empirica_pct`.
 
@@ -406,13 +497,15 @@ Iteración 6 el reporte añade `por_volumen` (terciles), `multipaso` (agregado +
 > usan todo silver—. Sobre la completitud: `silver_quality.json` da `completitud_pct` 100 % **por
 > construcción** (silver imputa el marcador `NO REPORTADO` en vez de dejar nulos); el campo
 > `placeholders_pct` expone el **% real de no reportados** por columna sin maquillarlo (en la ejecución de
-> referencia: `zona` ≈81 %, `arma_medio` ≈74 %, `grupo_etario` ≈53 %, `sexo` ≈42 %; ver [2](#2-ingeniería-de-datos-preparación)).
+> referencia: `zona` ≈87 %, `arma_medio` ≈82 %, `grupo_etario` ≈43 %, `sexo` ≈34 %; ver [2](#2-ingeniería-de-datos-preparación)).
 >
 > **Conteo de series (por qué difiere entre arneses).** El nº de series no es único porque cada arnés
 > aplica su propio filtro de historia mínima: el **modelado** reporta **13.089** series
 > (`model_report.json`), la **detección/evaluación de anomalías** opera sobre un universo algo mayor (no
 > exige el mismo umbral de meses no nulos), y el **arnés champion/challenger** (Iteración 10) puntúa
-> **18.262** series con su propio criterio. Son universos distintos por diseño, no cifras contradictorias.
+> las series bajo su propio criterio (el conteo de cada ejecución queda en su registro; el reporte
+> versionado publica métricas y configuración). Son universos distintos por diseño, no cifras
+> contradictorias.
 
 | Iteración | Datos | Backtest | sMAPE modelo | sMAPE base | MAE modelo | MAE base |
 |---|---|---|---|---|---|---|
@@ -421,30 +514,35 @@ Iteración 6 el reporte añade `por_volumen` (terciles), `multipaso` (agregado +
 | Iter 3 | 8 datasets (poisson, revertida) ❌ | holdout | 103,4 | 111,0 | 3,4e5 ❌ | 2,38 |
 | Iter 5-7 · 1 paso | 16 ds, conteos | walk-forward rec. (3) | 119,33 | **117,87** | 4,13 | **1,97** |
 | Iter 5-7 · multipaso h6 | 16 ds, conteos | walk-forward rec. (3) | **102,80** | 114,69 | 5,02 | **2,57** |
-| **actual (Iter 8) · 1 paso** | 16 ds + población, **tasa+mezcla** | walk-forward rec. (3) | ≈126 | **117,9** | **≈1,95** | 1,97 |
-| **actual (Iter 8) · multipaso h6** | 16 ds + población, **tasa+mezcla** | walk-forward rec. (3) | **≈113,4** | 114,7 | **≈2,20** | 2,57 |
+| Iter 8 · 1 paso | 16 ds + población, **tasa+mezcla** (aún borraba filas repetidas; superada) | walk-forward rec. (3) | ≈126 | **117,9** | **≈1,95** | 1,97 |
+| Iter 8 · multipaso h6 | 16 ds + población, **tasa+mezcla** (aún borraba filas repetidas; superada) | walk-forward rec. (3) | **≈113,4** | 114,7 | **≈2,20** | 2,57 |
+| **actual (Iter 11-12) · 1 paso** | 16 ds + población, tasa+mezcla, **filas repetidas conservadas**, `media_hist` 60 m | walk-forward rec. (3) | ≈127 | **120,1** | **≈2,55** | 2,60 |
+| **actual (Iter 11-12) · multipaso h6** | 16 ds + población, tasa+mezcla, **filas repetidas conservadas**, `media_hist` 60 m | walk-forward rec. (3) | **≈114,9** | 116,9 | **≈2,92** | 3,48 |
 
-(Cifras de la ejecución de referencia regenerada por `make deploy` — ver `reports/model_report.json`. Tras la **Iteración 8** (población + tasa por 100.000 habitantes + mezcla): el modelo **queda ligeramente por delante de la línea base
-en MAE a 1 paso** (≈1,95 vs 1,97; margen de **+1 a +3 % según la ejecución**, que el ruido ~1 % mueve en
-puntos porcentuales) **y la
-bate en MAE y sMAPE multipaso** (las filas "actual (Iter 8)"); **a 1 paso aún cede en sMAPE** (persistencia
-casi imbatible en error relativo a un mes). Las filas "Iter 5-7" preservan el estado previo (conteos), cuando
-el modelo perdía ~2× en MAE — el contraste evidencia el salto.)
+(Cifras de la ejecución de referencia regenerada por `make deploy` — ver `reports/model_report.json`. Tras las
+**Iteraciones 11-12** (se dejó de eliminar filas repetidas —escala corregida, +41 % de hechos— y `media_hist` con ventana
+de 60 meses): el modelo **queda por delante de
+la línea base en MAE a 1 paso** (≈2,55 vs 2,60; margen de **+1 a +3 % según la ejecución**, que el ruido ~1 %
+mueve en puntos porcentuales) **y la bate en MAE y sMAPE multipaso** (filas "actual"); **a 1 paso aún cede en
+sMAPE** (persistencia casi imbatible en error relativo a un mes). Las filas "Iter 5-7" e "Iter 8" preservan
+los estados previos — conteos crudos y datos aún sin las filas repetidas, respectivamente; sus MAE no son comparables
+con los actuales porque la escala del dato cambió — el contraste evidencia cada salto.)
 
 El desglose `por_volumen` que el reporte
 **regenera**:
-- **`por_volumen`** (terciles): tras la Iteración 8 el modelo gana en **MAE y sMAPE** en el tercil **medio**
-  (MAE ≈0,83 vs 0,94); en el **alto** gana en sMAPE (≈71 vs 79) y queda en práctico empate en MAE (≈4,53 vs
-  4,50; las urbanas de alto volumen, domadas por la mezcla con persistencia). El de **volumen ínfimo** queda por
-  detrás en ambas (≈0,48 vs 0,48; error absoluto diminuto, "repetir el último valor" es casi imbatible ahí). El
-  flag `gana_modelo` por tercil lo registra (el medio gana de forma estable; el alto oscila entre ejecuciones por
-  la fluctuación de ~1 %).
+- **`por_volumen`** (terciles): el modelo gana en **MAE y sMAPE** en los terciles **medio**
+  (MAE ≈0,90 vs 1,03) y **alto** (MAE por margen fino, ≈6,23 vs 6,25 — las urbanas de alto volumen, domadas
+  por la mezcla con persistencia y la ventana de `media_hist` —, sMAPE con holgura, ≈75 vs 83, y el mejor
+  MASE, ≈1,01). El de **volumen ínfimo** queda por
+  detrás en ambas (≈0,51 vs 0,51; error absoluto diminuto, "repetir el último valor" es casi imbatible ahí). El
+  flag `gana_modelo` por tercil lo registra (el medio gana de forma estable; el margen del alto es fino y
+  puede oscilar entre ejecuciones por la fluctuación de ~1 %).
 - **`multipaso`** (horizonte recursivo de 6 meses, lo que se entrega): contra la **persistencia multi-paso**
-  el modelo gana **tanto en MAE (≈2,20 vs 2,57) como en sMAPE (≈113,4 vs 114,7)**, con ventaja **creciente**
+  el modelo gana **tanto en MAE (≈2,92 vs 3,48) como en sMAPE (≈114,9 vs 116,9)**, con ventaja **creciente**
   por paso, porque la persistencia se degrada rápido con el horizonte (a 1 paso el modelo aún cede en sMAPE;
-  la ventaja se abre al proyectar). Contra la **estacional multi-paso** gana en MAE (≈2,20 vs 2,44) pero el
-  sMAPE queda en **empate práctico** (≈113,4 vs 113,5) y la ventaja en MAE **no es monótona por paso** (a 2
-  meses la estacional queda ligeramente por delante: 2,32 vs 2,31). Se reporta además la **cobertura empírica** de la banda: **80,0 %**, igual
+  la ventaja se abre al proyectar). Contra la **estacional multi-paso** gana en MAE (≈2,92 vs 3,20) y
+  ligeramente en sMAPE (≈114,9 vs 115,5), pero la ventaja en MAE **no es monótona por paso** (a 2-3
+  meses la estacional queda por delante: 2,89 vs 3,12 en el paso 2). Se reporta además la **cobertura empírica** de la banda: **80,0 %**, igual
   al 80 % nominal tras la **calibración conformal** de `pi_scale` (antes 94,4 %; ver [4](#4-evaluación-del-modelo)).
 
 > Mejora futura para series de gran volumen: modelos por nivel de volumen o LightGBM/Prophet; pérdida de

@@ -20,7 +20,11 @@ bajo licencia **CC BY-SA 4.0**, verificada dataset a dataset contra la API de me
 [DATASETS.md](DATASETS.md#licencia-y-vigencia-de-las-fuentes)). Las **filas** son
 volúmenes crudos aproximados de la API;
 los conteos definitivos tras limpieza viven en [`reports/silver_quality.json`](../reports/silver_quality.json),
-regenerado en cada ejecución. Ese informe distingue `completitud_pct` (100 % por construcción: silver imputa el
+regenerado en cada ejecución, cuyo bloque **`procedencia`** concilia crudo→silver fuente a fuente (descartes
+reales ≤0,06 %, solo fechas o códigos de municipio inválidos: la limpieza **no elimina filas repetidas** — en
+las fuentes a grano de evento las filas idénticas son hechos distintos con atributos gruesos, ver
+[CRISP-ML(Q) §2](CRISP-ML-Q.md#2-ingeniería-de-datos-preparación)). Ese informe distingue `completitud_pct`
+(100 % por construcción: silver imputa el
 marcador `NO REPORTADO` en vez de dejar nulos) de `placeholders_pct` (el **% real de no reportados** por
 campo). La **alineación de estas fuentes con la Hoja de Ruta Nacional de Datos Abiertos
 Estratégicos** se documenta y verifica en la sección

@@ -54,7 +54,8 @@ Fuentes abiertas:  Policía · 18 datasets SODA2 (16 de eventos + 2 administrati
    │  vigia ingest          (descarga paginada con reintentos; Justicia por streaming keyset)
    ▼
 data/bronze/*.parquet        ← copia fiel del crudo + metadatos de linaje
-   │  vigia clean            (fechas ISO/dd/mm/yyyy, normalización DANE, tipado, deduplicado)
+   │  vigia clean            (fechas ISO/dd/mm/yyyy, normalización DANE, tipado; conserva las
+   │                          filas repetidas: el grano es el del publicador — ver docs/CRISP-ML-Q.md §2)
    ▼
 data/silver/eventos.parquet  ← esquema UNIFICADO de eventos delictivos
    │  vigia gold             (serie mensual municipio×delito + features + población DANE)
@@ -98,7 +99,7 @@ los normaliza a un único modelo de evento:
 - **Objetivo:** predecir la cantidad mensual de eventos por municipio y categoría.
 - **Enfoque:** un modelo global (`HistGradientBoostingRegressor`) entrenado sobre todas las series con
   *features* de rezago (lags 1, 2, 3, 6, 12), medias/desviaciones móviles, estacionalidad (mes,
-  trimestre, seno/coseno, tendencia) e **identidad de serie** (media histórica expansiva y meses
+  trimestre, seno/coseno, tendencia) e **identidad de serie** (media histórica con ventana de 60 meses y meses
   activos, que dan al modelo el nivel base de cada municipio×categoría sin fuga de datos).
 - **Incertidumbre:** cada pronóstico incluye una **banda (~80 %)** derivada de la dispersión robusta de
   los residuos de la validación retrospectiva (*backtest*), ensanchada con √horizonte (error recursivo

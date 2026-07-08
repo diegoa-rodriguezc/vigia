@@ -1,5 +1,5 @@
 {
-  "generado_en": "2026-07-06T23:48:23Z",
+  "generado_en": "2026-07-07T22:07:48Z",
   "estado_global": "amarillo",
   "frescura": {
     "periodo_max": "2026-05",
@@ -7,118 +7,118 @@
     "estado": "verde"
   },
   "deriva_datos": {
-    "psi": 0.1607,
+    "psi": 0.1608,
     "estado": "amarillo",
     "ventana_meses": 6,
     "referencia_meses": 18,
-    "volumen_mensual_referencia": 50340.3,
-    "volumen_mensual_reciente": 40445.0,
-    "cambio_volumen_pct": -19.7
+    "volumen_mensual_referencia": 58868.4,
+    "volumen_mensual_reciente": 48066.8,
+    "cambio_volumen_pct": -18.3
   },
   "backtest_extendido": {
     "horizon": 12,
     "n_origins": 2,
-    "mae": 1.951,
-    "smape": 122.63,
-    "baseline_mae": 2.1485,
-    "baseline_smape": 116.65,
+    "mae": 2.5834,
+    "smape": 122.72,
+    "baseline_mae": 2.9363,
+    "baseline_smape": 118.84,
     "supera_baseline_mae": true,
     "por_paso": [
       {
         "paso": 1,
         "n": 23136,
-        "mae": 1.3945,
-        "smape": 130.44,
-        "baseline_mae": 1.5884,
-        "baseline_smape": 117.71
+        "mae": 1.7991,
+        "smape": 130.8,
+        "baseline_mae": 2.1096,
+        "baseline_smape": 119.74
       },
       {
         "paso": 2,
         "n": 22831,
-        "mae": 1.5427,
-        "smape": 130.07,
-        "baseline_mae": 1.728,
-        "baseline_smape": 119.27
+        "mae": 2.0641,
+        "smape": 130.24,
+        "baseline_mae": 2.2875,
+        "baseline_smape": 121.39
       },
       {
         "paso": 3,
         "n": 22465,
-        "mae": 1.6899,
-        "smape": 127.9,
-        "baseline_mae": 1.8,
-        "baseline_smape": 118.48
+        "mae": 2.2296,
+        "smape": 127.91,
+        "baseline_mae": 2.4671,
+        "baseline_smape": 120.56
       },
       {
         "paso": 4,
         "n": 21998,
-        "mae": 1.7309,
-        "smape": 126.91,
-        "baseline_mae": 1.8906,
-        "baseline_smape": 118.2
+        "mae": 2.2543,
+        "smape": 127.06,
+        "baseline_mae": 2.5299,
+        "baseline_smape": 120.36
       },
       {
         "paso": 5,
         "n": 21438,
-        "mae": 1.8793,
-        "smape": 126.21,
-        "baseline_mae": 2.0001,
-        "baseline_smape": 118.12
+        "mae": 2.4544,
+        "smape": 126.36,
+        "baseline_mae": 2.7001,
+        "baseline_smape": 120.48
       },
       {
         "paso": 6,
         "n": 20789,
-        "mae": 1.993,
-        "smape": 126.55,
-        "baseline_mae": 2.1138,
-        "baseline_smape": 118.27
+        "mae": 2.6404,
+        "smape": 126.74,
+        "baseline_mae": 2.8962,
+        "baseline_smape": 120.68
       },
       {
         "paso": 7,
         "n": 20036,
-        "mae": 2.2637,
-        "smape": 132.18,
-        "baseline_mae": 2.5406,
-        "baseline_smape": 123.64
+        "mae": 3.1396,
+        "smape": 132.45,
+        "baseline_mae": 3.5869,
+        "baseline_smape": 125.77
       },
       {
         "paso": 8,
         "n": 19250,
-        "mae": 2.3216,
-        "smape": 128.63,
-        "baseline_mae": 2.6055,
-        "baseline_smape": 121.27
+        "mae": 3.2127,
+        "smape": 128.82,
+        "baseline_mae": 3.6084,
+        "baseline_smape": 123.37
       },
       {
         "paso": 9,
         "n": 18100,
-        "mae": 2.1457,
-        "smape": 112.95,
-        "baseline_mae": 2.2193,
-        "baseline_smape": 112.49
+        "mae": 2.776,
+        "smape": 112.57,
+        "baseline_mae": 3.0361,
+        "baseline_smape": 114.69
       },
       {
         "paso": 10,
         "n": 16010,
-        "mae": 2.1621,
-        "smape": 99.98,
-        "baseline_mae": 2.4568,
-        "baseline_smape": 107.52
+        "mae": 3.0002,
+        "smape": 100.82,
+        "baseline_mae": 3.5689,
+        "baseline_smape": 110.0
       },
       {
         "paso": 11,
         "n": 11049,
-        "mae": 2.4471,
-        "smape": 96.61,
-        "baseline_mae": 2.8527,
-        "baseline_smape": 108.22
+        "mae": 3.2415,
+        "smape": 96.18,
+        "baseline_mae": 3.972,
+        "baseline_smape": 110.58
       },
       {
         "paso": 12,
         "n": 6341,
-        "mae": 3.1795,
-        "smape": 90.68,
-        "baseline_mae": 3.6152,
-        "baseline_smape": 107.33
+        "mae": 3.5421,
+        "smape": 88.63,
+        "baseline_mae": 4.5067,
+        "baseline_smape": 108.84
       }
     ],
     "estado": "verde"

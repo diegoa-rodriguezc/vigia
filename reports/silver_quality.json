@@ -1,23 +1,106 @@
 {
-  "filas": 5040569,
+  "filas": 8810230,
   "fuentes": {
-    "reporte_capturas": 1237427,
-    "violencia_intrafamiliar": 681664,
+    "reporte_capturas": 3673466,
+    "violencia_intrafamiliar": 682557,
+    "amenazas": 650347,
     "hurto_personas": 641359,
-    "amenazas": 428409,
+    "hurto_residencias": 609597,
+    "delitos_informaticos": 491867,
+    "delitos_sexuales": 438526,
+    "incautacion_armas": 421215,
     "hurto_vehiculos": 382563,
-    "hurto_residencias": 333220,
-    "delitos_sexuales": 291469,
-    "homicidios": 267978,
-    "incautacion_armas": 251247,
-    "delitos_informaticos": 182538,
-    "recuperacion_vehiculos": 178530,
-    "extorsion": 95721,
-    "hurto_modalidades": 43240,
-    "terrorismo": 13905,
-    "secuestro": 8151,
-    "trata_personas": 3148
+    "homicidios": 339653,
+    "recuperacion_vehiculos": 276738,
+    "extorsion": 127521,
+    "hurto_modalidades": 44169,
+    "terrorismo": 15337,
+    "secuestro": 10267,
+    "trata_personas": 5048
   },
+  "procedencia": {
+    "homicidios": {
+      "filas_crudas": 339653,
+      "filas_validas": 339653,
+      "descartadas_pct": 0.0
+    },
+    "hurto_vehiculos": {
+      "filas_crudas": 382563,
+      "filas_validas": 382563,
+      "descartadas_pct": 0.0
+    },
+    "violencia_intrafamiliar": {
+      "filas_crudas": 682558,
+      "filas_validas": 682557,
+      "descartadas_pct": 0.0
+    },
+    "amenazas": {
+      "filas_crudas": 650347,
+      "filas_validas": 650347,
+      "descartadas_pct": 0.0
+    },
+    "reporte_capturas": {
+      "filas_crudas": 3673572,
+      "filas_validas": 3673466,
+      "descartadas_pct": 0.0
+    },
+    "incautacion_armas": {
+      "filas_crudas": 421224,
+      "filas_validas": 421215,
+      "descartadas_pct": 0.0
+    },
+    "recuperacion_vehiculos": {
+      "filas_crudas": 276743,
+      "filas_validas": 276738,
+      "descartadas_pct": 0.0
+    },
+    "hurto_modalidades": {
+      "filas_crudas": 44169,
+      "filas_validas": 44169,
+      "descartadas_pct": 0.0
+    },
+    "hurto_personas": {
+      "filas_crudas": 641724,
+      "filas_validas": 641359,
+      "descartadas_pct": 0.06
+    },
+    "hurto_residencias": {
+      "filas_crudas": 609597,
+      "filas_validas": 609597,
+      "descartadas_pct": 0.0
+    },
+    "delitos_sexuales": {
+      "filas_crudas": 438526,
+      "filas_validas": 438526,
+      "descartadas_pct": 0.0
+    },
+    "extorsion": {
+      "filas_crudas": 127521,
+      "filas_validas": 127521,
+      "descartadas_pct": 0.0
+    },
+    "secuestro": {
+      "filas_crudas": 10267,
+      "filas_validas": 10267,
+      "descartadas_pct": 0.0
+    },
+    "delitos_informaticos": {
+      "filas_crudas": 491867,
+      "filas_validas": 491867,
+      "descartadas_pct": 0.0
+    },
+    "terrorismo": {
+      "filas_crudas": 15337,
+      "filas_validas": 15337,
+      "descartadas_pct": 0.0
+    },
+    "trata_personas": {
+      "filas_crudas": 5048,
+      "filas_validas": 5048,
+      "descartadas_pct": 0.0
+    }
+  },
+  "nota_procedencia": "filas_crudas → filas_validas por fuente; los descartes provienen solo de fecha o código de municipio inválidos. No se eliminan filas repetidas: una fila idéntica a otra es un hecho distinto con atributos gruesos, no un duplicado del publicador.",
   "rango_fechas": {
     "min": "2003-01-01",
     "max": "2026-05-31"
@@ -42,10 +125,10 @@
   "nota_completitud": "completitud_pct es 100% por construcción: silver imputa el placeholder 'NO REPORTADO' en los campos de texto ausentes en vez de dejar nulos. Ver placeholders_pct para el % real de no reportados por campo.",
   "placeholders_pct": {
     "municipio": 0.0,
-    "zona": 81.04,
-    "arma_medio": 74.25,
-    "sexo": 41.65,
-    "grupo_etario": 52.62
+    "zona": 86.65,
+    "arma_medio": 82.26,
+    "sexo": 33.95,
+    "grupo_etario": 42.7
   },
   "municipios_unicos": 1126,
   "categorias": [
@@ -70,6 +153,6 @@
     "TRATA_DE_PERSONAS",
     "VIOLENCIA_INTRAFAMILIAR"
   ],
-  "total_hechos": 9235124,
+  "total_hechos": 13006054,
   "alertas": []
 }

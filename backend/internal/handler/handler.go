@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/vigia/backend/internal/auth"
 	"github.com/vigia/backend/internal/config"
 	"github.com/vigia/backend/internal/mlclient"
 	"github.com/vigia/backend/internal/realtime"
@@ -69,10 +70,22 @@ func New(repo *repository.Repository, ml *mlclient.Client, store *redisstore.Sto
 	}
 }
 
-// cacheActive indica si se debe leer/escribir caché para esta petición (habilitada, con
-// store disponible y sin el bypass `?nocache=1`).
+// cacheActive indica si se debe leer/escribir caché para esta petición (habilitada y con
+// store disponible). El bypass `?nocache=1` es privilegio del rol admin: forzar el recálculo
+// dispara cómputo caro (LLM/modelo) y, abierto a cualquier cuenta ciudadana de registro
+// público, sería una denegación de servicio barata. Para los demás roles el parámetro se
+// ignora en silencio (se responde de la caché, sin 403 que rompa al cliente).
 func (h *Handler) cacheActive(r *http.Request) bool {
-	return h.cache.enabled && h.store != nil && r.URL.Query().Get("nocache") != "1"
+	if !h.cache.enabled || h.store == nil {
+		return false
+	}
+	if r.URL.Query().Get("nocache") == "1" {
+		claims, ok := auth.ClaimsFromContext(r.Context())
+		if ok && claims.Role == auth.RoleAdmin {
+			return false // admin: bypass concedido, se recalcula
+		}
+	}
+	return true
 }
 
 // writeRaw escribe una respuesta JSON cruda (bytes ya serializados) con cabecera X-Cache.

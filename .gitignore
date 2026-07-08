@@ -1458,3 +1458,7 @@ ml/.ruff_cache/
 
 # Frontend
 frontend/dist/
+
+# Excepción: scripts versionados en ml/scripts/
+!ml/scripts/
+!ml/scripts/**

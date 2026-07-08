@@ -3,7 +3,8 @@
 .PHONY: help up down logs pipeline ml-install ml-api ml-test \
         ingest clean gold justicia train validate-anomalies load-db rag-index health \
         backend-run backend-test frontend-dev fmt \
-        docker-pipeline docker-health docker-rag-index docker-reingest ollama-pull deploy deploy-gpu
+        docker-pipeline docker-health docker-rag-index docker-reingest ollama-pull deploy deploy-gpu \
+        kb-docs docker-challenger docker-rag-eval docker-blend-sweep
 
 # Comando base de Compose. 
 COMPOSE ?= docker compose
@@ -36,7 +37,7 @@ logs: ## Muestra logs en vivo
 	$(COMPOSE) logs -f
 
 # == Despliegue (todo dentro de Docker) ==
-deploy: up ollama-pull docker-pipeline ## Despliegue completo: levanta servicios (db, ollama, ml, backend, frontend) + modelos + pipeline con datos
+deploy: up ollama-pull kb-docs docker-pipeline ## Despliegue completo: levanta servicios (db, ollama, ml, backend, frontend) + modelos + pipeline con datos
 
 # Superpone docker-compose.gpu.yml (reserva de GPU para Ollama). Requiere driver
 # NVIDIA + NVIDIA Container Toolkit (Linux) o Docker Desktop+WSL2 (Windows). 
@@ -56,10 +57,31 @@ docker-pipeline: ## Ejecuta el pipeline completo DENTRO del contenedor ml (hostn
 docker-health: ## Regenera la salud del modelo (reports/model_health.json) DENTRO del contenedor ml. Proceso Lento.
 	$(COMPOSE) exec ml python -m vigia health
 
+# Reportes de evaluación BAJO DEMANDA (no van en el pipeline ni en `deploy`): se ejecutan a mano
+# cuando se requieren. Todos corren DENTRO del contenedor ml (necesitan gold/BD; rag-eval además un
+# proveedor LLM activo). Ver reports/README.md.
+docker-challenger: ## Evalúa el retador neuronal vs el HGB de producción (reports/challenger.json). Lento.
+	$(COMPOSE) exec ml python -m vigia challenger
+
+docker-rag-eval: ## Evalúa el asistente con preguntas de referencia (reports/rag_eval.json). Requiere proveedor LLM.
+	$(COMPOSE) exec ml python -m vigia rag-eval
+
+# El barrido NO es un subcomando `vigia` sino un script; como el código no está montado en el
+# contenedor, se pasa por la entrada estándar (-T), igual que kb-docs.
+docker-blend-sweep: ## Barrido del peso de la mezcla modelo/persistencia (reports/blend_sweep.json). Lento (~10 min).
+	$(COMPOSE) exec -T ml python - < ml/scripts/blend_sweep.py
+
 # Reconstruye SOLO el índice del RAG (kb_chunks) DENTRO del contenedor ml, sin rehacer el pipeline.
 # Útil tras añadir documentos a data/kb_docs/ o cambiar el embedder.
 docker-rag-index: ## Reconstruye el índice del RAG (kb_chunks) DENTRO del contenedor ml
 	$(COMPOSE) exec ml python -m vigia rag-index
+
+# Verifica la INTEGRIDAD (SHA-256 y tamaño) del PDF de la Política de Seguridad versionado
+# en data/kb_docs/; si faltara o no coincidiera, lo descarga del sitio oficial. Si el
+# archivo ya existe y su hash coincide, no vuelve a descargarlo. El código no está montado
+# en el contenedor → el script se pasa por la entrada estándar (-T).
+kb-docs: ## Verifica (SHA-256) los documentos de la KB del RAG y los re-obtiene si faltan
+	$(COMPOSE) exec -T ml python - < ml/scripts/fetch_kb_docs.py
 
 # Re-ingesta selectiva + reconstrucción de lo derivado, GENÉRICO para cualquier fuente.
 #   make docker-reingest ONLY=poblacion               # una fuente

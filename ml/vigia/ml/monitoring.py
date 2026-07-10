@@ -3,14 +3,19 @@
 Reúne, sobre los artefactos que ya produce el pipeline, tres señales de "¿sigue siendo
 fiable el modelo?" pensadas para operación continua, sin reentrenar:
 
-1. **Frescura de datos** (`freshness`): rezago entre el último mes con datos y hoy. Datos viejos
-   degradan cualquier pronóstico aunque el modelo no cambie.
+1. **Frescura de datos** (`freshness`): rezago entre el último mes con datos y hoy, más el
+   desglose por categoría (≈ fuente): con solo el máximo GLOBAL, una fuente estancada pasaría
+   inadvertida mientras otra siga fresca — las categorías con más de `_LAG_ESTANCADA` meses de
+   atraso frente al panel se listan y elevan la señal a amarillo. Datos viejos degradan
+   cualquier pronóstico aunque el modelo no cambie.
 2. **Deriva de datos** (`data_drift`): PSI (Population Stability Index) de la distribución de
    conteos de delito de los meses recientes vs. el histórico de referencia, más el cambio del
    volumen nacional. Detecta si "el mundo cambió" respecto a lo que el modelo vio al entrenar.
 3. **Backtest extendido a 12 meses** (`backtest_horizon`): valida el horizonte LARGO (no solo los
    6 meses del entrenamiento) con el mismo walk-forward sin fuga, y reporta la degradación por paso
    y si el modelo sigue batiendo a la persistencia a 12 meses.
+4. **Cobertura de población** (`population_coverage`): el denominador DANE habilita el modelado en
+   tasas; si falta, el modelo degrada a conteos en silencio — esta señal lo hace visible.
 
 `health_report` ensambla todo con un semáforo (verde/amarillo/rojo) por señal y global, y lo
 persiste en `reports/model_health.json` (auditable). No cambia el modelo: solo observa.
@@ -44,6 +49,13 @@ _PSI_SIGNIFICATIVO = 0.25
 # Rezago de datos (meses) tolerable antes de marcar el tablero como desactualizado.
 _LAG_ATENCION = 3
 _LAG_CRITICO = 6
+# Meses de atraso de una categoría frente al máximo del panel para declararla ESTANCADA. Umbral
+# calibrado con el dato real (2026-07): el atraso natural por rezago de publicación y bajo volumen
+# llega a ~5 meses (hurto a entidades financieras) — 6 detecta estancamientos genuinos sin falsas
+# alarmas.
+_LAG_ESTANCADA = 6
+# Cobertura mínima del denominador poblacional para considerar sano el modo de tasas.
+_MIN_COBERTURA_POBLACION = 95.0
 
 
 def _delitos(series: pd.DataFrame) -> pd.DataFrame:
@@ -82,7 +94,13 @@ def _estado_psi(value: float) -> str:
 
 
 def freshness(series: pd.DataFrame, now: datetime | None = None) -> dict:
-    """Rezago entre el último mes con datos y hoy (frescura). Semáforo por meses de rezago."""
+    """Rezago entre el último mes con datos y hoy (frescura). Semáforo por meses de rezago.
+
+    Además del máximo GLOBAL, desglosa el último período por categoría (≈ fuente: cada dataset
+    aporta una) y lista las ESTANCADAS — las que van más de `_LAG_ESTANCADA` meses detrás del
+    panel—, que elevan la señal a amarillo: sin esto, una fuente detenida quedaba invisible
+    mientras cualquier otra siguiera fresca.
+    """
     now = now or datetime.now(UTC)
     periodos = pd.to_datetime(series["periodo"])
     if periodos.empty:
@@ -90,12 +108,29 @@ def freshness(series: pd.DataFrame, now: datetime | None = None) -> dict:
     pmax = periodos.max()
     lag = (now.year - pmax.year) * 12 + (now.month - pmax.month)
     estado = "verde" if lag <= _LAG_ATENCION else "amarillo" if lag <= _LAG_CRITICO else "rojo"
-    return {"periodo_max": pmax.strftime("%Y-%m"), "lag_meses": int(lag), "estado": estado}
+    por_cat = series.assign(_p=periodos).groupby("categoria")["_p"].max()
+    atraso = ((pmax.year - por_cat.dt.year) * 12 + (pmax.month - por_cat.dt.month)).astype(int)
+    estancadas = [
+        {
+            "categoria": str(c),
+            "periodo_max": por_cat[c].strftime("%Y-%m"),
+            "meses_detras_del_panel": int(m),
+        }
+        for c, m in atraso.sort_values(ascending=False).items()
+        if m > _LAG_ESTANCADA
+    ]
+    if estancadas and estado == "verde":
+        estado = "amarillo"
+    return {
+        "periodo_max": pmax.strftime("%Y-%m"),
+        "lag_meses": int(lag),
+        "umbral_estancada_meses": _LAG_ESTANCADA,
+        "fuentes_estancadas": estancadas,
+        "estado": estado,
+    }
 
 
-def data_drift(
-    series: pd.DataFrame, recent_months: int = 6, reference_months: int = 18
-) -> dict:
+def data_drift(series: pd.DataFrame, recent_months: int = 6, reference_months: int = 18) -> dict:
     """Deriva de los conteos de delito: PSI (reciente vs referencia) + cambio de volumen nacional.
 
     La ventana reciente son los últimos `recent_months`; la referencia es una ventana **rolling**
@@ -173,6 +208,28 @@ def backtest_horizon(series: pd.DataFrame, horizon: int = 12, n_splits: int = 2)
     }
 
 
+def population_coverage(series: pd.DataFrame) -> dict:
+    """Cobertura del denominador poblacional (DANE) en la serie gold.
+
+    Sin población el modelo degrada CON ELEGANCIA a conteos (modo "count") — no es un fallo,
+    pero cambia la calidad del pronóstico y antes ocurría en silencio: esta señal lo declara.
+    """
+    if "poblacion" not in series.columns or series["poblacion"].isna().all():
+        return {
+            "disponible": False,
+            "cobertura_pct": 0.0,
+            "estado": "amarillo",
+            "nota": "sin denominador poblacional: el modelo opera en conteos "
+            "(re-ingiera la fuente `poblacion` y reconstruya gold)",
+        }
+    cobertura = round(100 * float(series["poblacion"].notna().mean()), 1)
+    return {
+        "disponible": True,
+        "cobertura_pct": cobertura,
+        "estado": "verde" if cobertura >= _MIN_COBERTURA_POBLACION else "amarillo",
+    }
+
+
 _PEOR = {"verde": 0, "amarillo": 1, "rojo": 2}
 
 
@@ -186,14 +243,16 @@ def health_report(
     """Ensambla las señales de salud + un semáforo global (el peor de las señales)."""
     fresh = freshness(series, now=now)
     drift = data_drift(series, recent_months=recent_months, reference_months=reference_months)
+    pob = population_coverage(series)
     bt = backtest_horizon(series, horizon=horizon)
-    estados = [fresh["estado"], drift["estado"]] + ([bt["estado"]] if bt else [])
+    estados = [fresh["estado"], drift["estado"], pob["estado"]] + ([bt["estado"]] if bt else [])
     global_estado = max(estados, key=lambda e: _PEOR.get(e, 0)) if estados else "verde"
     return {
         "generado_en": (now or datetime.now(UTC)).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "estado_global": global_estado,
         "frescura": fresh,
         "deriva_datos": drift,
+        "poblacion": pob,
         "backtest_extendido": bt,
     }
 

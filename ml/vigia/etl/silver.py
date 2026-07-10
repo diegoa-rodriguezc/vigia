@@ -7,6 +7,8 @@ de fecha. Aquí se normalizan a un único modelo de evento delictivo
 
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 
 from vigia.config import settings
@@ -15,6 +17,38 @@ from vigia.etl.quality import quality_report
 from vigia.logging import get_logger
 
 log = get_logger(__name__)
+
+
+def _bronze_cap(dataset_id: str) -> tuple[bool, int | None]:
+    """Lee del linaje del bronze si la fuente se ingirió con tope (SODA_MAX_ROWS).
+
+    Devuelve `(capped, row_cap)`. Ante meta ausente o ilegible, asume sin tope (False, None):
+    el flag es informativo y no debe tumbar la construcción de silver.
+    """
+    meta_path = settings.bronze_dir / f"{dataset_id}.meta.json"
+    if not meta_path.exists():
+        return False, None
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return False, None
+    return bool(meta.get("capped", False)), meta.get("row_cap")
+
+
+def _bronze_ingested_at(dataset_id: str) -> str | None:
+    """Fecha de ingesta del bronze (linaje). Los meta del bronze están gitignored: elevar la
+    fecha al informe de calidad la hace auditable desde el repo. Es una fecha derivada del
+    DATO (solo cambia al re-ingerir), no un reloj de pared que ensuciaría el diff del reporte
+    en cada ejecución. Ante meta ausente o ilegible devuelve None (informativo)."""
+    meta_path = settings.bronze_dir / f"{dataset_id}.meta.json"
+    if not meta_path.exists():
+        return None
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+    return meta.get("ingested_at")
+
 
 # Esquema unificado de salida
 UNIFIED_COLUMNS = [
@@ -88,7 +122,7 @@ def _to_dane5(series: pd.Series, family: str) -> pd.Series:
         digits = digits.str.slice(0, 5)
     code = digits.str.zfill(5).where(digits.str.len().between(1, 5), other=pd.NA)
     # Un código DANE válido nunca tiene '00' como departamento (los dptos van de 05 a 99):
-    # esto descarta placeholders como '00000' u '000xx' que la fuente trae con código en blanco.
+    # esto descarta marcadores como '00000' u '000xx' que la fuente trae con código en blanco.
     return code.where(code.str.slice(0, 2) != "00", other=pd.NA)
 
 
@@ -218,7 +252,8 @@ def build_silver(only: list[str] | None = None) -> pd.DataFrame:
         if not src.exists():
             log.warning(
                 "Sin datos de la fuente %s en la capa bronze (%s); fuente omitida",
-                spec.id, src.name,
+                spec.id,
+                src.name,
             )
             continue
         raw = pd.read_parquet(src)
@@ -233,6 +268,17 @@ def build_silver(only: list[str] | None = None) -> pd.DataFrame:
             "filas_validas": int(len(norm)),
             "descartadas_pct": round(100 * (1 - len(norm) / len(raw)), 2),
         }
+        # Fecha de ingesta del bronze (linaje auditable desde el repo; se omite si el meta falta).
+        ingerido = _bronze_ingested_at(spec.id)
+        if ingerido:
+            procedencia[spec.id]["ingerido_el"] = ingerido
+        # Si el bronze se truncó por SODA_MAX_ROWS, `filas_crudas` NO es el volumen del portal
+        # sino el recortado: dejarlo explícito para que el reporte de calidad no mienta. Solo se
+        # inyecta cuando hubo tope; así una ejecución SIN tope produce la procedencia idéntica.
+        capped, row_cap = _bronze_cap(spec.id)
+        if capped:
+            procedencia[spec.id]["truncado"] = True
+            procedencia[spec.id]["row_cap"] = row_cap
         frames.append(norm)
 
     if not frames:

@@ -35,14 +35,14 @@ def test_read_one_localiza_encabezado_orden_arbitrario_y_solo_total():
         ("05", "Antioquia", "Medellín", "5001", 2020, "Cabecera Municipal", 100),
         ("05", "Antioquia", "Medellín", "5001", 2020, "Total", 150),
         ("05", "Antioquia", "Medellín", "5001", 2021, "Total", 160),
-        ("00", "Sin dato", "X", "00000", 2020, "Total", 9),  # placeholder -> descartado
+        ("00", "Sin dato", "X", "00000", 2020, "Total", 9),  # marcador -> descartado
     ]
     df = _read_one(_make_xlsx(rows))
 
     assert list(df.columns) == ["cod_municipio", "anio", "poblacion"]
     # Solo el TOTAL municipal (no cabecera/centros poblados).
     assert set(df["anio"]) == {2020, 2021}
-    # Código DANE a 5 dígitos (zfill) y sin placeholders '00...'.
+    # Código DANE a 5 dígitos (zfill) y sin marcadores '00...'.
     assert (df["cod_municipio"] == "05001").all()
     assert (df["cod_municipio"].str.slice(0, 2) != "00").all()
     assert int(df.loc[df["anio"] == 2020, "poblacion"].iloc[0]) == 150

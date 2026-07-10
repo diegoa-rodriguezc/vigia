@@ -15,6 +15,7 @@ modelo que no es autorregresiva—.
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import unicodedata
@@ -90,7 +91,7 @@ def _read_one(content: bytes) -> pd.DataFrame:
         }
     )
     out = out.dropna(subset=["cod_municipio", "anio", "poblacion"])
-    # Descarta placeholders de código en blanco (mismo criterio que silver._to_dane5).
+    # Descarta marcadores de código en blanco (mismo criterio que silver._to_dane5).
     out = out[out["cod_municipio"].str.slice(0, 2) != "00"]
     return out[out["poblacion"] > 0]
 
@@ -111,7 +112,16 @@ def ingest_poblacion() -> pd.DataFrame:
         resp.raise_for_status()
         df = _read_one(resp.content)
         frames.append(df)
-        sources_meta.append({"url": url, "filas": int(len(df))})
+        # Checksum del archivo descargado (linaje verificable: los hashes de referencia están
+        # publicados en docs/DATASETS.md — si el DANE reemplaza el archivo, el meta lo delata).
+        sources_meta.append(
+            {
+                "url": url,
+                "filas": int(len(df)),
+                "bytes": len(resp.content),
+                "sha256": hashlib.sha256(resp.content).hexdigest(),
+            }
+        )
 
     pob = (
         pd.concat(frames, ignore_index=True)

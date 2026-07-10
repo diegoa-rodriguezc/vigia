@@ -18,7 +18,7 @@ _PLACEHOLDER = "NO REPORTADO"
 def _is_text(s: pd.Series) -> bool:
     """¿Es una columna de texto? (object, pandas ``StringDtype`` o categórica).
 
-    silver convierte el tipo de los campos de texto con ``.astype("string")`` (``StringDtype``), que **no**
+    silver convierte el tipo del texto con ``.astype("string")`` (``StringDtype``), que **no**
     es ``object``: filtrar solo por ``dtype == object`` saltaba todas esas columnas y dejaba
     ``placeholders_pct`` vacío. Aquí se contemplan los tres dtypes textuales posibles.
     """
@@ -36,15 +36,15 @@ def quality_report(df: pd.DataFrame, procedencia: dict[str, dict] | None = None)
     `build_silver` ({fuente: {filas_crudas, filas_validas, descartadas_pct}}), para que la
     diferencia entre el volumen del portal y el de silver sea auditable sin correr el pipeline.
     """
-    # % de valores que son el placeholder "NO REPORTADO" en cada campo de texto donde aparece.
-    # `completitud_pct` da 100% por construcción (silver imputa el placeholder en vez de dejar
+    # % de valores que son el marcador "NO REPORTADO" en cada campo de texto donde aparece.
+    # `completitud_pct` da 100% por construcción (silver imputa el marcador en vez de dejar
     # nulos); este desglose muestra el subregistro REAL por campo, sin maquillarlo.
     placeholders_pct: dict[str, float] = {}
     for col in df.columns:
         if not _is_text(df[col]):
             continue
         # `==` sobre StringDtype devuelve un boolean nullable: NA (valor ausente) cuenta como
-        # "no es placeholder", de modo que el % se calcula sobre TODAS las filas, no las no-nulas.
+        # "no es marcador", de modo que el % se calcula sobre TODAS las filas, no las no-nulas.
         is_placeholder = (df[col] == _PLACEHOLDER).fillna(False)
         if is_placeholder.any():
             placeholders_pct[col] = round(100 * is_placeholder.mean(), 2)
@@ -60,7 +60,9 @@ def quality_report(df: pd.DataFrame, procedencia: dict[str, dict] | None = None)
         "nota_procedencia": (
             "filas_crudas → filas_validas por fuente; los descartes provienen solo de fecha o "
             "código de municipio inválidos. No se eliminan filas repetidas: una fila idéntica "
-            "a otra es un hecho distinto con atributos gruesos, no un duplicado del publicador."
+            "a otra es un hecho distinto con atributos gruesos, no un duplicado del publicador. "
+            "`ingerido_el` es la fecha de ingesta del bronze de cada fuente (linaje auditable "
+            "sin correr el pipeline; los meta del bronze no se versionan)."
         ),
         "rango_fechas": {
             "min": str(df["fecha"].min().date()) if len(df) else None,
@@ -68,7 +70,7 @@ def quality_report(df: pd.DataFrame, procedencia: dict[str, dict] | None = None)
         },
         "completitud_pct": {col: round(100 * df[col].notna().mean(), 2) for col in df.columns},
         "nota_completitud": (
-            "completitud_pct es 100% por construcción: silver imputa el placeholder "
+            "completitud_pct es 100% por construcción: silver imputa el marcador "
             f"'{_PLACEHOLDER}' en los campos de texto ausentes en vez de dejar nulos. "
             "Ver placeholders_pct para el % real de no reportados por campo."
         ),
@@ -76,9 +78,26 @@ def quality_report(df: pd.DataFrame, procedencia: dict[str, dict] | None = None)
         "municipios_unicos": int(df["cod_municipio"].nunique()),
         "categorias": sorted(df["categoria"].dropna().unique().tolist())[:50],
         "total_hechos": int(df["cantidad"].sum()),
-        "alertas": _checks(df),
+        "alertas": _checks(df) + _truncation_alerts(procedencia),
     }
     return json.dumps(report, ensure_ascii=False, indent=2)
+
+
+def _truncation_alerts(procedencia: dict[str, dict] | None) -> list[str]:
+    """Alertas por fuentes truncadas en la ingesta (SODA_MAX_ROWS).
+
+    `build_silver` marca `truncado`/`row_cap` en la procedencia de la fuente cuyo bronze se cortó
+    en el tope. Se eleva a alerta VISIBLE para que una ejecución parcial no se lea como completa.
+    """
+    alerts: list[str] = []
+    for fuente, p in (procedencia or {}).items():
+        if p.get("truncado"):
+            cap = p.get("row_cap")
+            alerts.append(
+                f"Fuente '{fuente}' ingerida con tope SODA_MAX_ROWS={cap}: volumen posiblemente "
+                "PARCIAL; los conteos de esta fuente y sus derivados NO representan el total real."
+            )
+    return alerts
 
 
 def _checks(df: pd.DataFrame) -> list[str]:

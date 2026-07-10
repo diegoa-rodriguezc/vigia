@@ -5,7 +5,14 @@ from datetime import UTC, datetime
 import numpy as np
 import pandas as pd
 
-from vigia.ml.monitoring import backtest_horizon, data_drift, freshness, health_report, psi
+from vigia.ml.monitoring import (
+    backtest_horizon,
+    data_drift,
+    freshness,
+    health_report,
+    population_coverage,
+    psi,
+)
 
 
 def _series(n_series=8, n_meses=60, con_poblacion=True):
@@ -55,6 +62,34 @@ def test_freshness_semaforo():
     assert fr2["lag_meses"] == 12 and fr2["estado"] == "rojo"
 
 
+def test_freshness_detecta_fuente_estancada():
+    """Una categoría detenida meses atrás del panel debe listarse como estancada y elevar la
+    señal a amarillo aunque el máximo global siga fresco (antes quedaba invisible)."""
+    s = _series(n_meses=24)  # HOMICIDIO termina en 2020-12
+    vieja = _series(n_series=2, n_meses=16).assign(categoria="SECUESTRO")  # termina en 2020-04
+    fr = freshness(pd.concat([s, vieja], ignore_index=True), now=datetime(2021, 1, 15, tzinfo=UTC))
+    assert fr["lag_meses"] == 1  # el panel sigue fresco…
+    assert fr["estado"] == "amarillo"  # …pero la fuente estancada degrada la señal
+    assert [e["categoria"] for e in fr["fuentes_estancadas"]] == ["SECUESTRO"]
+    assert fr["fuentes_estancadas"][0]["meses_detras_del_panel"] == 8
+    # Sin estancadas, la lista queda vacía y el estado no cambia.
+    fr2 = freshness(s, now=datetime(2021, 1, 15, tzinfo=UTC))
+    assert fr2["fuentes_estancadas"] == [] and fr2["estado"] == "verde"
+
+
+def test_population_coverage_semaforo():
+    """Con denominador DANE → verde; sin la columna (o toda nula) → amarillo declarado (el
+    modelo degrada a conteos en silencio y la señal lo hace visible)."""
+    con = population_coverage(_series())
+    assert con["disponible"] is True
+    assert con["cobertura_pct"] == 100.0 and con["estado"] == "verde"
+    sin = population_coverage(_series(con_poblacion=False))
+    assert sin["disponible"] is False and sin["estado"] == "amarillo"
+    nula = _series()
+    nula["poblacion"] = np.nan
+    assert population_coverage(nula)["disponible"] is False
+
+
 def test_data_drift_estructura():
     d = data_drift(_series(), recent_months=6)
     for k in ("psi", "estado", "cambio_volumen_pct", "ventana_meses", "referencia_meses"):
@@ -92,9 +127,13 @@ def test_backtest_horizon_largo():
 def test_health_report_semaforo_global():
     rep = health_report(_series(), horizon=6, now=datetime(2024, 6, 15, tzinfo=UTC))
     assert rep["estado_global"] in ("verde", "amarillo", "rojo")
-    assert {"frescura", "deriva_datos", "backtest_extendido"} <= set(rep)
+    assert {"frescura", "deriva_datos", "poblacion", "backtest_extendido"} <= set(rep)
     # El global es el PEOR de las señales presentes.
-    estados = [rep["frescura"]["estado"], rep["deriva_datos"]["estado"]]
+    estados = [
+        rep["frescura"]["estado"],
+        rep["deriva_datos"]["estado"],
+        rep["poblacion"]["estado"],
+    ]
     if rep["backtest_extendido"]:
         estados.append(rep["backtest_extendido"]["estado"])
     orden = {"verde": 0, "amarillo": 1, "rojo": 2}

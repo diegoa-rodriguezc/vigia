@@ -312,8 +312,8 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
   deterioros municipales reales —los enfrentamientos de **Arauca 2022** (Tame, Saravena, Arauquita), la
   **crisis del Catatumbo 2025** (Tibú, El Tarra), la **masacre de Samaniego 2020**, el **Club El Nogal 2003**,
   la **Brigada 30 de Cúcuta 2021** y la **chiva bomba de Toribío 2011** (el único fallo histórico: lo
-  silenciaba el punto ciego MAD=0 que corrigió la Iteración 13 — su serie de TERRORISMO es rala, mayoría de
-  ceros, y el z quedaba forzado a 0). En el modo
+  silenciaba el punto ciego MAD=0 que corrigió la Iteración 13 — su serie de TERRORISMO tiene la mayoría de
+  los meses en cero y el z quedaba forzado a 0). En el modo
   estricto por categoría caen los atentados **pequeños frente a la línea base de una metrópoli**
   (Andino, Escuela General Santander: aciertan por municipio-mes vía el deterioro concurrente de otra
   categoría, no por la propia). No es prueba causal: es **validez de cara**, con sus límites declarados. *(La
@@ -581,8 +581,8 @@ con un LLM de 1,7B.
     recall ≥0,9), el catálogo pasa a **30.243** alertas (tasa 1,13 % de los meses-serie, ≈2 por serie), la
     corroboración interna **sube** de 23,3 % a **24,6 %** (7.433 respaldadas) y el recall contra eventos
     documentados pasa de 10/11 a **11/11** — el fallo que se cierra es justamente **Toribío 2011**, cuya
-    serie rala de TERRORISMO silenciaba el punto ciego (el diagnóstico anterior, «línea base alta», era
-    incorrecto: era MAD=0).
+    serie de TERRORISMO, con la mayoría de los meses en cero, caía en el punto ciego (el diagnóstico
+    anterior, «línea base alta», era incorrecto: era MAD=0).
 
 **Estado actual:** modelo aceptado y **reforzado**: tras las Iteraciones 8-12 **supera a la persistencia en
 MAE 1 paso y multipaso y en sMAPE multipaso** (`supera_linea_base_mae = true`,

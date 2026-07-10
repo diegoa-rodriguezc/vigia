@@ -94,8 +94,8 @@ las **modela con dato oficial** y hace visible su subregistro.
   ubica correctamente municipios que un cruce por nombre —el atajo habitual— pierde por errores de escritura.
 - Las **tasas por 100.000 habitantes** (población DANE) hacen comparable un municipio amazónico de pocos
   miles con una capital — algo imposible con conteos crudos.
-- Los municipios **no** modelados (Guainía 1/6, Vaupés 3/5, Amazonas 7/11) tienen series demasiado ralas
-  (<12 meses con hechos). En vez de inventar un pronóstico falso, VigIA los **deja explícitos como vacío de
+- Los municipios **no** modelados (Guainía 1/6, Vaupés 3/5, Amazonas 7/11) tienen series con demasiados
+  meses sin hechos registrados (<12 meses con hechos). En vez de inventar un pronóstico falso, VigIA los **deja explícitos como vacío de
   información** — un insumo de política pública en sí mismo (¿por qué no se reporta?).
 
 ---

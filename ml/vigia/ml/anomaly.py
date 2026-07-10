@@ -1,7 +1,8 @@
 """Detección de anomalías para alerta temprana.
 
 Marca meses-municipio con incidencia atípica combinando dos señales:
-1. z-score robusto (MAD) del residuo frente a la mediana móvil, calculado POR serie.
+1. z-score robusto (MAD, con respaldo de escala para series quietas) del residuo frente a
+   la mediana móvil, calculado POR serie.
 2. IsolationForest sobre [valor, residuo].
 Se reporta anomalía al alza cuando AMBAS coinciden (consenso), reduciendo falsos positivos.
 
@@ -27,6 +28,12 @@ log = get_logger(__name__)
 
 ROBUST_Z_THRESHOLD = 3.5
 KEY = ["cod_municipio", "categoria"]
+# Constantes de consistencia normal de las escalas robustas: sigma ≈ MAD/0.6745 ≈ MeanAD/0.7979.
+_MAD_A_SIGMA = 0.6745
+_MEANAD_A_SIGMA = 0.7979
+# Piso de la escala de RESPALDO (en hechos): un pico solo alerta si supera
+# z_threshold × piso ≈ 3,5 hechos sobre la mediana móvil de su serie.
+_PISO_SIGMA_RESPALDO = 1.0
 _COLS = [
     "cod_municipio",
     "municipio",
@@ -37,6 +44,26 @@ _COLS = [
     "score_z",
     "severidad",
 ]
+
+
+def _z_robusto(x: pd.Series, por: list[pd.Series]) -> pd.Series:
+    """z robusto por grupo, con respaldo de escala cuando la MAD del grupo es 0.
+
+    En series quietas (>50 % de valores idénticos, típico de municipios pequeños con muchos
+    ceros) la MAD es 0 y el z quedaba forzado a 0: la serie era SORDA a cualquier pico
+    (punto ciego medido el 2026-07-10: 79 % de las series del panel; ocultaba p. ej. 75
+    secuestros en un mes en El Tambo). Respaldo: la media de desviaciones absolutas, con un
+    PISO de `_PISO_SIGMA_RESPALDO` hechos — sin el piso, el respaldo triplicaba las alertas
+    y el 91 % del exceso eran blips de ≤3 hechos (medido; ver CRISP-ML-Q, Iteración 13).
+    La ruta MAD>0 no cambia respecto al comportamiento histórico. Serie constante → z=0.
+    """
+    med = x.groupby(por).transform("median")
+    absdev = (x - med).abs()
+    mad = absdev.groupby(por).transform("median")
+    meanad = absdev.groupby(por).transform("mean")
+    respaldo = (meanad / _MEANAD_A_SIGMA).clip(lower=_PISO_SIGMA_RESPALDO)
+    sigma = (mad / _MAD_A_SIGMA).where(mad > 0, respaldo)
+    return ((x - med) / sigma).fillna(0.0)
 
 
 def detect(
@@ -73,7 +100,7 @@ def detect(
 
     y = df["cantidad"].astype(float)
 
-    # Señal 1: residuo vs mediana móvil (12) por serie -> z robusto (mediana/MAD por grupo)
+    # Señal 1: residuo vs mediana móvil (12) por serie -> z robusto por grupo
     roll = (
         df.groupby(KEY)["cantidad"]
         .rolling(12, min_periods=6)
@@ -82,20 +109,14 @@ def detect(
     )
     roll = roll.fillna(df.groupby(KEY)["cantidad"].transform("median"))
     df["_roll"] = roll
-    resid = y - df["_roll"]
-    med = resid.groupby([df[k] for k in KEY]).transform("median")
-    absdev = (resid - med).abs()
-    mad = absdev.groupby([df[k] for k in KEY]).transform("median").replace(0, np.nan)
-    df["_z"] = (0.6745 * (resid - med) / mad).fillna(0.0)
+    df["_z"] = _z_robusto(y - df["_roll"], [df[k] for k in KEY])
     sig_z = df["_z"].abs() > z_threshold
 
     # Señal 2: UN IsolationForest global sobre features YA NORMALIZADAS POR SERIE.
     # Usar [valor, residuo] crudos sesgaría el bosque hacia los municipios de mayor
     # volumen (Bogotá siempre parecería "outlier"); en su lugar se le pasa la atipicidad
     # *relativa* a cada serie: el z-robusto del residuo y el z-robusto del nivel.
-    med_y = y.groupby([df[k] for k in KEY]).transform("median")
-    mad_y = (y - med_y).abs().groupby([df[k] for k in KEY]).transform("median").replace(0, np.nan)
-    z_nivel = (0.6745 * (y - med_y) / mad_y).fillna(0.0)
+    z_nivel = _z_robusto(y, [df[k] for k in KEY])
     feats = np.column_stack([df["_z"].to_numpy(), z_nivel.to_numpy()])
     iso = IsolationForest(contamination=contamination, random_state=settings.seed)
     sig_iso = iso.fit_predict(feats) == -1

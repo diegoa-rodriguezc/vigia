@@ -291,8 +291,8 @@ inyectados** (ground truth) en un panel sintético (`tests/test_anomaly.py`,
 - **Justificación de `contamination=0,03`:** fija la prevalencia *esperada* de outliers del IsolationForest;
   el **consenso** de dos señales (z robusto **y** bosque) + el filtro de *solo picos al alza* la tensan aún
   más, de modo que la **tasa real** de alertas queda **muy por debajo** de ese 3 %. El reporte
-  (`anomalias.tasa_alertas_pct`, `alertas_por_serie`) lo evidencia: el total (22.867) es **<1 % de los
-  meses-serie** evaluados (0,85 %) y representa un **catálogo histórico desde 2003** (≈1–2 alertas por serie
+  (`anomalias.tasa_alertas_pct`, `alertas_por_serie`) lo evidencia: el total (30.243) es **≈1 % de los
+  meses-serie** evaluados (1,13 %) y representa un **catálogo histórico desde 2003** (≈2 alertas por serie
   en ~20 años), no un muro de alertas simultáneas. Las perillas (`contamination`, `z_threshold`) están expuestas en
   `anomaly.detect` para ajustar el punto de operación sin tocar el código.
 
@@ -308,21 +308,23 @@ verdad-terreno oficial, se añaden dos validaciones sobre las anomalías reales:
   catálogo no está montado). El reporte emite **dos modos** para no sobrevender los aciertos triviales de las
   metrópolis (donde casi todo mes tiene *alguna* anomalía): *por municipio-mes* y *exigiendo además que
   coincida la categoría*. **Resultado sobre el catálogo de referencia (11 hitos, 2003-2025, ±1 mes):**
-  **recall 0,91 por municipio-mes (10/11)** y **0,55 exigiendo categoría (6/11)**. El detector captura los
+  **recall 1,0 por municipio-mes (11/11)** y **0,64 exigiendo categoría (7/11)**. El detector captura los
   deterioros municipales reales —los enfrentamientos de **Arauca 2022** (Tame, Saravena, Arauquita), la
-  **crisis del Catatumbo 2025** (Tibú, El Tarra), la **masacre de Samaniego 2020**, el **Club El Nogal 2003**
-  y la **Brigada 30 de Cúcuta 2021**— y el único *miss* por municipio-mes es **Toribío 2011** (municipio de
-  conflicto crónico cuya línea base ya es alta: un ataque más no destaca estadísticamente). En el modo
-  estricto por categoría caen además los atentados **pequeños frente a la línea base de una metrópoli**
+  **crisis del Catatumbo 2025** (Tibú, El Tarra), la **masacre de Samaniego 2020**, el **Club El Nogal 2003**,
+  la **Brigada 30 de Cúcuta 2021** y la **chiva bomba de Toribío 2011** (el único fallo histórico: lo
+  silenciaba el punto ciego MAD=0 que corrigió la Iteración 13 — su serie de TERRORISMO es rala, mayoría de
+  ceros, y el z quedaba forzado a 0). En el modo
+  estricto por categoría caen los atentados **pequeños frente a la línea base de una metrópoli**
   (Andino, Escuela General Santander: aciertan por municipio-mes vía el deterioro concurrente de otra
   categoría, no por la propia). No es prueba causal: es **validez de cara**, con sus límites declarados. *(La
-  corrección del subconteo de la Iteración 11 elevó este recall de 7/11 a 10/11: al eliminar erróneamente
-  las filas repetidas se perdían precisamente los picos de hechos que estos eventos generan.)* La corroboración interna (abajo)
+  corrección del subconteo de la Iteración 11 elevó este recall de 7/11 a 10/11 — al eliminar erróneamente
+  las filas repetidas se perdían precisamente los picos de hechos que estos eventos generan— y la del punto
+  ciego MAD=0 de la Iteración 13 lo llevó a 11/11.)* La corroboración interna (abajo)
   opera sobre las anomalías reales.
 - **Corroboración interna** (sin datos externos): fracción de anomalías respaldadas por **otra categoría de
   delito en el mismo municipio-mes**. Un deterioro real suele ser multidelito; un artefacto aislado, no.
-  *Resultado sobre el catálogo actual (22.867 anomalías): **23,3 % corroboradas** (5.337 anomalías respaldadas
-  por otra categoría, agrupadas en 2.484 clústeres multidelito)* — muy por encima de lo esperable si las
+  *Resultado sobre el catálogo actual (30.243 anomalías): **24,6 % corroboradas** (7.433 anomalías respaldadas
+  por otra categoría, agrupadas en 3.453 clústeres multidelito)* — muy por encima de lo esperable si las
   alertas fueran ruido aislado. NO es prueba causal:
   es **validez de cara**, declarada como tal. Reporte en `reports/anomaly_validation.json`.
 
@@ -563,6 +565,25 @@ con un LLM de 1,7B.
     (Bogotá ≈+42 % sobre la media reciente; parte es estacionalidad legítima —los primeros meses del año son
     más bajos— y parte, el costo de un modelo global); se declara en vez de ocultarse.
 
+- **Iteración 13 (punto ciego MAD=0 del detector de anomalías: respaldo de escala calibrado):** un test
+    intermitente del CI destapó que el z robusto dejaba **sordas** a las series quietas: con >50 % de
+    residuos idénticos (típico de municipios pequeños con muchos ceros) la MAD del grupo es 0 y el z quedaba
+    forzado a 0 → ningún pico alertaba, por extremo que fuera. *Prevalencia medida:* **79 % de las 13.431
+    series** del panel. *Experimento (tres variantes sobre el panel real):* el detector vigente reproduce las
+    22.867 alertas versionadas; un respaldo **ingenuo** (media de desviaciones absolutas como escala) las
+    **triplica** (71.784) con **91 % del exceso en blips de ≤3 hechos** — descartado; un respaldo **calibrado**
+    (misma escala con **piso de 1,0 hecho**: solo alerta lo que supera `z_threshold`×piso ≈ 3,5 hechos sobre
+    la mediana móvil) añade **7.445 alertas con cero ruido de ≤3 hechos** (mediana 5 hechos) y solo mueve 69
+    alertas previas (re-umbral del bosque global). Entre lo destapado: **El Tambo 2025-09 (75 secuestros
+    extorsivos en un mes)**, Ipiales 2016-08 (88 casos de trata) y Medellín 2009-06 (71 de trata). *Se
+    cablea* (`anomaly._z_robusto`, la ruta MAD>0 queda intacta; 2 tests de regresión: pico en serie quieta →
+    alerta, blip 0→2 → silencio) y *se re-mide todo:* el benchmark sintético sigue verde (precisión ≥0,85 /
+    recall ≥0,9), el catálogo pasa a **30.243** alertas (tasa 1,13 % de los meses-serie, ≈2 por serie), la
+    corroboración interna **sube** de 23,3 % a **24,6 %** (7.433 respaldadas) y el recall contra eventos
+    documentados pasa de 10/11 a **11/11** — el fallo que se cierra es justamente **Toribío 2011**, cuya
+    serie rala de TERRORISMO silenciaba el punto ciego (el diagnóstico anterior, «línea base alta», era
+    incorrecto: era MAD=0).
+
 **Estado actual:** modelo aceptado y **reforzado**: tras las Iteraciones 8-12 **supera a la persistencia en
 MAE 1 paso y multipaso y en sMAPE multipaso** (`supera_linea_base_mae = true`,
 `supera_linea_base_smape_multipaso = true`). **A 1 paso mantiene una ventaja modesta en MAE** (≈2,55 vs 2,60
@@ -583,7 +604,7 @@ tabla siguiente es una ejecución de referencia (no sustituye al artefacto regen
 
 Ejecución de referencia (16 datasets, backtest **walk-forward**; regenerada por `make deploy`, ver
 `reports/model_report.json`): **13.089 series** modeladas, 1.106 municipios, 20 categorías, **12,98 millones**
-de hechos modelados, periodo 2003-01 → 2026-05, **22.867 anomalías** (10.088 alta / 12.779 media). Tras la
+de hechos modelados, periodo 2003-01 → 2026-05, **30.243 anomalías** (11.888 alta / 18.355 media). Tras la
 Iteración 6 el reporte añade `por_volumen` (terciles), `multipaso` (agregado + `por_paso`) y
 `pi_cobertura_empirica_pct`.
 

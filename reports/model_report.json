@@ -1,5 +1,5 @@
 {
-  "trained_at": "2026-07-07T21:36:28.679611+00:00",
+  "trained_at": "2026-07-10T22:00:06.677189+00:00",
   "seed": 77,
   "features": [
     "lag_1",
@@ -290,13 +290,13 @@
     "min_nonzero": 12
   },
   "anomalias": {
-    "total": 22867,
-    "alta": 10088,
-    "media": 12779,
+    "total": 30243,
+    "alta": 11888,
+    "media": 18355,
     "universo_meses_serie": 2676237,
-    "tasa_alertas_pct": 0.854,
+    "tasa_alertas_pct": 1.13,
     "series_evaluadas": 13431,
-    "series_con_alerta": 2684,
-    "alertas_por_serie": 1.7
+    "series_con_alerta": 6004,
+    "alertas_por_serie": 2.25
   }
 }

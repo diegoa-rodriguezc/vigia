@@ -128,6 +128,44 @@ def test_benchmark_precision_se_mantiene_alta_con_mas_anomalias():
     assert recall >= 0.5  # recall cae de forma predecible (acotado por contamination)
 
 
+def _serie_quieta(cantidad):
+    """Serie determinista de bajo volumen (mayoría de ceros → MAD de residuo = 0)."""
+    n = len(cantidad)
+    fechas = pd.period_range("2020-01", periods=n, freq="M").to_timestamp()
+    return pd.DataFrame(
+        {
+            "cod_municipio": ["19256"] * n,
+            "municipio": ["EL TAMBO"] * n,
+            "departamento": ["CAUCA"] * n,
+            "categoria": ["SECUESTRO_EXTORSIVO"] * n,
+            "periodo": fechas,
+            "cantidad": cantidad,
+        }
+    )
+
+
+def test_pico_en_serie_quieta_no_queda_silenciado():
+    # Punto ciego histórico (corregido en Iteración 13): con >50 % de residuos idénticos la
+    # MAD del grupo es 0 y el z quedaba forzado a 0 → la serie era sorda a CUALQUIER pico
+    # (así se silenciaban 75 secuestros en un mes). El respaldo de escala lo detecta.
+    cantidad = np.zeros(36, dtype=int)
+    cantidad[[7, 19]] = 1  # actividad esporádica realista
+    cantidad[30] = 15  # pico inequívoco
+    res = detect(_serie_quieta(cantidad))
+    assert (res["cantidad"] == 15).any()
+    assert (res.loc[res["cantidad"] == 15, "severidad"] == "ALTA").all()
+
+
+def test_blip_minimo_en_serie_quieta_no_alerta():
+    # El PISO de la escala de respaldo exige superar ~3,5 hechos sobre la mediana móvil:
+    # pasar de 0 a 2 hechos NO es alerta (sin el piso, el 91 % de las alertas nuevas eran
+    # blips de ≤3 hechos — medido sobre el panel real; ver CRISP-ML-Q, Iteración 13).
+    cantidad = np.zeros(36, dtype=int)
+    cantidad[30] = 2
+    res = detect(_serie_quieta(cantidad))
+    assert res.empty
+
+
 def test_serie_estable_no_genera_falsos_positivos():
     # Serie determinista con micro-oscilación acotada (sin picos): el filtro z robusto
     # nunca se dispara, así que el consenso no marca falsos positivos.

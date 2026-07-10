@@ -1,16 +1,16 @@
 {
   "corte_dato": "2026-05",
-  "n_anomalias": 22867,
+  "n_anomalias": 30243,
   "corroboracion_interna": {
-    "n_anomalias": 22867,
-    "n_corroboradas": 5337,
-    "fraccion_corroborada": 0.233,
-    "n_clusters_multidelito": 2484
+    "n_anomalias": 30243,
+    "n_corroboradas": 7433,
+    "fraccion_corroborada": 0.246,
+    "n_clusters_multidelito": 3453
   },
   "contra_eventos_documentados": {
     "n_eventos": 11,
-    "n_detectados": 10,
-    "recall": 0.909,
+    "n_detectados": 11,
+    "recall": 1.0,
     "window_months": 1,
     "by_categoria": false,
     "detalle": [
@@ -26,7 +26,7 @@
         "periodo": "2011-07",
         "categoria": "TERRORISMO",
         "descripcion": "Chiva bomba frente a la estación de Policía de Toribío, Cauca (FARC); 3 muertos, 460 viviendas afectadas",
-        "detectado": false
+        "detectado": true
       },
       {
         "cod_municipio": "11001",
@@ -95,8 +95,8 @@
   },
   "contra_eventos_documentados_por_categoria": {
     "n_eventos": 11,
-    "n_detectados": 6,
-    "recall": 0.545,
+    "n_detectados": 7,
+    "recall": 0.636,
     "window_months": 1,
     "by_categoria": true,
     "detalle": [
@@ -140,7 +140,7 @@
         "periodo": "2021-06",
         "categoria": "TERRORISMO",
         "descripcion": "Carro bomba en la Brigada 30 del Ejército, Cúcuta; decenas de heridos",
-        "detectado": false
+        "detectado": true
       },
       {
         "cod_municipio": "81794",

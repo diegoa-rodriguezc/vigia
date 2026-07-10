@@ -23,7 +23,10 @@ los conteos definitivos tras limpieza viven en [`reports/silver_quality.json`](.
 regenerado en cada ejecución, cuyo bloque **`procedencia`** concilia crudo→silver fuente a fuente (descartes
 reales ≤0,06 %, solo fechas o códigos de municipio inválidos: la limpieza **no elimina filas repetidas** — en
 las fuentes a grano de evento las filas idénticas son hechos distintos con atributos gruesos, ver
-[CRISP-ML(Q) §2](CRISP-ML-Q.md#2-ingeniería-de-datos-preparación)). Ese informe distingue `completitud_pct`
+[CRISP-ML(Q) §2](CRISP-ML-Q.md#2-ingeniería-de-datos-preparación)). Si la ingesta se limita con
+`SODA_MAX_ROWS` (opción de pruebas rápidas), el recorte **no es silencioso**: el linaje del bronze marca la
+fuente (`capped`/`row_cap`) y `silver_quality.json` emite una **alerta** de volumen parcial por cada fuente
+truncada, para que una ejecución incompleta nunca se lea como el total. Ese informe distingue `completitud_pct`
 (100 % por construcción: silver imputa el
 marcador `NO REPORTADO` en vez de dejar nulos) de `placeholders_pct` (el **% real de no reportados** por
 campo). La **alineación de estas fuentes con la Hoja de Ruta Nacional de Datos Abiertos
@@ -36,7 +39,7 @@ Estratégicos** se documenta y verifica en la sección
 | `hurto_vehiculos` | `csb4-y6v2` | A | ISO | 382.563 | `tipo_delito` (categoría por artículo) |
 | `hurto_personas` | `4rxi-8m8d` | A | ISO | 641.724 | delito urbano más frecuente (por hechos —`cantidad`—, no por filas) |
 | `hurto_residencias` | `7mn7-vzqp` | A | ISO | 609.597 | — |
-| `delitos_sexuales` | `bz43-8ahq` | A | ISO | 438.526 | `sexo`, `zona` (desagregable por género) |
+| `delitos_sexuales` | `bz43-8ahq` | A | ISO | 438.526 | `sexo`, `zona` (atributos de fuente; solo calidad) |
 | `delitos_informaticos` | `4v6r-wu98` | A | ISO | 491.867 | `descripcion_conducta` (no mapeada) |
 | `extorsion` | `q2ib-t9am` | A | ISO | 127.521 | — |
 | `secuestro` | `d7zw-hpf4` | A | ISO | 10.267 | `tipo_delito` (extorsivo/simple) |
@@ -48,8 +51,8 @@ Estratégicos** se documenta y verifica en la sección
 | `incautacion_armas` | `2iz5-9bbz` | B | dd/mm/yyyy | 421.224 | usa `municipio_hecho`; `clase_bien` (respuesta) |
 | `recuperacion_vehiculos` | `dhy3-732k` | B | dd/mm/yyyy | 276.743 | `clase_bien` (respuesta) |
 | `hurto_modalidades` | `d4fr-sbn2` | B | dd/mm/yyyy | 44.169 | categoría en `tipo_de_hurto`; `genero`, `grupo_etario` |
-| `auditorias` | `yiu6-gjbe` | admin | — | 953 | no es serie delictiva |
-| `demandas_notificadas` | `4uxk-dt6c` | admin | — | 18.074 | no es serie delictiva |
+| `auditorias` | `yiu6-gjbe` | admin | — | 977 | no delictiva; transparencia institucional (data card) |
+| `demandas_notificadas` | `4uxk-dt6c` | admin | — | 18.074 | no delictiva; transparencia institucional (data card) |
 
 > ⚠️ **Correcciones de integración:** `reporte_capturas`, `incautacion_armas` y `recuperacion_vehiculos`
 > resultaron ser **familia B** (no A como sugería el inventario inicial). `mineria_ilicita` (`4y5w-y5sj`)
@@ -121,8 +124,13 @@ recomendación. Mapeo verificado dataset↔Hoja de Ruta:
 
 **Conjunto priorizado aún no aperturado — aporte de VigIA.** La Hoja de Ruta prioriza además *"Seguridad y
 justicia – Violencia basada en género"* (registro **id 39**, categoría ESTADÍSTICAS, entidad DPS), con
-estado **NO APERTURADO** y recomendación **APERTURAR**. VigIA aporta señal proxy sobre ese vacío mediante
-`delitos_sexuales` (desagregable por `sexo`/`zona`) y `violencia_intrafamiliar` (con `genero`/`grupo_etario`).
+estado **NO APERTURADO** y recomendación **APERTURAR**. VigIA aporta una señal proxy sobre ese vacío al
+**visibilizar la concentración municipal** de las categorías asociadas a la violencia basada en género
+—`delitos_sexuales` y `violencia_intrafamiliar`—: muestra **dónde** se registran estos hechos. El proxy es
+**geográfico y agregado**; VigIA **no** desglosa por sexo, edad ni zona aunque las fuentes traigan esos
+atributos, por decisión ética (no perfilar ni estigmatizar poblaciones — ver
+[Ética y uso responsable](CRISP-ML-Q.md#ética-y-uso-responsable)). Esos atributos se conservan únicamente
+para medir el subregistro (`placeholders_pct`).
 
 > **Acotación del eje "Justicia".** En la Hoja de Ruta, la categoría *JUSTICIA Y DEL DERECHO* (id 137) se
 > refiere al registro público de propiedad/tenencia de tierras (Superintendencia de Notariado y Registro),
@@ -153,16 +161,18 @@ avanza más allá de la indagación).
 |---|---|
 | Dataset | *Procesos Fiscalía — V3* (`dbdv-iihs`, público; la V2 es privada → 403) |
 | Entidad | **Fiscalía General de la Nación** (no la Policía) |
-| Volumen | **~23 millones** de procesos (micro-dato anonimizado, 1 fila por proceso) |
-| Grano materializado | `municipio × año × etapa` |
+| Volumen | **~23,2 millones** de procesos (micro-dato anonimizado, 1 fila por proceso) |
+| Grano materializado | `municipio × año × etapa × título del Código Penal` |
 | Dimensión diferencial | `etapa`: **Indagación → Investigación → Juicio → Ejecución de Penas** |
+| Dimensión penal | `titulo_delito`: título del Código Penal (24 valores; **taxonomía propia de la Fiscalía**, no es 1:1 con las categorías de la Policía) |
 | Cobertura | **1.126 municipios**, **2004-2026** (SPOA arranca con la Ley 906 de 2004) |
 
 **Por qué es una capa PARALELA (no se fusiona con la serie de la Policía).** Una *noticia criminal / proceso*
 de la Fiscalía **no** es un *hecho registrado* por la Policía; sumarlas sería **doble conteo**. Por eso no
 entra a `silver.py` ni al `CATALOG` de delitos: vive aparte, en `gold/justicia_anual.parquet`,
-`gold/justicia_resumen.parquet` y `reports/justicia.json`. Su valor es la `etapa`, ausente en cualquier serie
-de incidencia.
+`gold/justicia_resumen.parquet`, `gold/justicia_delito.parquet` y `reports/justicia.json`. Su valor es la
+`etapa`, ausente en cualquier serie de incidencia, y —desde el desglose penal— la **tasa de judicialización
+por tipo de delito**.
 
 
 - **Esquema bronze** (`data/bronze/justicia_procesos.parquet`, ya agregado por el streaming):
@@ -172,40 +182,64 @@ de incidencia.
 | `cod_dane_hecho` | str | Código DANE del municipio del hecho (5 díg.; se cruza con DIVIPOLA) |
 | `a_o_hecho` | str | Año del hecho |
 | `etapa` | str | Etapa procesal (texto crudo de la Fiscalía) |
+| `titulo_delito` | str | Título del Código Penal (texto crudo; vacío → «Sin información») |
 | `n_procesos` | int | Conteo de procesos del grupo (agregado localmente) |
 
 - **Gold** (`etl/justicia.py`): `justicia_anual` (`cod_municipio × año × etapa`, con nombres DIVIPOLA y la clase
-`indagacion`/`judicializado`/`desconocido`) y `justicia_resumen` (por municipio: `total_procesos`,
-`n_judicializados` y **`tasa_judicializacion_pct`** = 100·judicializados / procesos de etapa conocida). La
+`indagacion`/`judicializado`/`desconocido`), `justicia_resumen` (por municipio: `total_procesos`,
+`n_judicializados` y **`tasa_judicializacion_pct`** = 100·judicializados / procesos de etapa conocida) y
+`justicia_delito` (NACIONAL por título del Código Penal: totales y tasa por título — responde *«¿qué delito
+se judicializa menos?»*; el **ranking** de `reports/justicia.json` solo compara títulos con **≥ 10.000
+procesos de etapa conocida**, porque una tasa sobre pocos procesos es ruido). La
 clasificación de etapa es robusta a tildes/mayúsculas (`_clasifica_etapa`).
 
 **Cifras nacionales reales** (`reports/justicia.json`, regenerado por `vigia justicia`):
 
 | Métrica | Valor |
 |---|---|
-| Procesos totales | **23.029.390** |
-| Embudo | Indagación 21.069.716 (91,5 %) · **Judicializado 1.959.486 (8,5 %)** · desconocido 188 |
-| **Tasa de judicialización nacional** | **8,51 %** |
-| Top municipios (procesos · tasa) | Bogotá 5,5 millones · 5,6 % — Medellín 1,7 millones · 7,9 % — Cali 1,28 millones · 7,8 % — Barranquilla 707.000 · 9,0 % — Cartagena 512.000 · 6,5 % |
+| Procesos totales | **23.181.489** (corte de la fuente: 30/06/2026) |
+| Embudo (por clase) | Indagación 21.214.155 (91,5 %) · **Judicializado 1.967.131 (8,5 %)** · desconocido 203 |
+| Embudo (por etapa) | Indagación 21.214.155 · Investigación 178.460 · Juicio 862.535 · **Ejecución de penas 926.136** · sin información 203 — la etapa es el **estado actual** del proceso (quien está en ejecución ya pasó por las anteriores), por eso no decrece de forma monótona |
+| **Tasa de judicialización nacional** | **8,49 %** |
+| Top municipios (procesos · tasa) | Bogotá 5,5 millones · 5,6 % — Medellín 1,7 millones · 7,8 % — Cali 1,29 millones · 7,8 % — Barranquilla 712.000 · 9,0 % — Cartagena 516.000 · 6,5 % |
+| **Menor tasa por título penal** | *Delitos Contra La Integridad Moral* (injuria/calumnia): **0,34 %** de 686.296 procesos |
+| **Mayor tasa por título penal** | *De Los Delitos Contra La Salud Pública*: **23,74 %** de 1.301.084 procesos |
 
 > El hallazgo es contundente y honesto: **solo ~8,5 % de las noticias criminales superan la indagación** a
 > nivel nacional; las grandes ciudades quedan **por debajo** del promedio (Bogotá 5,6 %). Es una señal de
-> *cuello de botella judicial* que el conteo de delitos no puede dar.
+> *cuello de botella judicial* que el conteo de delitos no puede dar. Y el desglose penal la afina: los
+> delitos **querellables** (injuria/calumnia) casi no se judicializan (0,34 %), mientras los de
+> persecución oficiosa con captura frecuente (salud pública/estupefacientes) multiplican por siete la
+> tasa nacional.
 
 **Advertencias de uso:**
 > 1. **Rezago judicial** — un proceso por un hecho reciente puede seguir en indagación o sin radicar, así que
->    los años recientes **subcuentan** más que la serie de la Policía.
+>    los años recientes quedan **más subestimados** que en la serie de la Policía.
 > 2. **La indagación domina** el volumen (la mayoría de noticias no avanza); por eso el valor está en la
 >    **tasa** de judicialización, no en el conteo bruto.
 > 3. **No es comparable 1:1 con la Policía**: *proceso* (Fiscalía) ≠ *hecho registrado* (Policía), y la
 >    taxonomía penal de la Fiscalía no mapea 1:1 a las categorías de delito de la Policía.
 > 4. Unos pocos códigos DANE del hecho no cruzan con DIVIPOLA (extranjeros/sin dato) → quedan con nombre nulo
 >    (de ahí 1.126 municipios vs. 1.122 oficiales).
+> 5. **Las tasas agregadas mezclan cohortes de hechos 2004-2026**: un proceso reciente aún puede avanzar de
+>    etapa, así que sirven para comparar territorios o delitos entre sí, no años recientes contra antiguos.
+>    El bloque `tasa_por_anio` del reporte lo demuestra con el dato: los años maduros rondan el **10-11 %**
+>    (2010: 11,04 %; 2015: 10,87 %), 2023 baja a **5,85 %** y 2026 a **3,2 %** — no porque se judicialice
+>    menos, sino porque esas cohortes aún no maduran.
+
+**Procedencia (conciliación bronze → gold, bloque `procedencia` del reporte):** el bronze agrega
+**23.212.036** procesos en 478.083 grupos; el gold conserva 23.181.489 y descarta **30.547 (0,13 %)** con
+causa declarada: 19.377 sin municipio válido (código DANE en blanco/extranjero) y 11.170 con año inválido o
+fuera de 2003-2026. La ingesta por streaming quedó **conciliada contra el servidor** el 2026-07-10: un
+`count(1)` server-side sobre `dbdv-iihs` devolvió **23.212.036 — diferencia 0** con la suma local (el
+keyset leyó exactamente cada fila). Las próximas re-ingestas registran ese linaje en el meta del bronze
+(`source_rows` y `source_count`, ver `soda.fetch_count`).
 
 > **Estado:** capa **cableada de punta a punta**. Produce los `gold` (`justicia_resumen`,
-> `justicia_anual`) y `reports/justicia.json`; `etl/load.py` los carga a PostgreSQL; el backend expone
-> `/justicia/resumen|municipios|departamentos|municipio`; el frontend tiene la pestaña pública **Justicia**;
-> y `rag/ingest._justicia_cards` indexa el embudo para el asistente. Todo se genera con `make docker-pipeline`.
+> `justicia_anual`, `justicia_delito`) y `reports/justicia.json`; `etl/load.py` los carga a PostgreSQL; el
+> backend expone `/justicia/resumen|municipios|departamentos|delitos|municipio`; el frontend tiene la pestaña
+> pública **Justicia**; y `rag/ingest._justicia_cards` indexa el embudo para el asistente. Todo se genera
+> con `make docker-pipeline`.
 
 ## Esquema crudo — Familia A (ej. homicidios `m8fd-ahd9`)
 
@@ -275,6 +309,18 @@ se materializa en `data/bronze/poblacion.parquet` (`[cod_municipio, anio, poblac
 `poblacion.meta.json`) y se cruza en `gold` por `(cod_municipio, anio)` con *clip* de año para respaldar los
 extremos (2003-2004 → 2005; años futuros → 2035). Cobertura del cruce: **100 %** de la serie mensual.
 
+**Integridad verificable (checksums de referencia, calculados el 2026-07-10):** la ingesta registra el
+SHA-256 y el tamaño de cada Excel descargado en `poblacion.meta.json`; si el DANE reemplaza el archivo, el
+meta lo delata al compararlo con estos valores de referencia:
+
+| Archivo | Bytes | SHA-256 |
+|---|---|---|
+| `DCD-area-proypoblacion-Mun-2005-2019.xlsx` | 1.857.795 | `e98503078be48b201ada2f01d5aca888e321dd13ec56dad1b0f463e70f439da7` |
+| `DCD-area-proypoblacion-Mun-2020-2035-ActPostCOVID-19.xlsx` | 1.878.067 | `4a696919048712ba386c034f48c476ac1c500e0e575be311e384fb461f44e6ba` |
+
+Si la población falta en gold (parquet ausente), el modelo **degrada a conteos** y la pestaña *Salud del
+modelo* lo señala (señal `poblacion` de `vigia health`).
+
 ## Esquema unificado — `data/silver/eventos.parquet`
 
 | Campo | Tipo | Descripción |
@@ -297,6 +343,21 @@ extremos (2003-2004 → 2005; años futuros → 2035). Cobertura del cruce: **10
 > La dimensión **`naturaleza`** (`delito` / `respuesta`) **no** se almacena en silver: se deriva en gold a
 > partir de `categoria` (`datasets.naturaleza`, ver `RESPONSE_CATEGORIES`), para separar la incidencia
 > delictiva de la respuesta institucional (capturas/incautaciones/recuperaciones) en los agregados.
+>
+> Los atributos **demográficos y de zona** (`zona`, `arma_medio`, `sexo`, `grupo_etario`) se conservan en
+> silver **solo** para cuantificar el subregistro (`placeholders_pct` en `silver_quality.json`: en la
+> ejecución de referencia, `zona` ≈87 %, `arma_medio` ≈82 %, `grupo_etario` ≈43 % y `sexo` ≈34 % de «NO
+> REPORTADO»). **No** se agregan a la capa gold ni entran como variables del modelo: VigIA no desglosa la
+> incidencia por grupo demográfico, por decisión ética (no perfilar ni estigmatizar poblaciones — ver
+> [Ética y uso responsable](CRISP-ML-Q.md#ética-y-uso-responsable)).
+
+**Limitaciones del dato de origen (declaradas, no «corregidas»):** (1) la serie histórica larga **no es
+de nivel comparable entre décadas** — el volumen nacional registrado pasa de 258.315 (2014) a 650.934
+(2019), **+152 % en cinco años**, por la consolidación del registro (SIEDCO, denuncia virtual), no por una
+triplicación de la criminalidad; (2) los **meses internos sin filas se leen como 0 hechos** dentro del
+rango activo de cada serie (gold no inventa años fuera de ese rango); (3) los **meses finales llegan
+incompletos** por rezago de reporte (la señal de frescura/volumen de la pestaña *Salud del modelo* lo
+vigila). Detalle y cómo el diseño acota cada una: [CRISP-ML-Q §2](CRISP-ML-Q.md#limitaciones-del-dato-de-origen-declaradas).
 
 ## Esquema gold y tablas en PostgreSQL
 

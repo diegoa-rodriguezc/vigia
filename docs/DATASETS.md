@@ -47,8 +47,10 @@ de VigIA priorizan los conjuntos estratégicos del concurso. **Resultado verific
   pertenecen al mismo conjunto priorizado *"Estadísticas de criminalidad"*; las de delito materializan la
   recomendación de consolidar.
 - **Conjunto priorizado aún NO aperturado:** id 39 (ESTADÍSTICAS, DPS) *"Seguridad y justicia – Violencia
-  basada en género"* (estado NO APERTURADO, recomendación APERTURAR). VigIA aporta proxy con
-  `delitos_sexuales` y `violencia_intrafamiliar`.
+  basada en género"* (estado NO APERTURADO, recomendación APERTURAR). VigIA aporta una señal proxy
+  **geográfica y agregada** —dónde se concentran estos hechos a nivel municipal— con `delitos_sexuales` y
+  `violencia_intrafamiliar`; **no** desglosa por sexo, edad ni zona pese a que las fuentes lo
+  permitirían, por decisión ética (ver [Ética y uso responsable](CRISP-ML-Q.md#ética-y-uso-responsable)).
 - **Acotación:** la categoría *JUSTICIA Y DEL DERECHO* (id 137) cubre registro de propiedad/tierras, no
   criminalidad → el núcleo del reto vive en DEFENSA id 70.
 
@@ -133,6 +135,18 @@ Policía Nacional, esquema idéntico a HOMICIDIO: `cod_muni` 5 díg. + `fecha_he
 cobertura nacional, vigentes a 2026-05). Detalle y justificación de descartes en
 [../docs/DATA_DICTIONARY.md](../docs/DATA_DICTIONARY.md).
 
+**Sobre la concentración en un solo productor.** Que 18 de los 20 conjuntos provengan de la Policía
+Nacional no es una debilidad del muestreo sino la forma del dominio: la Policía es el **productor oficial**
+de la estadística delictiva y la Hoja de Ruta Nacional prioriza justamente ese conjunto (arriba). Cada
+dataset es un **activo independiente** del portal —id propio, delito propio, publicación propia— y la
+uniformidad de esquema de la familia A es una **propiedad de la fuente que el diseño explota** (añadir un
+delito nuevo = una entrada en el catálogo declarativo, sin tocar la unificación), sin ocultar que existe
+una **familia B** con otro esquema y otro formato de fecha, cuya unificación es el reto técnico central
+(`silver.py`). La diversidad real del proyecto va por **entidad y modalidad**: Fiscalía (micro-dato de
+23,2 millones de procesos por paginación continua, con dimensión penal), DANE (DIVIPOLA + población
+municipal), cartografía del MGN, un PDF de política pública (pilar no estructurado del RAG) y la señal de
+prensa en tiempo real (newsdata.io/GDELT).
+
 ## Fuentes incorporadas
 
 Fuente | SODA id | API | Categoría
@@ -164,10 +178,10 @@ provienen siempre de los datasets de arriba.
 
 | Recurso | Ubicación en el repo | Procedencia | Nota de uso |
 |---|---|---|---|
-| Límites departamentales (GeoJSON) | `frontend/public/colombia-departamentos.json` | Geometría de la división político-administrativa oficial (**MGN, DANE** — un dato factual). Cadena de obtención: *shapefiles* de Maurix Suárez → conversión comunitaria de John Alexis Guerra Gómez ([gist `43c7656821069d00dcbc`](https://gist.github.com/john-guerra/43c7656821069d00dcbc), `colombia.geo.json`, revisión `be6a6e2`; descargado 2026-06; el gist **no declara licencia explícita**) → **simplificación propia** que conserva solo el dato factual (propiedades reducidas a `DPTO`/`NOMBRE_DPT`, coordenadas redondeadas a 3 decimales, 33 entidades) | Solo geometría del mapa coroplético; el cruce estadístico es por código DANE (`DPTO`). Situación de licencia declarada en la sección Licencia del README |
+| Límites departamentales (GeoJSON) | `frontend/public/colombia-departamentos.json` | Geometría de la división político-administrativa oficial (**MGN, DANE** — un hecho, no una obra creativa). Cadena de obtención: *shapefiles* de Maurix Suárez → conversión comunitaria de John Alexis Guerra Gómez ([gist `43c7656821069d00dcbc`](https://gist.github.com/john-guerra/43c7656821069d00dcbc), `colombia.geo.json`, revisión `be6a6e2`; descargado 2026-06; el gist **no declara licencia explícita**) → **simplificación propia** que conserva solo el dato oficial (propiedades reducidas a `DPTO`/`NOMBRE_DPT`, coordenadas redondeadas a 3 decimales, 33 entidades) | Solo geometría del mapa coroplético; el cruce estadístico es por código DANE (`DPTO`). Situación de licencia declarada en la sección Licencia del README |
 | *Política de Seguridad, Defensa y Convivencia Ciudadana 2022-2026* (PDF) | `data/kb_docs/` (versionado) | **Copia íntegra** del documento oficial del Ministerio de Defensa publicado por la Policía Nacional: [policia.gov.co](https://www.policia.gov.co/sites/default/files/2024-12/Pol%C3%ADtica%20de%20Seguridad%20Defensa%20y%20Convivencia%20Ciudadna.pdf) *[sic: errata «Ciudadna» del sitio de origen]*. Integridad **verificable** con `make kb-docs` (`ml/scripts/fetch_kb_docs.py`): SHA-256 `5b169a5a87ec7f9de57d7879ee4fa22fc83e9f288e1e0a903939a666b9f6af1a` y tamaño exacto 47.785.152 bytes, contrastados contra el original en línea el 2026-07-08 | Redistribuido íntegro y con cita, al amparo de la reproducción de textos oficiales (art. 41, Ley 23 de 1982), para reproducibilidad del pilar no estructurado; declarado en la sección Licencia del README |
 | *Hoja de Ruta Sectorial de Datos Abiertos — Sector Justicia 2024-2026* (PDF) | `docs/hoja-ruta-sectorial-justicia.pdf` | Documento oficial de MinJusticia/MinTIC, distribuido por enlaces de SharePoint de MinTIC susceptibles de caducar (ver [HOJA_RUTA_SECTORIAL.md](HOJA_RUTA_SECTORIAL.md)); SHA-256 `08b360251d3c8790828a87859688de8d5fc0bb0907c678e0a6330ab12cdc1b26`, 1.079.708 bytes | **Copia de evidencia** redistribuida íntegra y con cita, para que la alineación sectorial citada sea verificable; declarada en la sección Licencia del README |
 | Teselas del mapa | (servicio externo en runtime) | © OpenStreetMap contributors / © CARTO (`basemaps.cartocdn.com`) | Atribución visible en la interfaz del mapa (Leaflet) |
-| newsdata.io (señal de prensa) | (API externa en runtime, `backend/internal/realtime/newsdata.go`) | API comercial de noticias (`newsdata.io/api/1/latest`), plan gratuito con `NEWSDATA_API_KEY` | Fuente primaria de la señal de prensa si hay key; noticias, **no** cifras oficiales; cacheada en Redis |
+| newsdata.io (señal de prensa) | (API externa en runtime, `backend/internal/realtime/newsdata.go`) | API comercial de noticias (`newsdata.io/api/1/latest`), plan gratuito con `NEWSDATA_API_KEY` | Fuente primaria de la señal de prensa si hay key; noticias, **no** cifras oficiales; con caché en Redis |
 | GDELT (señal de prensa) | (API externa en runtime, `backend/internal/realtime/gdelt.go`) | *Global Database of Events, Language and Tone* (`api.gdeltproject.org`), sin token | Respaldo sin key; rate-limit duro (~1 req/5 s), degradación controlada; noticias, **no** cifras oficiales |
 

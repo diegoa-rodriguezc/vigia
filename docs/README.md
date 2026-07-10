@@ -40,7 +40,8 @@ Se muestran en contexto dentro de [ARCHITECTURE.md](ARCHITECTURE.md) y el [READM
   ejecución/despliegue (`model_report.json`, `silver_quality.json`, `justicia.json`,
   `anomaly_validation.json`) y los comandos de evaluación bajo demanda (`model_health.json` con
   `make docker-health`, `challenger.json` con `make docker-challenger`, `rag_eval.json` con
-  `make docker-rag-eval`, `blend_sweep.json` con `make docker-blend-sweep` — el barrido de la mezcla
-  modelo/persistencia).
+  `make docker-rag-eval`, `rag_eval_ollama.json` con `make docker-rag-eval-ollama` — el camino por
+  defecto del asistente, sin API key—, `blend_sweep.json` con `make docker-blend-sweep` — el análisis
+  de sensibilidad de la mezcla modelo/persistencia).
   Son las **cifras** que citan estos documentos.
 

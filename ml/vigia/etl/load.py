@@ -18,7 +18,8 @@ log = get_logger(__name__)
 # Cada sentencia se ejecuta por separado (ver _exec_ddl): con conexión en autocommit,
 # un lote multi-sentencia se trataría como UNA transacción implícita y, además, las
 # migraciones ALTER deben correr ANTES de cualquier índice que dependa de las columnas
-# nuevas. Las ALTER ... IF NOT EXISTS hacen segura la re-ejecución de la migración de tablas antiguas.
+# nuevas. Las ALTER ... IF NOT EXISTS hacen segura la re-ejecución de la migración de tablas
+# antiguas.
 DDL_STATEMENTS = [
     """CREATE TABLE IF NOT EXISTS resumen_municipio (
         cod_municipio TEXT, municipio TEXT, departamento TEXT,
@@ -43,6 +44,12 @@ DDL_STATEMENTS = [
         cod_municipio TEXT, anio INT, etapa TEXT, clase_etapa TEXT, n_procesos BIGINT,
         municipio TEXT, departamento TEXT, cod_departamento TEXT
     )""",
+    # Tasa de judicialización NACIONAL por título del Código Penal (~30 filas: sin índice, a
+    # propósito — un seq-scan sobre 30 filas es más barato que mantenerlo).
+    """CREATE TABLE IF NOT EXISTS justicia_delito (
+        titulo_delito TEXT, total_procesos BIGINT, n_judicializados BIGINT,
+        procesos_etapa_conocida BIGINT, tasa_judicializacion_pct DOUBLE PRECISION
+    )""",
     # Migraciones seguras de re-ejecutar (tablas creadas con un esquema anterior), antes de índices.
     "ALTER TABLE resumen_municipio ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION",
     "ALTER TABLE resumen_municipio ADD COLUMN IF NOT EXISTS lon DOUBLE PRECISION",
@@ -51,11 +58,13 @@ DDL_STATEMENTS = [
     "ALTER TABLE serie_mensual ADD COLUMN IF NOT EXISTS naturaleza TEXT",
     # Índice de serie_mensual
     "CREATE INDEX IF NOT EXISTS idx_serie_mpio_cat ON serie_mensual (cod_municipio, categoria)",
-    "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_serie_naturaleza_categoria ON serie_mensual (naturaleza, categoria)",
+    "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_serie_naturaleza_categoria "
+    "ON serie_mensual (naturaleza, categoria)",
     "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_serie_periodo ON serie_mensual (periodo)",
     # Índice de resumen_municipio
     "CREATE INDEX IF NOT EXISTS idx_resumen_delitos ON resumen_municipio (total_delitos DESC)",
-    "CREATE INDEX IF NOT EXISTS idx_resumen_departamento ON resumen_municipio ((left(cod_municipio,2)))",
+    "CREATE INDEX IF NOT EXISTS idx_resumen_departamento "
+    "ON resumen_municipio ((left(cod_municipio,2)))",
     # Índice de paginación/orden estable de anomalías (coincide con el ORDER BY del backend).
     "CREATE INDEX IF NOT EXISTS idx_anom_periodo ON anomalias (periodo DESC, cod_municipio)",
     "CREATE INDEX IF NOT EXISTS idx_anom_severidad ON anomalias(severidad)",
@@ -70,7 +79,8 @@ DDL_STATEMENTS = [
     "CREATE INDEX IF NOT EXISTS idx_anom_cat_trgm ON anomalias "
     "USING gin ((translate(lower(categoria), 'áéíóúüñ', 'aeiouun')) gin_trgm_ops)",
     # Justicia: ranking por volumen, embudo nacional por etapa y drill-down por municipio.
-    "CREATE INDEX IF NOT EXISTS idx_justicia_resumen_total ON justicia_resumen (total_procesos DESC)",
+    "CREATE INDEX IF NOT EXISTS idx_justicia_resumen_total "
+    "ON justicia_resumen (total_procesos DESC)",
     "CREATE INDEX IF NOT EXISTS idx_justicia_anual_muni ON justicia_anual (cod_municipio)",
     "CREATE INDEX IF NOT EXISTS idx_justicia_anual_etapa ON justicia_anual (etapa)",
 ]
@@ -211,4 +221,25 @@ def load_gold() -> None:
             log.info("Tabla justicia_anual cargada en PostgreSQL: %d filas", len(ja))
         else:
             log.info("Justicia (Fiscalía) no encontrada en la capa gold; se omite su carga.")
+
+        # Tasa de judicialización por título del Código Penal (nacional). Bloque independiente:
+        # un bronze anterior (sin dimensión penal) produce los otros gold pero no este.
+        jd_path = gold / "justicia_delito.parquet"
+        if jd_path.exists():
+            jd = pd.read_parquet(jd_path)
+            _copy_df(
+                conn,
+                "justicia_delito",
+                jd,
+                [
+                    "titulo_delito",
+                    "total_procesos",
+                    "n_judicializados",
+                    "procesos_etapa_conocida",
+                    "tasa_judicializacion_pct",
+                ],
+            )
+            log.info("Tabla justicia_delito cargada en PostgreSQL: %d filas", len(jd))
+        else:
+            log.info("Justicia por delito no encontrada en la capa gold; se omite su carga.")
     log.info("Carga a PostgreSQL completada.")

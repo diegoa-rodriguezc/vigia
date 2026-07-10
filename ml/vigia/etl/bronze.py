@@ -14,7 +14,7 @@ import pandas as pd
 
 from vigia.config import settings
 from vigia.datasets import ALL_DATASETS, AggregatedSpec, DatasetSpec
-from vigia.ingest.soda import fetch_dataset, fetch_streamed_aggregate
+from vigia.ingest.soda import fetch_count, fetch_dataset, fetch_streamed_aggregate
 from vigia.logging import get_logger
 
 log = get_logger(__name__)
@@ -29,11 +29,25 @@ def ingest_one(spec: DatasetSpec) -> pd.DataFrame:
     """Descarga un dataset y lo persiste en la capa bronze con su linaje."""
     settings.ensure_dirs()
     log.info("Ingestando %s (%s)…", spec.id, spec.soda_id)
+    cap = settings.soda_max_rows
     df = fetch_dataset(
         spec.soda_id,
-        max_rows=settings.soda_max_rows,
+        max_rows=cap,
         app_token=settings.soda_app_token,
     )
+    # ¿La descarga se cortó por el tope SODA_MAX_ROWS? Tras `head(cap)`, len(df) nunca supera el
+    # tope, así que igualarlo implica que la fuente tenía AL MENOS `cap` filas (posiblemente más).
+    # El único falso positivo (fuente con exactamente `cap` filas) marca de más, nunca de menos:
+    # siempre avisa "posiblemente parcial", jamás oculta un truncado. Deja rastro en el linaje y en
+    # el reporte de calidad (silver lo lee) para que ninguna ejecución parcial pase por completa.
+    capped = cap is not None and len(df) >= cap
+    if capped:
+        log.warning(
+            "Fuente %s truncada a %d filas por SODA_MAX_ROWS: el bronze y todos los reportes "
+            "derivados (silver, gold, modelo) son PARCIALES para esta fuente.",
+            spec.id,
+            cap,
+        )
     out = settings.bronze_dir / f"{spec.id}.parquet"
     df.to_parquet(out, index=False)
 
@@ -42,6 +56,10 @@ def ingest_one(spec: DatasetSpec) -> pd.DataFrame:
         "soda_id": spec.soda_id,
         "name": spec.name,
         "rows": int(len(df)),
+        # Linaje del tope de ingesta: `row_cap` es el SODA_MAX_ROWS aplicado (None = sin tope) y
+        # `capped` avisa si la descarga se cortó en ese tope (fuente posiblemente parcial).
+        "row_cap": cap,
+        "capped": capped,
         "columns": list(df.columns),
         "content_hash": _dataframe_hash(df) if not df.empty else None,
         "ingested_at": datetime.now(UTC).isoformat(),
@@ -72,6 +90,12 @@ def ingest_aggregated(spec: AggregatedSpec) -> pd.DataFrame:
     )
     out = settings.bronze_dir / f"{spec.id}.parquet"
     df.to_parquet(out, index=False)
+    # Conciliación del streaming: filas de origen leídas (cada una cuenta 1 en el agregado) vs
+    # `count(1)` del servidor en una sola petición (~80 s; None si no responde — deseable, no
+    # requisito). Una diferencia pequeña es esperable si la fuente recibió filas DURANTE la
+    # ingesta (el conteo se pide al final).
+    source_rows = df.attrs.get("source_rows")
+    source_count = fetch_count(spec.soda_id, where=spec.where, app_token=settings.soda_app_token)
     meta = {
         "dataset_id": spec.id,
         "soda_id": spec.soda_id,
@@ -82,6 +106,8 @@ def ingest_aggregated(spec: AggregatedSpec) -> pd.DataFrame:
         "count_as": spec.count_as,
         "where": spec.where,
         "rows": int(len(df)),
+        "source_rows": int(source_rows) if source_rows is not None else None,
+        "source_count": source_count,
         "columns": list(df.columns),
         "content_hash": _dataframe_hash(df) if not df.empty else None,
         "ingested_at": datetime.now(UTC).isoformat(),

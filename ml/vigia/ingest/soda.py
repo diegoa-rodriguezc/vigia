@@ -6,6 +6,8 @@ sesión con reintentos automáticos (429/5xx) y paginación por `$limit`/`$offse
 
 from __future__ import annotations
 
+import time
+
 import pandas as pd
 import requests
 from requests.adapters import HTTPAdapter
@@ -16,6 +18,14 @@ from vigia.logging import get_logger
 log = get_logger(__name__)
 
 SODA_MAX_PAGE = 50_000  # tope de filas por petición en SODA2
+# Tope de filas de los agregados parciales del streaming antes de re-agruparlos (acota la RAM
+# de `fetch_streamed_aggregate` con grupos anchos; ver el colapso intermedio en esa función).
+_ACC_COLLAPSE_ROWS = 2_000_000
+# Reintentos POR PÁGINA del streaming (además de los reintentos 429/5xx de la sesión): un corte
+# a mitad del cuerpo de la respuesta (IncompleteRead) escapa al Retry de urllib3 y, sin esto,
+# una sola falla transitoria pierde ~media hora de avance. El keyset hace el reintento seguro:
+# re-pedir la misma página (:id > último) produce el mismo resultado.
+_PAGE_RETRIES = 4
 
 
 def _build_session(app_token: str | None = None) -> requests.Session:
@@ -111,26 +121,55 @@ def fetch_streamed_aggregate(
     de millones de filas. Resultado idéntico al `$group`, pero reproducible y robusto sin token.
 
     Returns:
-        DataFrame con `group_cols` + la columna de conteo `count_as` (entera).
+        DataFrame con `group_cols` + la columna de conteo `count_as` (entera). El total de
+        filas de ORIGEN leídas queda en `df.attrs["source_rows"]` (linaje: la suma de los
+        conteos debe calzar con ese total, cada fila de origen cuenta exactamente 1).
     """
     url = f"https://www.datos.gov.co/resource/{soda_id}.json"
     session = _build_session(app_token)
     page_size = min(page_size, SODA_MAX_PAGE)
     select = ",".join([*group_cols, ":id"])
 
-    acc: list[pd.DataFrame] = []  # agregados parciales por página (se colapsan al final)
+    def _collapse(parts: list[pd.DataFrame]) -> pd.DataFrame:
+        """Re-agrupa los parciales y suma los conteos por clave."""
+        return (
+            pd.concat(parts, ignore_index=True)
+            .groupby(group_cols, dropna=False, as_index=False)[count_as]
+            .sum()
+        )
+
+    acc: list[pd.DataFrame] = []  # agregados parciales por página (se colapsan por tramos)
+    acc_rows = 0  # filas acumuladas en los parciales (dispara el colapso intermedio)
     last_id: str | None = None
     total = 0
     while True:
-        # Keyset: orden estable por :id y avance con :id > último (evita el coste del $offset hondo).
+        # Keyset: orden estable por :id y avance con :id > último (evita el $offset hondo).
         clause = f':id > "{last_id}"' if last_id else None
         full_where = " AND ".join(c for c in (where and f"({where})", clause) if c) or None
         params = {"$select": select, "$order": ":id", "$limit": page_size}
         if full_where:
             params["$where"] = full_where
-        resp = session.get(url, params=params, timeout=timeout)
-        resp.raise_for_status()
-        rows = resp.json()
+        for intento in range(_PAGE_RETRIES):
+            try:
+                resp = session.get(url, params=params, timeout=timeout)
+                resp.raise_for_status()
+                rows = resp.json()
+                break
+            except (requests.RequestException, ValueError) as exc:
+                # ValueError: cuerpo no-JSON (respuesta truncada/errónea del backend). Re-pedir
+                # la misma página es seguro: el $where por :id no avanza hasta que la página llega.
+                if intento == _PAGE_RETRIES - 1:
+                    raise
+                espera = 5 * 2**intento
+                log.warning(
+                    "  %s (stream): error transitorio en la página (%s); reintento %d/%d en %d s",
+                    soda_id,
+                    exc,
+                    intento + 1,
+                    _PAGE_RETRIES - 1,
+                    espera,
+                )
+                time.sleep(espera)
         if not rows:
             break
         page = pd.DataFrame(rows)
@@ -138,6 +177,13 @@ def fetch_streamed_aggregate(
         # Agrega ya la página (vectorizado) para no acumular millones de filas crudas en RAM.
         part = page.groupby(group_cols, dropna=False).size().reset_index(name=count_as)
         acc.append(part)
+        acc_rows += len(part)
+        # Colapso intermedio: con un grupo ancho (p. ej. municipio×año×etapa×título) los parciales
+        # de cientos de páginas suman millones de filas; re-agruparlos por tramos acota la RAM a un
+        # tamaño fijo sin cambiar el resultado (la suma de conteos es asociativa).
+        if acc_rows > _ACC_COLLAPSE_ROWS:
+            acc = [_collapse(acc)]
+            acc_rows = len(acc[0])
         total += len(rows)
         if total % (page_size * 10) == 0:
             log.info("  %s (stream): %d filas leídas", soda_id, total)
@@ -145,10 +191,37 @@ def fetch_streamed_aggregate(
             break
 
     if not acc:
-        return pd.DataFrame()
-    # Colapsa los parciales: re-agrupa y suma los conteos por clave.
-    out = pd.concat(acc, ignore_index=True).groupby(group_cols, dropna=False, as_index=False)[
-        count_as
-    ].sum()
-    log.info("  %s (stream): %d filas leídas -> %d grupos", soda_id, total, len(out))
+        out = pd.DataFrame()
+    else:
+        out = _collapse(acc)
+        log.info("  %s (stream): %d filas leídas -> %d grupos", soda_id, total, len(out))
+    out.attrs["source_rows"] = total  # linaje: filas de origen leídas (≡ suma de los conteos)
     return out
+
+
+def fetch_count(
+    soda_id: str,
+    *,
+    where: str | None = None,
+    app_token: str | None = None,
+    timeout: int = 180,
+) -> int | None:
+    """`count(1)` server-side en UNA petición, para CONCILIAR la ingesta por streaming.
+
+    En los datasets enormes es lento (~80 s en la fuente de la Fiscalía) pero, a diferencia
+    del `$group`, sí responde. Devuelve None si el servidor no contesta a tiempo (la
+    conciliación es linaje deseable, no requisito: su ausencia no debe tumbar la ingesta).
+    """
+    url = f"https://www.datos.gov.co/resource/{soda_id}.json"
+    session = _build_session(app_token)
+    params: dict[str, str] = {"$select": "count(1) AS n"}
+    if where:
+        params["$where"] = where
+    try:
+        resp = session.get(url, params=params, timeout=timeout)
+        resp.raise_for_status()
+        rows = resp.json()
+        return int(rows[0]["n"])
+    except (requests.RequestException, ValueError, LookupError) as exc:
+        log.warning("  %s: count(1) de conciliación no disponible (%s)", soda_id, exc)
+        return None

@@ -1,13 +1,157 @@
 {
   "fuente": "Fiscalía General de la Nación — Procesos V3 (dbdv-iihs)",
-  "grano": "municipio × año × etapa",
-  "total_procesos": 23029390,
+  "grano": "municipio × año × etapa × título del Código Penal",
+  "total_procesos": 23181489,
   "embudo_etapas": {
-    "indagacion": 21069716,
-    "judicializado": 1959486,
-    "desconocido": 188
+    "indagacion": 21214155,
+    "judicializado": 1967131,
+    "desconocido": 203
   },
-  "tasa_judicializacion_nacional_pct": 8.51,
+  "embudo_por_etapa": [
+    {
+      "etapa": "Indagación",
+      "clase_etapa": "indagacion",
+      "n_procesos": 21214155
+    },
+    {
+      "etapa": "Investigación",
+      "clase_etapa": "judicializado",
+      "n_procesos": 178460
+    },
+    {
+      "etapa": "Juicio",
+      "clase_etapa": "judicializado",
+      "n_procesos": 862535
+    },
+    {
+      "etapa": "Ejecución De Penas",
+      "clase_etapa": "judicializado",
+      "n_procesos": 926136
+    },
+    {
+      "etapa": "Sin Información",
+      "clase_etapa": "desconocido",
+      "n_procesos": 203
+    }
+  ],
+  "tasa_judicializacion_nacional_pct": 8.49,
+  "tasa_por_anio": [
+    {
+      "anio": 2004,
+      "procesos_etapa_conocida": 1259,
+      "tasa_judicializacion_pct": 0.4
+    },
+    {
+      "anio": 2005,
+      "procesos_etapa_conocida": 14721,
+      "tasa_judicializacion_pct": 6.48
+    },
+    {
+      "anio": 2006,
+      "procesos_etapa_conocida": 29619,
+      "tasa_judicializacion_pct": 8.94
+    },
+    {
+      "anio": 2007,
+      "procesos_etapa_conocida": 89105,
+      "tasa_judicializacion_pct": 9.32
+    },
+    {
+      "anio": 2008,
+      "procesos_etapa_conocida": 114401,
+      "tasa_judicializacion_pct": 10.29
+    },
+    {
+      "anio": 2009,
+      "procesos_etapa_conocida": 187335,
+      "tasa_judicializacion_pct": 9.42
+    },
+    {
+      "anio": 2010,
+      "procesos_etapa_conocida": 1050185,
+      "tasa_judicializacion_pct": 11.04
+    },
+    {
+      "anio": 2011,
+      "procesos_etapa_conocida": 1099087,
+      "tasa_judicializacion_pct": 10.66
+    },
+    {
+      "anio": 2012,
+      "procesos_etapa_conocida": 1116137,
+      "tasa_judicializacion_pct": 11.15
+    },
+    {
+      "anio": 2013,
+      "procesos_etapa_conocida": 1165161,
+      "tasa_judicializacion_pct": 10.94
+    },
+    {
+      "anio": 2014,
+      "procesos_etapa_conocida": 1169950,
+      "tasa_judicializacion_pct": 10.8
+    },
+    {
+      "anio": 2015,
+      "procesos_etapa_conocida": 1197149,
+      "tasa_judicializacion_pct": 10.87
+    },
+    {
+      "anio": 2016,
+      "procesos_etapa_conocida": 1235734,
+      "tasa_judicializacion_pct": 10.96
+    },
+    {
+      "anio": 2017,
+      "procesos_etapa_conocida": 1314458,
+      "tasa_judicializacion_pct": 10.58
+    },
+    {
+      "anio": 2018,
+      "procesos_etapa_conocida": 1421618,
+      "tasa_judicializacion_pct": 9.91
+    },
+    {
+      "anio": 2019,
+      "procesos_etapa_conocida": 1489013,
+      "tasa_judicializacion_pct": 9.14
+    },
+    {
+      "anio": 2020,
+      "procesos_etapa_conocida": 1189956,
+      "tasa_judicializacion_pct": 9.34
+    },
+    {
+      "anio": 2021,
+      "procesos_etapa_conocida": 1454638,
+      "tasa_judicializacion_pct": 8.4
+    },
+    {
+      "anio": 2022,
+      "procesos_etapa_conocida": 1723363,
+      "tasa_judicializacion_pct": 7.0
+    },
+    {
+      "anio": 2023,
+      "procesos_etapa_conocida": 1873211,
+      "tasa_judicializacion_pct": 5.85
+    },
+    {
+      "anio": 2024,
+      "procesos_etapa_conocida": 1777162,
+      "tasa_judicializacion_pct": 4.77
+    },
+    {
+      "anio": 2025,
+      "procesos_etapa_conocida": 1714768,
+      "tasa_judicializacion_pct": 3.52
+    },
+    {
+      "anio": 2026,
+      "procesos_etapa_conocida": 753256,
+      "tasa_judicializacion_pct": 3.2
+    }
+  ],
   "cobertura": {
     "municipios": 1126,
     "anio_min": 2004,
@@ -17,67 +161,148 @@
     {
       "cod_municipio": "11001",
       "municipio": "BOGOTÁ, D.C.",
-      "total_procesos": 5506930,
-      "tasa_judicializacion_pct": 5.58
+      "total_procesos": 5547024,
+      "tasa_judicializacion_pct": 5.55
     },
     {
       "cod_municipio": "05001",
       "municipio": "MEDELLÍN",
-      "total_procesos": 1698640,
-      "tasa_judicializacion_pct": 7.87
+      "total_procesos": 1711502,
+      "tasa_judicializacion_pct": 7.84
     },
     {
       "cod_municipio": "76001",
       "municipio": "SANTIAGO DE CALI",
-      "total_procesos": 1284851,
-      "tasa_judicializacion_pct": 7.84
+      "total_procesos": 1292912,
+      "tasa_judicializacion_pct": 7.82
     },
     {
       "cod_municipio": "08001",
       "municipio": "BARRANQUILLA",
-      "total_procesos": 707289,
-      "tasa_judicializacion_pct": 8.97
+      "total_procesos": 711848,
+      "tasa_judicializacion_pct": 8.95
     },
     {
       "cod_municipio": "13001",
       "municipio": "CARTAGENA DE INDIAS",
-      "total_procesos": 511619,
-      "tasa_judicializacion_pct": 6.51
+      "total_procesos": 515712,
+      "tasa_judicializacion_pct": 6.49
     },
     {
       "cod_municipio": "68001",
       "municipio": "BUCARAMANGA",
-      "total_procesos": 455269,
-      "tasa_judicializacion_pct": 12.49
+      "total_procesos": 457402,
+      "tasa_judicializacion_pct": 12.48
     },
     {
       "cod_municipio": "50001",
       "municipio": "VILLAVICENCIO",
-      "total_procesos": 396553,
-      "tasa_judicializacion_pct": 9.09
+      "total_procesos": 398997,
+      "tasa_judicializacion_pct": 9.08
     },
     {
       "cod_municipio": "73001",
       "municipio": "IBAGUÉ",
-      "total_procesos": 369561,
-      "tasa_judicializacion_pct": 12.28
+      "total_procesos": 371889,
+      "tasa_judicializacion_pct": 12.24
     },
     {
       "cod_municipio": "54001",
       "municipio": "SAN JOSÉ DE CÚCUTA",
-      "total_procesos": 366613,
-      "tasa_judicializacion_pct": 11.08
+      "total_procesos": 369450,
+      "tasa_judicializacion_pct": 11.06
     },
     {
       "cod_municipio": "52001",
       "municipio": "PASTO",
-      "total_procesos": 359483,
-      "tasa_judicializacion_pct": 7.63
+      "total_procesos": 361774,
+      "tasa_judicializacion_pct": 7.61
     }
   ],
+  "tasa_por_delito": {
+    "grano": "nacional × título del Código Penal (taxonomía propia de la Fiscalía)",
+    "n_titulos": 24,
+    "umbral_min_procesos_conocidos": 10000,
+    "mayor_tasa": [
+      {
+        "titulo_delito": "De Los Delitos Contra La Salud Publica",
+        "total_procesos": 1301084,
+        "n_judicializados": 308858,
+        "tasa_judicializacion_pct": 23.74
+      },
+      {
+        "titulo_delito": "Delitos Contra La Seguridad Publica",
+        "total_procesos": 1435194,
+        "n_judicializados": 297298,
+        "tasa_judicializacion_pct": 20.72
+      },
+      {
+        "titulo_delito": "Delitos Contra La Libertad, Integridad Y Formacion Sexuales",
+        "total_procesos": 707001,
+        "n_judicializados": 127517,
+        "tasa_judicializacion_pct": 18.04
+      },
+      {
+        "titulo_delito": "De Los Delitos Contra El Regimen Constitucional Y Legal",
+        "total_procesos": 20262,
+        "n_judicializados": 3642,
+        "tasa_judicializacion_pct": 17.97
+      },
+      {
+        "titulo_delito": "Delitos Contra El Orden Economico Social",
+        "total_procesos": 126335,
+        "n_judicializados": 19968,
+        "tasa_judicializacion_pct": 15.81
+      }
+    ],
+    "menor_tasa": [
+      {
+        "titulo_delito": "Delitos Contra La Integridad Moral",
+        "total_procesos": 686296,
+        "n_judicializados": 2301,
+        "tasa_judicializacion_pct": 0.34
+      },
+      {
+        "titulo_delito": "De La Proteccion De La Informacion Y De Los Datos",
+        "total_procesos": 586590,
+        "n_judicializados": 6265,
+        "tasa_judicializacion_pct": 1.07
+      },
+      {
+        "titulo_delito": "Delitos Contra Mecanismos De Participacion Democratica",
+        "total_procesos": 20395,
+        "n_judicializados": 717,
+        "tasa_judicializacion_pct": 3.52
+      },
+      {
+        "titulo_delito": "Delitos Contra Las Personas Y Bienes Protegidos Por El Derec",
+        "total_procesos": 40260,
+        "n_judicializados": 1491,
+        "tasa_judicializacion_pct": 3.7
+      },
+      {
+        "titulo_delito": "Delitos Contra La Fe Publica",
+        "total_procesos": 1265871,
+        "n_judicializados": 55029,
+        "tasa_judicializacion_pct": 4.35
+      }
+    ]
+  },
+  "procedencia": {
+    "filas_agregadas_bronze": 478083,
+    "procesos_bronze": 23212036,
+    "procesos_gold": 23181489,
+    "procesos_descartados": {
+      "sin_municipio_valido": 19377,
+      "anio_invalido_o_fuera_de_rango": 11170,
+      "conteo_no_positivo": 0
+    },
+    "descartados_pct": 0.13
+  },
   "advertencias_uso": [
-    "Rezago judicial: un proceso por un hecho reciente puede seguir en indagación o sin radicar; los años recientes subcuentan más que la serie de la Policía.",
+    "Rezago judicial: un proceso por un hecho reciente puede seguir en indagación o sin radicar; los años recientes quedan más subestimados que en la serie de la Policía.",
+    "Las tasas agregadas (nacional, municipal y por título) mezclan cohortes de hechos de 2004-2026: un proceso reciente aún puede avanzar de etapa. Sirven para comparar territorios o delitos entre sí, no años recientes contra antiguos; el bloque tasa_por_anio muestra ese efecto.",
     "La indagación domina el volumen (la mayoría de noticias no avanza); el valor está en la TASA de judicialización, no en el conteo bruto.",
-    "Noticia criminal/proceso (Fiscalía) ≠ hecho registrado (Policía): capa paralela, no comparable 1:1; la taxonomía penal tampoco es 1:1 con las categorías de la Policía."
+    "Noticia criminal/proceso (Fiscalía) ≠ hecho registrado (Policía): capa paralela, no comparable 1:1; la taxonomía penal (títulos del Código Penal) tampoco es 1:1 con las categorías de la Policía, por eso el desglose por delito usa la taxonomía propia de la fuente."
   ]
 }

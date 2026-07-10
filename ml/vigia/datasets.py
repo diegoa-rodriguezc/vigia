@@ -265,7 +265,7 @@ def naturaleza(categoria: str) -> str:
 class AggregatedSpec:
     """Fuente SODA2 ENORME que se ingiere por streaming de columnas + agregación LOCAL.
 
-    No se descarga el micro-dato completo ni se agrega en el servidor (su backend no lo soporta):
+    No se descarga el micro-dato completo ni se agrega en el servidor (su backend no lo admite):
     se paginan solo `group_cols` por keyset y se cuentan en memoria (`count_as`).
     """
 
@@ -274,7 +274,9 @@ class AggregatedSpec:
     name: str
     group_cols: tuple[str, ...]  # columnas por las que se agrupa (se traen crudas y se cuentan)
     count_as: str = "n"  # nombre de la columna de conteo resultante
-    where: str | None = None  # $where opcional (filtro server-side ligero; el keyset se añade aparte)
+    where: str | None = (
+        None  # $where opcional (filtro server-side ligero; el keyset se añade aparte)
+    )
     notes: str = ""
 
 
@@ -282,13 +284,18 @@ JUSTICIA_PROCESOS = AggregatedSpec(
     id="justicia_procesos",
     soda_id="dbdv-iihs",  # "Procesos Fiscalía - V3" (público; la V2 es privada → 403)
     name="Procesos — Fiscalía General de la Nación (V3)",
-    # Grano municipio×año×etapa. Al agregar LOCALMENTE, el año SÍ puede ir en el grupo (no hay que
-    # particionar para esquivar el timeout, como sí haría falta server-side). 'Sin Información' en
-    # año/código se filtra después, en `etl/justicia.py`.
-    group_cols=("cod_dane_hecho", "etapa", "a_o_hecho"),
+    # Grano municipio×año×etapa×título penal. Al agregar LOCALMENTE, el año SÍ puede ir en el grupo
+    # (no hay que particionar para esquivar el timeout, como sí haría falta server-side). 'Sin
+    # Información' en año/código se filtra después, en `etl/justicia.py`.
+    # `titulo_delito` es el Título del Código Penal (~30 valores): la granularidad honesta para
+    # "¿qué delito se judicializa menos?". NO sirven: `tipo_delito` (pese al nombre trae el tipo de
+    # PROCESO: Concurso/Reparto), `delito` (miles de descripciones legales) ni `capitulo_delito` a
+    # solas ("Capítulo Único" se repite entre títulos → ambiguo). Verificado con una muestra real
+    # de la API (2026-07-09).
+    group_cols=("cod_dane_hecho", "etapa", "a_o_hecho", "titulo_delito"),
     count_as="n_procesos",
     notes="micro-dato anonimizado (~23 millones de filas) agregado por streaming keyset; "
-    "'etapa' = embudo de judicialización",
+    "'etapa' = embudo de judicialización; 'titulo_delito' = título del Código Penal",
 )
 
 

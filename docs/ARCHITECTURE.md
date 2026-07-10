@@ -10,7 +10,7 @@
    RAG usa por defecto modelos locales (sin costo de API ni envío de datos a terceros). El **pipeline de
    datos** (bronze→silver→gold) es **determinista bit-a-bit** (semilla fija) y sus métricas se regeneran en
    `reports/`. El **modelo** es reproducible *salvo ruido numérico ~1 %* entre ejecuciones (el gradient boosting
-   con `early_stopping` corta según un score sensible a las reducciones de punto flotante multi-hilo, pese a
+   con `early_stopping` corta según un score sensible a las reducciones de punto flotante multihilo, pese a
    las semillas; las conclusiones cualitativas son estables — ver
    [CRISP-ML(Q) - Reproducibilidad](CRISP-ML-Q.md#3-ingeniería-del-modelo)). La generación de texto del
    asistente, al depender de un LLM, tampoco es bit-a-bit reproducible.
@@ -68,7 +68,7 @@ data/gold/justicia_*.parquet
    ▼
 models/forecaster.joblib
    │  vigia validate-anomalies (valida las anomalías reales: recall contra eventos documentados
-   │                          + corroboración multi-delito → reports/anomaly_validation.json)
+   │                          + corroboración multidelito → reports/anomaly_validation.json)
    ▼
 reports/anomaly_validation.json
    │  vigia load-db          (gold de delito + Justicia + anomalías → PostgreSQL: 5 tablas)
@@ -136,7 +136,7 @@ los normaliza a un único modelo de evento:
   **por página**. Así la solución combina datos **estructurados** (series de gold) y **no estructurados**
   (marco normativo) en una sola base de conocimiento.
 - **Recuperación:** embeddings multilingües → `pgvector` (búsqueda por similitud coseno).
-- **Generación:** LLM vía una **abstracción de proveedor** (`providers.py`) que soporta
+- **Generación:** LLM vía una **abstracción de proveedor** (`providers.py`) que admite
   **Ollama (local, por defecto)**, **Claude/Anthropic** y **OpenAI**, seleccionable por configuración (`.env`).
 - **Agente con herramientas (`rag/agent.py`, opcional):** con un proveedor que soporte *tool-use*
   (**Anthropic/OpenAI**), el LLM **elige y encadena herramientas** (pronóstico, anomalías, embudo de
@@ -198,7 +198,7 @@ los normaliza a un único modelo de evento:
 
 - **ADR-01 — PostgreSQL + pgvector en una sola base.** Evita operar un *vector store* aparte;
   simplifica el despliegue y mantiene los agregados y el índice semántico juntos.
-- **ADR-02 — Go como BFF.** El frontend habla con un único backend; Go agrega/cachea y delega la IA
+- **ADR-02 — Go como BFF.** El frontend habla con un único backend; Go agrega/guarda en caché y delega la IA
   al servicio Python, manteniendo el modelo de datos pesado fuera del navegador.
 - **ADR-03 — LLM local por defecto.** Maximiza reproducibilidad y elimina costos/dependencia de
   terceros para la evaluación; la abstracción permite escalar a modelos gestionados en producción.
@@ -215,7 +215,7 @@ los normaliza a un único modelo de evento:
   Contraseñas sujetas a política de fortaleza (`auth.ValidatePassword`): una contraseña de admin débil
   aborta el arranque cuando `APP_ENV=production`.
 - **ADR-06 — Redis también como caché de respuestas de IA.** Los endpoints de IA (`/forecast`, `/simulate`,
-  `/assistant`, `/brief`) son caros (el LLM local en CPU tarda ~30–90 s). El backend cachea sus respuestas `200` en Redis: el pronóstico por
+  `/assistant`, `/brief`) son caros (el LLM local en CPU tarda ~30–90 s). El backend guarda en caché sus respuestas `200` en Redis: el pronóstico por
   `(municipio, categoría, horizonte)` (TTL `CACHE_FORECAST_TTL`, def. 6 h, pues solo cambia al reentrenar)
   y el asistente por hash SHA-256 de la pregunta normalizada (TTL `CACHE_ASSISTANT_TTL`, def. 1 h). Responde
   las consultas repetidas en milisegundos y mitiga el cuello de botella de concurrencia. La caché es

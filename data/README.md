@@ -53,4 +53,4 @@ Sin el documento, el índice del RAG degrada con elegancia (solo data cards de c
 
 - Diccionario de datos (campos, fuentes, esquemas): [docs/DATA_DICTIONARY.md](../docs/DATA_DICTIONARY.md)
 - Inventario de fuentes con URLs: [docs/DATASETS.md](../docs/DATASETS.md)
-- Calidad de la ejecución vigente (conteos, placeholders, rangos): [reports/silver_quality.json](../reports/silver_quality.json)
+- Calidad de la ejecución vigente (conteos, marcadores, rangos): [reports/silver_quality.json](../reports/silver_quality.json)

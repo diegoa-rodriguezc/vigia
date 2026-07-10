@@ -10,6 +10,33 @@ on:
     branches: [main]
 
 jobs:
+  # Puerta de estilo: linter + formato (Python) y análisis estático (Go). Barato (sin las
+  # dependencias pesadas del paquete): solo instala ruff. ruff va FIJADO a la misma minor que el
+  # extra `dev` porque `ruff format` puede cambiar de estilo entre minors (CI y local deben coincidir).
+  lint:
+    name: Linter y formato
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Instalar ruff (versión fijada, igual que el extra dev)
+        run: pip install "ruff>=0.12,<0.13"
+      - name: ruff check (ml)
+        working-directory: ml
+        run: ruff check .
+      - name: ruff format --check (ml)
+        working-directory: ml
+        run: ruff format --check .
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.22" # misma versión que go.mod
+          cache-dependency-path: backend/go.sum
+      - name: go vet (backend)
+        working-directory: backend
+        run: go vet ./...
+
   ml:
     name: Tests Python (ml)
     runs-on: ubuntu-latest
@@ -26,8 +53,9 @@ jobs:
       - name: Instalar el paquete (modo editable + dev)
         run: pip install -e ".[dev]"
       # Los tests corren offline por diseño (sin Postgres/Ollama/red).
+      # --cov reporta la cobertura como visibilidad (no bloquea: no hay umbral mínimo).
       - name: pytest
-        run: pytest -q
+        run: pytest -q --cov=vigia --cov-report=term-missing
 
   backend:
     name: Tests Go (backend)
@@ -42,8 +70,9 @@ jobs:
           go-version: "1.22" # misma versión que go.mod
           cache-dependency-path: backend/go.sum
       # Los tests de auth usan miniredis: no requieren Redis ni Postgres reales.
+      # -cover reporta la cobertura por paquete (visibilidad, no bloquea).
       - name: go test
-        run: go test ./...
+        run: go test -cover ./...
 
   frontend:
     name: Tests y build del frontend (React)

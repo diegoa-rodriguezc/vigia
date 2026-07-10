@@ -39,12 +39,28 @@ def test_embudo_justicia_sin_codigo_devuelve_el_nacional(monkeypatch):
             "tasa_judicializacion_pct": [5.0, 13.75],
         }
     )
-    monkeypatch.setattr(tools, "_load_gold", lambda name: fake)
+    fake_delito = pd.DataFrame(
+        {
+            "titulo_delito": ["Delitos Contra La Vida", "Delitos Contra La Familia", "Raro"],
+            "total_procesos": [700_000, 300_000, 50],
+            "n_judicializados": [70_000, 60_000, 45],
+            "procesos_etapa_conocida": [700_000, 300_000, 50],
+            "tasa_judicializacion_pct": [10.0, 20.0, 90.0],
+        }
+    )
+    goldes = {"justicia_resumen": fake, "justicia_delito": fake_delito}
+    monkeypatch.setattr(tools, "_load_gold", lambda name: goldes.get(name))
     out = tools.execute("embudo_justicia", {})
     assert out["encontrado"] and out["nivel"] == "nacional"
     assert out["total_procesos"] == 1000
     assert out["n_judicializados"] == 85
     assert out["tasa_judicializacion_pct"] == 8.5
+    # El modo nacional incluye los extremos por título penal; "Raro" (50 procesos) queda fuera
+    # del ranking por el umbral de volumen.
+    delito = out["tasa_por_delito"]
+    assert delito["menor_tasa"][0]["titulo_delito"] == "Delitos Contra La Vida"
+    assert delito["mayor_tasa"][0]["titulo_delito"] == "Delitos Contra La Familia"
+    assert all(r["titulo_delito"] != "Raro" for r in delito["menor_tasa"] + delito["mayor_tasa"])
     # Con código sigue respondiendo por el municipio (sin regresión).
     muni = tools.execute("embudo_justicia", {"cod_municipio": "05001"})
     assert muni["encontrado"] and muni["municipio"] == "MEDELLÍN"

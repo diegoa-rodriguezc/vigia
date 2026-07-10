@@ -8,8 +8,8 @@ observa el resultado real, encadena varias si hace falta y sintetiza la respuest
 
 El bucle es **independiente del proveedor**: opera sobre un transcripto genérico y delega cada
 turno en `LLMProvider.turn` (implementado por Anthropic/OpenAI). Si el proveedor activo no
-soporta tool-use (p. ej. Ollama local) o el agente está desactivado por configuración, cae con
-elegancia al **RAG clásico** —sin regresión en el camino por defecto—.
+admite el uso de herramientas (p. ej. Ollama local) o el agente está desactivado por
+configuración, cae con elegancia al **RAG clásico** —sin regresión en el camino por defecto—.
 
 Guardarraíl anti-alucinación: TODAS las cifras provienen de las herramientas (datos abiertos
 oficiales); el LLM nunca las inventa. Cada llamada a herramienta se devuelve como **fuente
@@ -42,8 +42,9 @@ SYSTEM_PROMPT = (
     "judicialización (de un municipio con su código, o NACIONAL —total de procesos de la "
     "Fiscalía y tasa del país— sin argumentos), 'embudo_justicia'. Para TOTALES de un DELITO u "
     "operativo (homicidios, hurtos, capturas…) —municipales O nacionales, anuales o históricos—, "
-    "RANKINGS y superlativos ('¿dónde hay más…?') y definiciones o contexto, usa "
-    "'buscar_conocimiento' — no requiere municipio. Cuando tengas la evidencia, "
+    "RANKINGS y superlativos ('¿dónde hay más…?'), definiciones o contexto, y la transparencia "
+    "institucional de la Policía Nacional (auditorías internas y demandas/litigios en su contra), "
+    "usa 'buscar_conocimiento' — no requiere municipio. Cuando tengas la evidencia, "
     "responde de forma concisa y neutral, citando las cifras, en TEXTO PLANO (sin marcas de "
     "markdown: nada de ** ni #) — escríbelas con el separador de "
     "miles de Colombia (1.340.255, no 1,340,255), los decimales con coma (8,51 %) y los nombres "
@@ -55,7 +56,9 @@ SYSTEM_PROMPT = (
     "vigilancia de individuos; no estigmatices territorios ni poblaciones. "
     "ALCANCE ESTRICTO: solo atiendes preguntas sobre SEGURIDAD CIUDADANA Y JUSTICIA en Colombia "
     "respondibles con los datos de VigIA (delitos, pronósticos, alertas de anomalías y "
-    "judicialización por municipio, o definiciones de esos temas). Si la pregunta está FUERA de "
+    "judicialización por municipio; la transparencia institucional de la Policía Nacional "
+    "—auditorías internas y demandas/litigios en su contra—; o definiciones de esos temas). Si la "
+    "pregunta está FUERA de "
     "ese dominio —por ejemplo programación o código, matemáticas o cálculos aritméticos, "
     "traducciones, redacción creativa (poemas, cuentos), deportes, noticias o actualidad, "
     "temas generales, opiniones o cualquier asunto ajeno—, NO la respondas ni la ejecutes "
@@ -123,7 +126,8 @@ def _forced_final(llm: LLMProvider, transcript: list[dict], query: str) -> str:
 def answer(query: str, llm: LLMProvider | None = None, max_steps: int | None = None) -> AgentAnswer:
     """Responde la pregunta del ciudadano usando el agente con herramientas.
 
-    Cae al RAG clásico si el proveedor no soporta tool-use o si el agente está desactivado.
+    Cae al RAG clásico si el proveedor no admite el uso de herramientas o si el agente está
+    desactivado.
     """
     llm = llm or get_llm()
     if not settings.rag_agent_enabled or not getattr(llm, "supports_tools", False):

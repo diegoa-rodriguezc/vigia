@@ -44,7 +44,7 @@ class Tool:
 
 
 # ───────────── Carga perezosa de gold (con invalidación por mtime) ─────────────
-# Las herramientas leen las tablas gold. La serie mensual (~3 millones de filas) se cachea
+# Las herramientas leen las tablas gold. La serie mensual (~3 millones de filas) se guarda en caché
 # y se invalida por la marca de tiempo del parquet, igual que el caché del API (`api/main.py`),
 # para que una re-ejecución del pipeline se refleje sin reiniciar el proceso.
 _cache: dict[str, dict] = {}
@@ -218,7 +218,7 @@ def _run_embudo_justicia(cod_municipio: str | None = None) -> dict:
         # llegaba a responder con la fila de Bogotá del ranking como si fuera el país).
         total = int(jr["total_procesos"].sum())
         jud = int(jr["n_judicializados"].sum())
-        return {
+        out = {
             "encontrado": True,
             "nivel": "nacional",
             "total_procesos": total,
@@ -226,6 +226,35 @@ def _run_embudo_justicia(cod_municipio: str | None = None) -> dict:
             "tasa_judicializacion_pct": round(100 * jud / total, 2) if total else None,
             "nota": "Tasa = procesos que superan la indagación / total con etapa conocida.",
         }
+        # Extremos por título del Código Penal (si el gold por delito existe): responde
+        # "¿qué delito se judicializa menos/más?" con el dato real, no con la recuperación.
+        # La comprobación de columnas degrada ante un gold de un esquema anterior (el contrato
+        # de las herramientas es NUNCA lanzar al bucle del agente).
+        delito = _load_gold("justicia_delito")
+        if delito is not None and {"titulo_delito", "procesos_etapa_conocida"} <= set(
+            delito.columns
+        ):
+            from vigia.etl.justicia import _MIN_PROCESOS_TASA
+
+            eleg = delito[
+                (delito["procesos_etapa_conocida"] >= _MIN_PROCESOS_TASA)
+                & (delito["titulo_delito"] != "Sin información")
+            ]
+            if not eleg.empty:
+                cols = ["titulo_delito", "total_procesos", "tasa_judicializacion_pct"]
+                out["tasa_por_delito"] = {
+                    "menor_tasa": eleg.nsmallest(3, "tasa_judicializacion_pct")[cols].to_dict(
+                        "records"
+                    ),
+                    "mayor_tasa": eleg.nlargest(3, "tasa_judicializacion_pct")[cols].to_dict(
+                        "records"
+                    ),
+                    "nota": (
+                        "Títulos del Código Penal (taxonomía de la Fiscalía) con al menos "
+                        f"{_MIN_PROCESOS_TASA} procesos de etapa conocida."
+                    ),
+                }
+        return out
     cod = str(cod_municipio)
     row = jr[jr["cod_municipio"] == cod]
     if row.empty:
@@ -346,9 +375,10 @@ TOOLS: list[Tool] = [
             "la indagación. Úsala SOLO para justicia, judicialización, impunidad o procesos de la "
             "Fiscalía. Si la pregunta nombra un municipio, PRIMERO obtén su código con "
             "'resolver_municipio' y pásalo aquí; el modo SIN argumentos (total NACIONAL: procesos "
-            "del país y tasa nacional) es SOLO para preguntas del país entero. NO sirve para "
-            "conteos de delitos u operativos de la Policía (homicidios, hurtos, capturas…): eso va "
-            "por 'buscar_conocimiento' aunque la pregunta diga 'nacional'."
+            "del país, tasa nacional y qué títulos del Código Penal tienen mayor/menor tasa — "
+            "para '¿qué delito se judicializa menos?') es SOLO para preguntas del país entero. NO "
+            "sirve para conteos de delitos u operativos de la Policía (homicidios, hurtos, "
+            "capturas…): eso va por 'buscar_conocimiento' aunque la pregunta diga 'nacional'."
         ),
         parameters=_obj(
             {

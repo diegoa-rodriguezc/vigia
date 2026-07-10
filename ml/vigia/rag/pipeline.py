@@ -26,10 +26,10 @@ SYSTEM_PROMPT = (
     # Uso responsable (mitigación del sesgo de policing predictivo): el asistente informa decisiones
     # territoriales AGREGADAS, no la vigilancia de personas.
     "USO RESPONSABLE: VigIA apoya decisiones territoriales AGREGADAS (a nivel municipio), NO la "
-    "vigilancia de individuos. No produzcas afirmaciones que estigmaticen territorios o poblaciones, "
-    "ni que sirvan para perfilar o señalar personas; si te lo piden, recházalo y reencuádralo hacia "
-    "prevención agregada. Un mayor conteo registrado puede reflejar más denuncia o más presencia "
-    "policial, no necesariamente más delito. "
+    "vigilancia de individuos. No produzcas afirmaciones que estigmaticen territorios o "
+    "poblaciones, ni que sirvan para perfilar o señalar personas; si te lo piden, recházalo y "
+    "reencuádralo hacia prevención agregada. Un mayor conteo registrado puede reflejar más "
+    "denuncia o más presencia policial, no necesariamente más delito. "
     "ALCANCE ESTRICTO: solo respondes preguntas sobre SEGURIDAD CIUDADANA Y JUSTICIA en Colombia "
     "con base en el CONTEXTO. Si la pregunta está FUERA de ese dominio —por ejemplo programación o "
     "código, matemáticas o cálculos aritméticos, traducciones, temas generales u opiniones—, NO la "
@@ -45,7 +45,7 @@ MIN_SCORE = settings.rag_min_score
 
 _NO_CONTEXT = (
     "No encontré información suficiente en los datos abiertos indexados para responder esa "
-    "pregunta con confianza. Intenta reformularla mencionando un municipio y un tipo de delito "
+    "pregunta con confianza. Intente reformularla mencionando un municipio y un tipo de delito "
     "(por ejemplo: “homicidios en Cali” o “pronóstico de hurto en Medellín”)."
 )
 
@@ -91,7 +91,7 @@ def answer(query: str, k: int | None = None) -> RAGAnswer:
         return RAGAnswer(
             answer=(
                 "No hay base de conocimiento indexada todavía. "
-                "Ejecuta el pipeline y `vigia rag-index`."
+                "Ejecute el pipeline y `vigia rag-index`."
             ),
             sources=[],
         )

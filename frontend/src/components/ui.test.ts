@@ -1,5 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { paginate, pageWindow, toCSV } from "./ui";
+import { paginate, pageWindow, tipValue, toCSV } from "./ui";
+
+describe("tipValue", () => {
+  it("presenta un par [inferior, superior] como rango es-CO (banda de incertidumbre)", () => {
+    // Sin el caso de arreglo, React concatenaba el par sin separador: «112.73140.12», «01.67».
+    expect(tipValue([112.73, 140.12])).toBe("112,73 – 140,12");
+    expect(tipValue([0, 1.67])).toBe("0 – 1,67");
+  });
+
+  it("formatea números sueltos en es-CO y deja pasar el resto tal cual", () => {
+    expect(tipValue(5506930)).toBe("5.506.930");
+    expect(tipValue("texto")).toBe("texto");
+  });
+});
 
 describe("paginate", () => {
   const items = Array.from({ length: 23 }, (_, i) => i + 1);

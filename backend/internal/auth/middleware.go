@@ -14,6 +14,12 @@ type ctxKey int
 
 const claimsKey ctxKey = 0
 
+// Roles conocidos del sistema (los mismos literales que persiste la tabla users).
+const (
+	RoleAdmin   = "admin"
+	RoleCitizen = "citizen"
+)
+
 // Middleware agrupa las dependencias para proteger rutas.
 type Middleware struct {
 	tokens *TokenManager
@@ -70,6 +76,13 @@ func (m *Middleware) RequireRole(role string) func(http.Handler) http.Handler {
 func ClaimsFromContext(ctx context.Context) (*Claims, bool) {
 	c, ok := ctx.Value(claimsKey).(*Claims)
 	return c, ok
+}
+
+// ContextWithClaims inyecta claims en el contexto igual que RequireAuth; existe para que
+// otros paquetes (y sus tests) puedan simular una petición autenticada sin pasar por el
+// middleware completo.
+func ContextWithClaims(ctx context.Context, c *Claims) context.Context {
+	return context.WithValue(ctx, claimsKey, c)
 }
 
 func bearerToken(r *http.Request) string {

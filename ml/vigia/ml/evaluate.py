@@ -2,7 +2,7 @@
 
 Persiste en `reports/model_report.json` las métricas de backtesting y las
 estadísticas del conjunto modelado, de modo que las cifras de la bitácora
-metodológica (`docs/CRISP-ML-Q.md`) se **regeneren** en cada corrida y sean
+metodológica (`docs/CRISP-ML-Q.md`) se **regeneren** en cada ejecución y sean
 auditables por el jurado, en lugar de vivir escritas a mano en el documento.
 """
 
@@ -100,7 +100,7 @@ def build_model_report(series: pd.DataFrame, model: ForecastModel) -> dict:
             multipaso.get("smape", inf) < multipaso.get("baseline_smape", inf)
         ),
         # Vara ESTACIONAL (mismo mes del año anterior), más exigente que la persistencia. None si
-        # el backtest no la reportó (p. ej. modelo de prueba sin baseline estacional).
+        # el backtest no la reportó (p. ej. modelo de prueba sin línea base estacional).
         "supera_linea_base_estacional_mae": (
             bool(metrics["mae"] < metrics["baseline_estacional_mae"])
             if "mae" in metrics and "baseline_estacional_mae" in metrics

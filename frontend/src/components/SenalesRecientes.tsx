@@ -9,10 +9,12 @@ export default function SenalesRecientes({
   cod,
   nombre,
   onClear,
+  clearLabel = "← Nacional",
 }: {
   cod?: string;        // undefined = nacional
   nombre?: string;     // nombre del departamento seleccionado (para el título)
-  onClear?: () => void; // volver al feed nacional
+  onClear?: () => void; // volver al feed nacional (o cerrar el panel, según el contexto)
+  clearLabel?: string; // texto del botón de onClear (en Alertas el panel se CIERRA, no vuelve a nacional)
 }) {
   const [data, setData] = useState<RealtimeSignal | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,7 @@ export default function SenalesRecientes({
         <span>Prensa · <b>{titulo}</b></span>
         {cod && onClear && (
           <button className="ghost" style={{ padding: "0 6px", fontSize: "0.78rem" }} onClick={onClear}>
-            ← Nacional
+            {clearLabel}
           </button>
         )}
       </div>

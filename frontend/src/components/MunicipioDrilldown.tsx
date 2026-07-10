@@ -83,6 +83,12 @@ export default function MunicipioDrilldown({ muni, onClose, onVerPronostico, onV
         </div>
 
         <h3 style={{ marginBottom: 4 }}><Icon name="bar-chart" size={16} /> Delitos por categoría</h3>
+        {detalle !== null && delitos.length > 8 && (
+          <p className="card-sub" style={{ marginTop: 0 }}>
+            Se muestran las 8 categorías con más registros (de {delitos.length}); la descarga CSV
+            incluye el desglose completo, con los resultados operativos.
+          </p>
+        )}
         {error ? (
           <div className="table-empty">No se pudo cargar el desglose del municipio.</div>
         ) : detalle === null ? (

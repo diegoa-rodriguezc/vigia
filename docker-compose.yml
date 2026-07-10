@@ -170,7 +170,7 @@ services:
           cpus: "1.0"
           memory: 512M
 
-  # ── Frontend (React) servido por nginx ──
+  # ── Frontend (React) publicado por nginx ──
   frontend:
     build:
       context: ./frontend
@@ -181,7 +181,7 @@ services:
       TZ: America/Bogota
     ports:
       - "5173:80"
-    # nginx-alpine trae wget (busybox): verifica que sirve el index.
+    # nginx-alpine trae wget (busybox): verifica que nginx responde con el index.
     # Usa 127.0.0.1 (no "localhost"): nuestro default.conf solo declara `listen 80;`
     # (IPv4), y el entrypoint de nginx NO añade el listener IPv6 porque el config
     # difiere del empaquetado. busybox wget resolvería "localhost" a ::1 primero y

@@ -53,11 +53,11 @@ export default function LoginModal({
         // 400 = política de contraseña / usuario inválido (mensaje del backend); 409 = ya existe.
         if (status === 409) setError("Ese nombre de usuario ya está en uso.");
         else if (status === 400 && serverMsg) setError(serverMsg);
-        else if (status === 429) setError("Demasiados intentos. Espera unos minutos.");
+        else if (status === 429) setError("Demasiados intentos. Espere unos minutos.");
         else setError(serverMsg ?? "No se pudo crear la cuenta.");
       } else {
         if (status === 401) setError("Usuario o contraseña incorrectos.");
-        else if (status === 429) setError("Demasiados intentos. Espera unos minutos.");
+        else if (status === 429) setError("Demasiados intentos. Espere unos minutos.");
         else setError(serverMsg ?? "No se pudo iniciar sesión.");
       }
       setLoading(false);
@@ -82,7 +82,7 @@ export default function LoginModal({
         </div>
         <p className="muted" style={{ marginTop: 0, fontSize: "0.85rem" }}>
           {isRegister
-            ? "Crea una cuenta ciudadana para usar el pronóstico, el simulador, el asistente y el informe. El resto del tablero es público."
+            ? "Cree una cuenta ciudadana para usar el pronóstico, el simulador, el asistente y el informe. El resto del tablero es público."
             : "El acceso es necesario para el pronóstico, el simulador, el asistente y el informe. El resto del tablero es público."}
         </p>
 
@@ -130,14 +130,14 @@ export default function LoginModal({
 
         {registrationEnabled && (
           <p className="muted" style={{ marginTop: 14, marginBottom: 0, fontSize: "0.85rem", textAlign: "center" }}>
-            {isRegister ? "¿Ya tienes cuenta? " : "¿No tienes cuenta? "}
+            {isRegister ? "¿Ya tiene cuenta? " : "¿No tiene cuenta? "}
             <button
               type="button"
               className="ghost"
               onClick={switchMode}
               style={{ padding: 0, textDecoration: "underline", cursor: "pointer" }}
             >
-              {isRegister ? "Inicia sesión" : "Crear una cuenta"}
+              {isRegister ? "Inicie sesión" : "Crear una cuenta"}
             </button>
           </p>
         )}

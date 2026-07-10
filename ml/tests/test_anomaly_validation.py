@@ -77,3 +77,19 @@ def test_corroboracion_cruza_categorias():
 def test_corroboracion_vacia():
     c = corroboration(pd.DataFrame(columns=["cod_municipio", "categoria", "periodo"]))
     assert c["n_anomalias"] == 0 and c["fraccion_corroborada"] == 0.0
+
+
+def test_write_report_incluye_corte_del_dato(tmp_path, monkeypatch):
+    """El reporte lleva el corte del dato validado — fecha derivada del DATO (último período del
+    panel), no un reloj de pared que ensuciaría el diff del reporte en cada ejecución."""
+    import json
+
+    from vigia.config import settings
+    from vigia.ml.anomaly_validation import write_report
+
+    monkeypatch.setattr(settings, "reports_dir", tmp_path)
+    anoms = _anoms([("11001", "HOMICIDIO", "2024-03-01"), ("05001", "HURTO", "2024-06-01")])
+    rep = write_report(anoms)
+    assert rep["corte_dato"] == "2024-06"
+    persistido = json.loads((tmp_path / "anomaly_validation.json").read_text(encoding="utf-8"))
+    assert persistido["corte_dato"] == "2024-06"

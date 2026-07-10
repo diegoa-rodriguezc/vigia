@@ -1,7 +1,7 @@
 """Prueba del arnés champion/challenger (HGB vs MLP).
 
 Datos sintéticos. Verifica que la comparación corre bajo el mismo backtest y emite métricas
-paralelas + veredicto, sin tocar el modelo servido.
+paralelas + veredicto, sin tocar el modelo en producción.
 """
 
 import numpy as np

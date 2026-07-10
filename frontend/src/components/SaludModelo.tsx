@@ -2,14 +2,20 @@ import { useEffect, useState } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { getMonitoring, type ModelHealth, type Estado } from "../api";
-import { ChartTooltip, nfmt } from "./ui";
+import { getMonitoring, errorMessage, type ModelHealth, type Estado } from "../api";
+import { ChartTooltip, nfmt, dfmt } from "./ui";
 import { Icon } from "./icons";
 
 const LABEL: Record<Estado, string> = { verde: "Saludable", amarillo: "Atención", rojo: "Crítico" };
 
-function Semaforo({ estado, size = 12 }: { estado: Estado; size?: number }) {
-  return <span className={`sem-dot sem-${estado}`} style={{ width: size, height: size }} aria-hidden="true" />;
+// El estado (verde/amarillo/rojo) va SOLO en el color, así que el punto lleva etiqueta accesible
+// por defecto; `decorativo` lo oculta al lector de pantalla cuando el texto adyacente ya nombra el
+// estado (evita que lo anuncie dos veces).
+function Semaforo({ estado, size = 12, decorativo = false }: { estado: Estado; size?: number; decorativo?: boolean }) {
+  const props = { className: `sem-dot sem-${estado}`, style: { width: size, height: size } };
+  return decorativo
+    ? <span {...props} aria-hidden="true" />
+    : <span {...props} role="img" aria-label={`Estado: ${LABEL[estado]}`} />;
 }
 
 export default function SaludModelo() {
@@ -21,8 +27,8 @@ export default function SaludModelo() {
     getMonitoring()
       .then(setData)
       .catch((e) => setError(e?.response?.status === 404
-        ? "Aún no hay reporte de salud. Ejecuta el pipeline o `vigia health`."
-        : (e?.response?.data?.error ?? e.message)))
+        ? "Aún no hay un reporte de salud del modelo disponible."
+        : errorMessage(e)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -35,7 +41,7 @@ export default function SaludModelo() {
   );
   if (!data) return null;
 
-  const { frescura: fr, deriva_datos: dr, backtest_extendido: bt, estado_global } = data;
+  const { frescura: fr, deriva_datos: dr, poblacion: pob, backtest_extendido: bt, estado_global } = data;
   const chart = (bt?.por_paso ?? []).map((p) => ({
     paso: p.paso, modelo: p.mae, persistencia: p.baseline_mae,
   }));
@@ -44,12 +50,13 @@ export default function SaludModelo() {
     <>
       <h2 className="section-title">Salud del modelo</h2>
       <p className="section-sub">
-        Monitoreo continuo (sin reentrenar): frescura de datos, deriva de distribución y validación
-        del horizonte largo. Refuerza la trazabilidad y el gobierno del modelo.
+        Monitoreo continuo (sin reentrenar): frescura de datos, deriva de distribución, cobertura del
+        denominador poblacional y validación del horizonte largo. Refuerza la trazabilidad y el
+        gobierno del modelo.
       </p>
 
       <div className="card" style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <Semaforo estado={estado_global} size={16} />
+        <Semaforo estado={estado_global} size={16} decorativo />
         <strong>Estado global: {LABEL[estado_global]}</strong>
         <span className="muted" style={{ fontSize: "0.8rem" }}>· generado {data.generado_en}</span>
       </div>
@@ -60,7 +67,7 @@ export default function SaludModelo() {
             <span className="kpi-label">Frescura de datos</span>
             <Semaforo estado={fr.estado} />
           </div>
-          <div className="kpi-value">{fr.lag_meses ?? "—"} <span style={{ fontSize: "0.9rem" }}>mes(es)</span></div>
+          <div className="kpi-value">{fr.lag_meses ?? "—"} <span style={{ fontSize: "0.9rem" }}>{fr.lag_meses === 1 ? "mes" : "meses"}</span></div>
           <div className="kpi-hint">de rezago · datos a {fr.periodo_max ?? "—"}</div>
         </div>
 
@@ -69,11 +76,28 @@ export default function SaludModelo() {
             <span className="kpi-label">Deriva de datos (PSI)</span>
             <Semaforo estado={dr.estado} />
           </div>
-          <div className="kpi-value">{dr.psi.toFixed(3)}</div>
+          <div className="kpi-value">{dfmt(dr.psi, 3)}</div>
           <div className="kpi-hint">
-            {dr.nota ?? `cambio de volumen ${dr.cambio_volumen_pct ?? "—"}% (últimos ${dr.ventana_meses} m)`}
+            {dr.nota ?? `cambio de volumen ${dr.cambio_volumen_pct != null ? dfmt(dr.cambio_volumen_pct, 1) : "—"} % (últimos ${dr.ventana_meses} m)`}
           </div>
         </div>
+
+        {pob && (
+          <div className="kpi">
+            <div className="kpi-top">
+              <span className="kpi-label">Cobertura poblacional</span>
+              <Semaforo estado={pob.estado} />
+            </div>
+            <div className="kpi-value">
+              {pob.disponible && pob.cobertura_pct != null ? <>{dfmt(pob.cobertura_pct, 1)} <span style={{ fontSize: "0.9rem" }}>%</span></> : "—"}
+            </div>
+            <div className="kpi-hint">
+              {pob.disponible
+                ? "de la serie con población DANE (tasas por 100.000 hab.)"
+                : "sin población DANE: el modelo degrada a conteos"}
+            </div>
+          </div>
+        )}
 
         {bt && (
           <div className="kpi">
@@ -81,9 +105,9 @@ export default function SaludModelo() {
               <span className="kpi-label">Backtest a {bt.horizon} meses</span>
               <Semaforo estado={bt.estado} />
             </div>
-            <div className="kpi-value">{bt.mae.toFixed(2)}</div>
+            <div className="kpi-value">{dfmt(bt.mae, 2)}</div>
             <div className="kpi-hint">
-              MAE vs {bt.baseline_mae.toFixed(2)} persistencia ·{" "}
+              MAE vs {dfmt(bt.baseline_mae, 2)} persistencia ·{" "}
               {bt.supera_baseline_mae ? "supera la línea base" : "no la supera"}
             </div>
           </div>
@@ -97,6 +121,7 @@ export default function SaludModelo() {
             Error (MAE) del modelo vs la persistencia ingenua a cada mes de pronóstico, con el mismo
             backtest walk-forward sin fuga. El error crece con el horizonte (recursión).
           </p>
+          <div role="img" aria-label="Gráfica de líneas del error (MAE) del modelo frente a la persistencia ingenua, por mes de pronóstico.">
           <ResponsiveContainer width="100%" height={320}>
             <LineChart data={chart} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#26324a" />
@@ -108,8 +133,9 @@ export default function SaludModelo() {
               <Line type="monotone" dataKey="persistencia" name="Persistencia (MAE)" stroke="#fbbf24" strokeWidth={2} strokeDasharray="6 4" dot={false} />
             </LineChart>
           </ResponsiveContainer>
+          </div>
           <p className="muted" style={{ marginTop: 6, fontSize: "0.8rem" }}>
-            {bt && `Validado sobre ${nfmt(bt.n_origins)} origen(es) temporales.`} PSI: &lt;0,1 estable · 0,1-0,25 deriva moderada · &gt;0,25 significativa.
+            {bt && `Validado sobre ${bt.n_origins === 1 ? "1 origen temporal" : `${nfmt(bt.n_origins)} orígenes temporales`}.`} PSI: &lt;0,1 estable · 0,1-0,25 deriva moderada · &gt;0,25 significativa.
           </p>
         </div>
       )}

@@ -1,12 +1,12 @@
 {
   "champion": {
     "modelo": "HistGradientBoostingRegressor",
-    "n_origins": 2,
+    "n_origins": 3,
     "horizon": 6,
-    "mae_1paso": 2.0697,
-    "smape_1paso": 128.17,
-    "mae_multipaso": 2.2757,
-    "smape_multipaso": 111.56
+    "mae_1paso": 2.5453,
+    "smape_1paso": 127.25,
+    "mae_multipaso": 2.9195,
+    "smape_multipaso": 114.89
   },
   "challenger": {
     "modelo": "MLPRegressor",
@@ -22,12 +22,12 @@
       "early_stopping": true,
       "n_iter_no_change": 10
     },
-    "n_origins": 2,
+    "n_origins": 3,
     "horizon": 6,
-    "mae_1paso": 2.2254,
-    "smape_1paso": 130.74,
-    "mae_multipaso": 2.3247,
-    "smape_multipaso": 115.1
+    "mae_1paso": 2.5654,
+    "smape_1paso": 127.87,
+    "mae_multipaso": 3.0335,
+    "smape_multipaso": 115.7
   },
-  "veredicto": "El ganador es HGB, mantiene la ventaja (2.2% mejor MAE multipaso) — no se justifica cambiar de modelo."
+  "veredicto": "El champion HGB mantiene la ventaja (3.9% mejor MAE multipaso) — no se justifica cambiar de modelo."
 }

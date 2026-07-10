@@ -207,3 +207,44 @@ def test_categoria_convencion_canonica_guion_bajo():
     )
     out = normalize(raw, SPEC_VEH)
     assert out.iloc[0]["categoria"] == "HURTO_MOTOCICLETAS"  # sin 'ARTICULO 239.' y con '_'
+
+
+def test_build_silver_conserva_filas_identicas(tmp_path, monkeypatch):
+    """Regresión del subconteo sistemático: en las fuentes a grano de EVENTO dos hechos con los
+    mismos atributos gruesos producen filas idénticas LEGÍTIMAS; build_silver no debe
+    eliminarlas (un `drop_duplicates()` global llegó a borrar ~30 % de los hechos)."""
+    import json
+
+    from vigia.config import settings
+    from vigia.etl.silver import build_silver
+
+    monkeypatch.setattr(settings, "data_dir", tmp_path / "data")
+    monkeypatch.setattr(settings, "reports_dir", tmp_path / "reports")
+    settings.ensure_dirs()
+
+    evento = {
+        "fecha_hecho": "2023-05-01T00:00:00.000",
+        "cod_depto": "11",
+        "departamento": "BOGOTA D.C.",
+        "cod_muni": "11001",
+        "municipio": "BOGOTA D.C.",
+        "zona": "URBANA",
+        "sexo": "MASCULINO",
+        "arma_medio": "ARMA DE FUEGO",
+        "cantidad": "1",
+    }
+    distinto = {**evento, "fecha_hecho": "2023-05-02T00:00:00.000", "sexo": "FEMENINO"}
+    raw = pd.DataFrame([evento, evento, distinto])  # dos hechos idénticos + uno distinto
+    raw.to_parquet(settings.bronze_dir / "homicidios.parquet", index=False)
+
+    out = build_silver(only=["homicidios"])
+
+    assert len(out) == 3  # las dos filas idénticas se conservan (hechos distintos)
+    assert int(out["cantidad"].sum()) == 3
+    # y la conciliación crudo→silver queda auditable en el informe de calidad
+    rep = json.loads((settings.reports_dir / "silver_quality.json").read_text(encoding="utf-8"))
+    assert rep["procedencia"]["homicidios"] == {
+        "filas_crudas": 3,
+        "filas_validas": 3,
+        "descartadas_pct": 0.0,
+    }

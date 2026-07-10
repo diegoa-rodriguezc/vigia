@@ -30,6 +30,11 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
 // para que todas las cifras del tablero se vean igual.
 export const nfmt = (n: number) => n.toLocaleString("es-CO");
 
+// Formato decimal es-CO (coma decimal) con un número fijo de decimales; sin él,
+// `toFixed` pinta el punto inglés y en una misma tabla el punto significaría dos cosas.
+export const dfmt = (n: number, dec = 1) =>
+  n.toLocaleString("es-CO", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+
 // Presenta un código de categoría de forma legible (HURTO_AUTOMOTORES → Hurto automotores).
 export const prettyCat = (c: string) =>
   c.replace(/_/g, " ").toLowerCase().replace(/^\w/, (m) => m.toUpperCase());
@@ -147,6 +152,13 @@ export function SkeletonRows({ rows = 6, cols = 4 }: { rows?: number; cols?: num
 }
 
 // ── Tooltip temático para recharts ──
+
+// Valor de una fila del tooltip. Una serie de RANGO (p. ej. la banda de incertidumbre del
+// pronóstico) trae el valor como par [inferior, superior]: sin este caso, React concatenaría
+// el arreglo sin separador («112.73140.12»).
+export const tipValue = (v: unknown) =>
+  Array.isArray(v) ? `${nfmt(v[0])} – ${nfmt(v[1])}` : typeof v === "number" ? nfmt(v) : v;
+
 export function ChartTooltip({ active, payload, label, suffix = "" }: any) {
   if (!active || !payload?.length) return null;
   return (
@@ -157,7 +169,7 @@ export function ChartTooltip({ active, payload, label, suffix = "" }: any) {
           <div className="t-row" key={i}>
             <span className="swatch" style={{ background: p.color || p.stroke || p.fill }} />
             <span>{p.name}:</span>
-            <b>{typeof p.value === "number" ? nfmt(p.value) : p.value}{suffix}</b>
+            <b>{tipValue(p.value)}{suffix}</b>
           </div>
         )
       ))}

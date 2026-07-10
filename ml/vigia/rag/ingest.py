@@ -10,12 +10,15 @@ from __future__ import annotations
 import json
 
 import pandas as pd
-from pgvector.psycopg import register_vector
 
 from vigia.config import settings
-from vigia.db import get_conn
 from vigia.logging import get_logger
 from vigia.rag.providers import get_embedder
+
+# Nota: `pgvector.psycopg` y `vigia.db` (que arrastran libpq) se importan DENTRO de las
+# funciones que tocan la BD (`_recreate_table`, `build_index`), no al nivel de módulo, para
+# que las data cards y sus tests se importen sin libpq instalado (mismo patrón que
+# `rag/pipeline.py`).
 
 log = get_logger(__name__)
 
@@ -138,12 +141,89 @@ def _ranking_cards(top_n: int = 15) -> list[dict]:
     return cards
 
 
+# Cómo resumir cada fuente ADMINISTRATIVA para el asistente: la columna de fecha (para el
+# rango temporal) y las dimensiones a desglosar —columna cruda de la fuente, etiqueta legible
+# y cuántos valores mostrar—. Es declarativo, igual que el catálogo: añadir otra fuente
+# administrativa con desglose = una entrada más aquí; si una fuente no tiene receta, su card
+# cae al conteo simple (degradación). Las columnas de valor único (p. ej. `estado_auditoria`,
+# siempre "PROGRAMADA") se omiten porque no informan.
+_ADMIN_SUMMARY: dict[str, dict] = {
+    "auditorias": {
+        "que_es": (
+            "Es el plan de auditorías internas y de control de la gestión de la Policía "
+            "Nacional (no una serie de delitos), útil para transparencia y rendición de cuentas."
+        ),
+        "fecha": "fecha_inicial",
+        "dims": [
+            ("tipo", "origen", 5),
+            ("tipo_auditoria", "modalidad", 6),
+            ("unidad", "unidad auditada", 5),
+        ],
+    },
+    "demandas_notificadas": {
+        "que_es": (
+            "Son los litigios en los que la Policía Nacional es demandada ante la "
+            "jurisdicción (no una serie de delitos), útiles para transparencia y "
+            "rendición de cuentas."
+        ),
+        "fecha": "fecha_de_admisi_n",
+        "dims": [
+            ("tipo_de_demanda", "tipo de demanda", 3),
+            ("unidad_de_defensa_judical", "unidad de defensa judicial", 5),
+            ("despacho_judicial", "despacho judicial", 5),
+        ],
+    },
+}
+
+
+def _admin_card_text(name: str, df: pd.DataFrame, recipe: dict | None) -> str:
+    """Redacta la data card de una fuente administrativa a partir de su receta.
+
+    Sin receta (o con un esquema inesperado) cae al conteo simple, para no romper el índice
+    si una fuente cambia de columnas. Con receta, añade el rango temporal y el desglose por
+    cada dimensión (todos los valores, o los de mayor volumen si la columna tiene muchos).
+    """
+    n = len(df)
+    if recipe is None:
+        return (
+            f"Fuente administrativa '{name}' (datos abiertos, datos.gov.co): {n} registros. "
+            f"Información de gestión institucional de la Policía Nacional (no una serie de "
+            f"delitos), útil para transparencia y rendición de cuentas."
+        )
+
+    periodo = ""
+    fecha_col = recipe.get("fecha")
+    if fecha_col in df.columns:
+        anios = pd.to_datetime(df[fecha_col], errors="coerce").dt.year.dropna()
+        if not anios.empty:
+            periodo = f" entre {int(anios.min())} y {int(anios.max())}"
+
+    frases: list[str] = []
+    for col, etiqueta, top_n in recipe.get("dims", []):
+        if col not in df.columns:
+            continue
+        vc = df[col].value_counts()
+        listado = ", ".join(f"{k} ({int(v)})" for k, v in vc.head(top_n).items())
+        if len(vc) > top_n:
+            frases.append(f"Por {etiqueta} ({len(vc)} distintos, los de mayor volumen): {listado}.")
+        else:
+            frases.append(f"Por {etiqueta}: {listado}.")
+
+    desglose = " ".join(frases)
+    return (
+        f"Transparencia institucional — '{name}' (datos abiertos, datos.gov.co): "
+        f"{n} registros{periodo}. {desglose} {recipe['que_es']}"
+    ).strip()
+
+
 def _admin_cards() -> list[dict]:
     """Data cards de las fuentes ADMINISTRATIVAS (auditorías, demandas) desde bronze.
 
-    No son series delictivas, pero aportan al eje de transparencia institucional: el
-    asistente puede informar sobre la gestión de la Policía Nacional. Se leen de bronze
-    (capa cruda) porque no entran a la serie de eventos; si no están, se omiten.
+    No son series delictivas, pero aportan al eje de transparencia institucional: el asistente
+    puede informar sobre la gestión de la Policía Nacional (cuántas auditorías, de qué tipo y
+    en qué periodo; cuántas demandas y por qué causa) a partir de un resumen REAL de cada
+    fuente (rango temporal + desglose por sus dimensiones), no solo su conteo de filas. Se leen
+    de bronze (capa cruda) porque no entran a la serie de eventos; si faltan, se omiten.
     """
     from vigia.datasets import ADMIN_CATALOG
 
@@ -158,12 +238,7 @@ def _admin_cards() -> list[dict]:
             continue
         cards.append(
             {
-                "content": (
-                    f"Fuente administrativa '{spec.name}' (datos abiertos, datos.gov.co): "
-                    f"{len(df)} registros. Es información de gestión institucional de la "
-                    f"Policía Nacional (no una serie de delitos), útil para transparencia y "
-                    f"rendición de cuentas."
-                ),
+                "content": _admin_card_text(spec.name, df, _ADMIN_SUMMARY.get(spec.id)),
                 "metadata": {"tipo": "administrativo", "fuente": spec.id},
             }
         )
@@ -205,6 +280,66 @@ def _justicia_cards(top_muni: int = 200) -> list[dict]:
             )
         except Exception:  # noqa: BLE001 — un reporte ausente/corrupto no debe romper el índice
             pass
+
+    # 1b) Cards por TÍTULO del Código Penal (tasa de judicialización por delito, nacional).
+    # La card del ranking declara el umbral y nombra explícitamente los extremos, para que el
+    # asistente responda "¿qué delito se judicializa menos/más?" con la cifra y su salvedad.
+    delito_path = settings.gold_dir / "justicia_delito.parquet"
+    if delito_path.exists():
+        from vigia.etl.justicia import _MIN_PROCESOS_TASA
+
+        delito = pd.read_parquet(delito_path)
+        eleg = delito[
+            (delito["procesos_etapa_conocida"] >= _MIN_PROCESOS_TASA)
+            & (delito["titulo_delito"] != "Sin información")
+        ]
+        if not eleg.empty:
+            menos = eleg.nsmallest(3, "tasa_judicializacion_pct")
+            mas = eleg.nlargest(3, "tasa_judicializacion_pct")
+
+            def _linea(r) -> str:
+                return (
+                    f"{r['titulo_delito']} (tasa {r['tasa_judicializacion_pct']}%, "
+                    f"{int(r['total_procesos'])} procesos)"
+                )
+
+            # Redacción a propósito SIN el sintagma "tasa de judicialización nacional": estas
+            # cards comparten vocabulario con la card nacional y, si lo repiten, la DESPLAZAN del
+            # top de la recuperación para la pregunta por la tasa del país (colisión medida con
+            # `vigia rag-eval` el 2026-07-09: el asistente citó la tasa de un título como si
+            # fuera la nacional). Lo mismo aplica a las cards por título de abajo.
+            cards.append(
+                {
+                    "content": (
+                        "Qué TIPO DE DELITO se judicializa menos (por título del Código Penal, "
+                        "taxonomía propia de la Fiscalía). El que MENOS se judicializa es "
+                        f"{_linea(menos.iloc[0])}; le siguen "
+                        f"{'; '.join(_linea(r) for _, r in menos.iloc[1:].iterrows())}. "
+                        f"El que MÁS se judicializa es {_linea(mas.iloc[0])}; le siguen "
+                        f"{'; '.join(_linea(r) for _, r in mas.iloc[1:].iterrows())}. "
+                        f"El ranking compara solo títulos con al menos {_MIN_PROCESOS_TASA} "
+                        "procesos de etapa conocida (con pocos procesos una tasa extrema es "
+                        "ruido). La taxonomía penal no es 1:1 con las categorías de la Policía."
+                    ),
+                    "metadata": {"tipo": "justicia", "alcance": "nacional-delito"},
+                }
+            )
+        for _, r in delito.iterrows():
+            cards.append(
+                {
+                    "content": (
+                        f"Título penal «{r['titulo_delito']}» (Código Penal, procesos de la "
+                        f"Fiscalía): {int(r['total_procesos'])} procesos, "
+                        f"{int(r['n_judicializados'])} superaron la indagación "
+                        f"({r['tasa_judicializacion_pct']}% de los de etapa conocida)."
+                    ),
+                    "metadata": {
+                        "tipo": "justicia",
+                        "alcance": "nacional-delito",
+                        "titulo_delito": r["titulo_delito"],
+                    },
+                }
+            )
 
     resumen = pd.read_parquet(resumen_path)
     # 2) Cards por municipio (los de mayor volumen de procesos).
@@ -277,6 +412,8 @@ def _context_docs() -> list[dict]:
 
 
 def _recreate_table(dim: int) -> None:
+    from vigia.db import get_conn
+
     with get_conn() as conn:
         conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
         conn.execute("DROP TABLE IF EXISTS kb_chunks")
@@ -297,6 +434,9 @@ def _recreate_table(dim: int) -> None:
 
 def build_index() -> int:
     """Genera las data cards, las vectoriza e indexa en pgvector. Devuelve nº de chunks."""
+    from pgvector.psycopg import register_vector
+
+    from vigia.db import get_conn
     from vigia.rag.documents import document_cards
 
     embedder = get_embedder()
@@ -310,7 +450,7 @@ def build_index() -> int:
         + document_cards()  # documentos no estructurados (PDF/Word) de settings.rag_docs_dir
     )
     if not cards:
-        log.warning("No hay datos gold para indexar. Ejecuta el pipeline ETL primero.")
+        log.warning("No hay datos gold para indexar. Ejecute el pipeline ETL primero.")
         return 0
 
     log.info("Vectorizando %d fragmentos…", len(cards))

@@ -20,16 +20,16 @@ log = get_logger(__name__)
 def _load_silver() -> pd.DataFrame:
     src = settings.silver_dir / "eventos.parquet"
     if not src.exists():
-        raise RuntimeError("Silver ausente. Ejecuta primero `vigia clean`.")
+        raise RuntimeError("Silver ausente. Ejecute primero `vigia clean`.")
     return pd.read_parquet(src)
 
 
 def _attach_poblacion(series: pd.DataFrame) -> pd.DataFrame:
-    """Añade `poblacion` (DANE) por `(cod_municipio, anio)` para habilitar tasas por 100k.
+    """Añade `poblacion` (DANE) por `(cod_municipio, anio)`; habilita tasas por 100.000 hab.
 
     La proyección DANE cubre 2005-2035; los años fuera de rango (2003-2004, o futuros) se
     respaldan con el año disponible más cercano (clip), evitando nulos en los extremos de la
-    serie. Si la población no se ha ingerido, la columna queda nula y el modelo opera sin
+    serie. Si la población no se ha descargado, la columna queda nula y el modelo opera sin
     tasas (degradación elegante, como con DIVIPOLA).
     """
     try:
@@ -37,7 +37,7 @@ def _attach_poblacion(series: pd.DataFrame) -> pd.DataFrame:
 
         pob = load_poblacion()
     except RuntimeError as exc:
-        log.warning("Población no añadida (%s); se modela sin tasas por 100k", exc)
+        log.warning("Población no añadida (%s); se modela sin tasas por 100.000 hab.", exc)
         series["poblacion"] = pd.NA
         return series
 
@@ -113,7 +113,7 @@ def build_gold() -> dict[str, pd.DataFrame]:
 
     series = build_monthly_series(eventos)
     series.to_parquet(settings.gold_dir / "serie_mensual.parquet", index=False)
-    log.info("Gold serie_mensual: %d filas", len(series))
+    log.info("Serie mensual de la capa gold escrita: %d filas", len(series))
 
     # KPIs por municipio. Se agrupa por el código DANE (clave estable) y se elige el
     # nombre canónico (el más frecuente), evitando duplicar municipios por variaciones
@@ -127,6 +127,10 @@ def build_gold() -> dict[str, pd.DataFrame]:
     eventos = eventos.assign(
         _cant_delito=eventos["cantidad"].where(~es_respuesta, 0),
         _cant_respuesta=eventos["cantidad"].where(es_respuesta, 0),
+        # Solo categorías de DELITO: la cifra alimenta "tipos de delito" en el tablero,
+        # el drill-down y las data cards del RAG; contar también las 3 respuestas
+        # mezclaría universos con el KPI nacional. `nunique` ignora los NaN del where().
+        _cat_delito=eventos["categoria"].where(~es_respuesta),
     )
     resumen_mpio = (
         eventos.groupby("cod_municipio", dropna=False)
@@ -134,7 +138,7 @@ def build_gold() -> dict[str, pd.DataFrame]:
             total_hechos=("cantidad", "sum"),
             total_delitos=("_cant_delito", "sum"),
             total_respuestas=("_cant_respuesta", "sum"),
-            categorias=("categoria", "nunique"),
+            categorias=("_cat_delito", "nunique"),
             primer_anio=("anio", "min"),
             ultimo_anio=("anio", "max"),
         )
@@ -173,7 +177,7 @@ def build_gold() -> dict[str, pd.DataFrame]:
     resumen_cat.to_parquet(settings.gold_dir / "resumen_categoria.parquet", index=False)
 
     log.info(
-        "Gold listo: %d municipios, %d categorías",
+        "Capa gold lista: %d municipios, %d categorías",
         len(resumen_mpio),
         eventos["categoria"].nunique(),
     )

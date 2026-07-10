@@ -1449,9 +1449,16 @@ models/*
 # No ignorar el README
 !models/README.md
 
+# Artefactos locales de ejecución de notebooks: evita reemplazar `models/forecaster.joblib` de la aplicación
+notebooks/artefactos/
+
 # Python
 ml/*.egg-info/
 ml/.ruff_cache/
 
 # Frontend
 frontend/dist/
+
+# Excepción: scripts versionados en ml/scripts/
+!ml/scripts/
+!ml/scripts/**

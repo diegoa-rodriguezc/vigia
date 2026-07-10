@@ -29,5 +29,5 @@ La URL de la API se configura con `VITE_API_BASE_URL` (por defecto `http://local
 ## Build de producción
 
 ```bash
-npm run build      # genera dist/ (servido por nginx en el contenedor)
+npm run build      # genera dist/ (lo publica nginx en el contenedor)
 ```

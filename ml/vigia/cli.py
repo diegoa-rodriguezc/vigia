@@ -13,8 +13,22 @@ app = typer.Typer(add_completion=False, help="VigIA — pipeline de datos, ML y 
 log = get_logger(__name__)
 
 
+def _miles(n: float) -> str:
+    """Entero con separador de miles al estilo es-CO (punto): 23029390 → '23.029.390'."""
+    return f"{int(n):,}".replace(",", ".")
+
+
+def _pct(v: float | None, dec: int = 1, *, de_fraccion: bool = False) -> str:
+    """Porcentaje es-CO: coma decimal y espacio antes del símbolo ('8,51 %'). Con
+    `de_fraccion`, escala una fracción 0-1 a porcentaje (0.233 → '23,3 %')."""
+    if v is None:
+        return "n/d"
+    x = v * 100 if de_fraccion else v
+    return f"{x:.{dec}f}".replace(".", ",") + " %"
+
+
 @app.command()
-def ingest(only: list[str] = typer.Option(None, help="Ingerir solo estos dataset ids")) -> None:
+def ingest(only: list[str] = typer.Option(None, help="Descargar solo estos dataset ids")) -> None:
     """Descarga los datos abiertos (SODA2) a la capa bronze."""
     from vigia.etl.bronze import ingest_all
 
@@ -61,7 +75,7 @@ def train(test_months: int = 6) -> None:
 
 @app.command(name="load-db")
 def load_db() -> None:
-    """Carga los artefactos gold a PostgreSQL (tablas servidas por el backend Go)."""
+    """Carga los artefactos gold a PostgreSQL (las tablas que expone el backend Go)."""
     from vigia.etl.load import load_gold
 
     load_gold()
@@ -149,8 +163,8 @@ def justicia() -> None:
 
     rep = json.loads((settings.reports_dir / "justicia.json").read_text(encoding="utf-8"))
     typer.echo(
-        f"Justicia: {rep['total_procesos']:,} procesos · "
-        f"tasa de judicialización nacional {rep['tasa_judicializacion_nacional_pct']}% · "
+        f"Justicia: {_miles(rep['total_procesos'])} procesos · "
+        f"tasa de judicialización nacional {_pct(rep['tasa_judicializacion_nacional_pct'], 2)} · "
         f"{rep['cobertura']['municipios']} municipios ({rep['cobertura']['anio_min']}–"
         f"{rep['cobertura']['anio_max']})."
     )
@@ -159,7 +173,7 @@ def justicia() -> None:
 @app.command()
 def challenger(test_months: int = 6) -> None:
     """Compara el modelo en producción (HGB) con un challenger neuronal (MLP) bajo el mismo
-    backtest sin fuga. Solo evalúa y reporta (no cambia el modelo servido)."""
+    backtest sin fuga. Solo evalúa y reporta (no cambia el modelo en producción)."""
     import pandas as pd
 
     from vigia.config import settings
@@ -178,7 +192,7 @@ def validate_anomalies(
     ),
     window: int = typer.Option(1, help="Ventana ± en meses para casar un evento con una anomalía"),
 ) -> None:
-    """Valida las anomalías detectadas: corroboración interna (multi-delito) y, si se aporta un
+    """Valida las anomalías detectadas: corroboración interna (multidelito) y, si se aporta un
     catálogo de eventos documentados, recall@ventana contra esos hitos reales (dos modos)."""
     import pandas as pd
 
@@ -191,18 +205,21 @@ def validate_anomalies(
     ev = pd.read_csv(src, dtype={"cod_municipio": str}, comment="#") if src else None
     report = av.write_report(anomalies, events=ev, window_months=window)
     corr = report["corroboracion_interna"]
+    frac = _pct(corr["fraccion_corroborada"], 1, de_fraccion=True)
     typer.echo(
-        f"Corroboración interna: {corr['fraccion_corroborada']:.1%} de {corr['n_anomalias']} "
+        f"Corroboración interna: {frac} de {corr['n_anomalias']} "
         f"anomalías respaldadas por otra categoría en el mismo municipio-mes "
-        f"({corr['n_clusters_multidelito']} clústeres multi-delito)."
+        f"({corr['n_clusters_multidelito']} clústeres multidelito)."
     )
     mm = report["contra_eventos_documentados"]
     cat = report["contra_eventos_documentados_por_categoria"]
     if mm:
+        r_muni = _pct(mm["recall"], 1, de_fraccion=True)
+        r_cat = _pct(cat["recall"], 1, de_fraccion=True)
         typer.echo(
             f"Eventos documentados (±{mm['window_months']} mes): recall por municipio-mes "
-            f"{mm['recall']:.1%} ({mm['n_detectados']}/{mm['n_eventos']}); "
-            f"exigiendo categoría {cat['recall']:.1%} ({cat['n_detectados']}/{cat['n_eventos']})."
+            f"{r_muni} ({mm['n_detectados']}/{mm['n_eventos']}); "
+            f"exigiendo categoría {r_cat} ({cat['n_detectados']}/{cat['n_eventos']})."
         )
 
 
@@ -220,8 +237,13 @@ def health(horizon: int = 12) -> None:
     fr, dr, bt = rep["frescura"], rep["deriva_datos"], rep["backtest_extendido"]
     fe, de = fr["estado"], dr["estado"]
     typer.echo(f"Estado global: {rep['estado_global'].upper()}")
-    typer.echo(f"  Frescura [{fe}]: rezago {fr['lag_meses']} mes(es), datos a {fr['periodo_max']}")
-    typer.echo(f"  Deriva [{de}]: PSI={dr['psi']}, cambio volumen {dr.get('cambio_volumen_pct')}%")
+    _mes = "mes" if fr["lag_meses"] == 1 else "meses"
+    typer.echo(f"  Frescura [{fe}]: rezago {fr['lag_meses']} {_mes}, datos a {fr['periodo_max']}")
+    _cv = dr.get("cambio_volumen_pct")
+    typer.echo(
+        f"  Deriva [{de}]: PSI={str(dr['psi']).replace('.', ',')}, "
+        f"cambio volumen {_pct(_cv, 1) if _cv is not None else 'n/d'}"
+    )
     if bt:
         supera = "supera" if bt["supera_baseline_mae"] else "no supera"
         typer.echo(
@@ -230,10 +252,49 @@ def health(horizon: int = 12) -> None:
         )
 
 
+@app.command(name="rag-eval")
+def rag_eval(
+    modo: str = typer.Option(
+        "auto",
+        help=(
+            "Camino a evaluar: auto (producción: agente si el proveedor admite "
+            "herramientas, si no RAG clásico) | agente | clasico. Funciona con ambos "
+            "proveedores (openai/anthropic → agente; Ollama local → clásico, más lento)."
+        ),
+    ),
+    out: str = typer.Option(
+        "rag_eval.json",
+        help=(
+            "Nombre del archivo de salida (dentro de reports/). Permite versionar la "
+            "medición de varios caminos, p. ej. rag_eval_ollama.json para el camino "
+            "por defecto, sin sobrescribir el reporte del agente."
+        ),
+    ),
+) -> None:
+    """Evalúa el asistente con preguntas de referencia DERIVADAS de gold/reports (no quemadas):
+    exactitud de cifras, abstención ante lo fuera de alcance (guardarraíl medido), citación
+    de fuentes y resolución de municipios con errores de tipeo. Requiere BD + proveedor LLM
+    activos; escribe reports/<out> (por defecto rag_eval.json)."""
+    from vigia.rag import evaluation
+
+    rep = evaluation.write_report(modo=modo, out_name=out)
+    pct = lambda v: _pct(v, 0, de_fraccion=True) if v is not None else "n/d"  # noqa: E731
+    typer.echo(
+        f"Asistente evaluado ({rep['n_preguntas']} preguntas, modo {rep['modo_efectivo']}): "
+        f"exactitud de cifras {pct(rep['exactitud_cifras'])} · "
+        f"abstención correcta {pct(rep['abstencion_correcta'])} · "
+        f"citación en aciertos {pct(rep['citacion_en_aciertos'])} · "
+        f"latencia media {rep['latencia_media_s']} s"
+    )
+    fallos = [d["id"] for d in rep["detalle"] if not d.get("acierto")]
+    if fallos:
+        typer.echo(f"Fallos: {', '.join(fallos)} (detalle en reports/{out})")
+
+
 @app.command()
 def ask(pregunta: str) -> None:
     """Consulta al asistente ciudadano desde la terminal (agente con herramientas si el proveedor
-    LLM lo soporta; si no, RAG clásico)."""
+    LLM lo admite; si no, RAG clásico)."""
     from vigia.rag.agent import answer
 
     res = answer(pregunta)
@@ -261,7 +322,7 @@ def brief(
 
     result = generate_brief(cod)
     if result is None:
-        typer.echo("Sin datos para ese municipio. ¿Ejecutaste el pipeline?")
+        typer.echo("Sin datos para ese municipio. ¿Ejecutó el pipeline?")
         raise typer.Exit(code=1)
     typer.echo(
         f"# Informe de seguridad — {result.municipio} "

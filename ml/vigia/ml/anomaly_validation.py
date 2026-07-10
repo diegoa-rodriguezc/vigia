@@ -103,7 +103,7 @@ def corroboration(anomalies: pd.DataFrame) -> dict:
 
     Agrupa por (municipio, mes) y cuenta categorías distintas con anomalía: una anomalía está
     *corroborada* si su municipio-mes registra ≥2 categorías de delito atípicas a la vez. Reportar
-    esta fracción da evidencia de que las alertas reflejan deterioros reales (multi-delito) y no
+    esta fracción da evidencia de que las alertas reflejan deterioros reales (multidelito) y no
     blips aislados. NO es prueba causal; es una señal agregada de validez de cara.
     """
     if anomalies.empty:
@@ -145,6 +145,11 @@ def write_report(
     from vigia.config import settings
 
     report: dict = {
+        # Corte del dato validado — fecha derivada del DATO, no reloj de pared: así el reporte
+        # de una misma ejecución del pipeline se reproduce byte a byte (linaje auditable).
+        "corte_dato": (
+            pd.to_datetime(anomalies["periodo"]).max().strftime("%Y-%m") if len(anomalies) else None
+        ),
         "n_anomalias": int(len(anomalies)),
         "corroboracion_interna": corroboration(anomalies),
     }

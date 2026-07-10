@@ -24,7 +24,7 @@ VigIA cierra el bucle **dato → conocimiento → decisión → acción → resu
 
 | Eslabón | Sin VigIA | Con VigIA |
 |---|---|---|
-| **Dato** | 16 fuentes de eventos dispersas (13 de delito), crudas | Un modelo unificado de eventos, tasas/100k comparables |
+| **Dato** | 16 fuentes de eventos dispersas (13 de delito), crudas | Un modelo unificado de eventos, tasas por 100.000 habitantes comparables |
 | **Conocimiento** | Reactivo: "¿cuántos hubo el mes pasado?" | Anticipatorio: pronóstico a 6 meses + alerta de anomalías + asistente que cita la fuente |
 | **Decisión** | Por intuición o presión mediática | Priorización por municipio/categoría con evidencia y banda de incertidumbre |
 | **Acción** | Despliegue homogéneo de pie de fuerza | Reasignación preventiva focalizada donde el riesgo proyectado sube |
@@ -44,7 +44,7 @@ traduce el dato en recomendación operativa.
 1. **Señal.** En el tablero, la analista de la Secretaría de Seguridad de un municipio ve que el **pronóstico
    de hurto a personas** para el próximo trimestre sube de forma sostenida **en su municipio**, y que la pestaña
    de **Alertas** marcó una anomalía al alza el mes anterior **en ese municipio** para esa categoría. *(El
-   horizonte servido es de 6 meses; el "próximo trimestre" se lee dentro de esa proyección.)*
+   pronóstico cubre 6 meses; el "próximo trimestre" se lee dentro de esa proyección.)*
 2. **Contexto.** Consulta al **asistente** ("¿cómo viene el hurto a personas este año y cómo se compara con el
    resto del departamento?") y obtiene cifras citadas a la fuente oficial, sin tener que cruzar planillas.
 3. **Decisión.** Lleva al Consejo de Seguridad una recomendación con evidencia: priorizar el **hurto a
@@ -70,7 +70,7 @@ evidencia común** para priorizar y para **evaluar** si lo que se hizo sirvió.
 > mes** —la granularidad que el dato abierto nacional publica de forma consistente para los 1.106 municipios
 > modelados—.
 > **No** desciende a comuna, barrio, cuadrante ni franja horaria: aunque algunas fuentes traen un campo `zona`
-> (urbana/rural), su subregistro es alto (≈81 % `NO REPORTADO`, ver
+> (urbana/rural), su subregistro es alto (≈87 % `NO REPORTADO`, ver
 > [CRISP-ML(Q)](CRISP-ML-Q.md#2-ingeniería-de-datos-preparación)) y no sostendría un pronóstico intra-municipal
 > fiable. El detalle táctico fino es competencia de los sistemas operativos internos de la Policía (SIEDCO/
 > cuadrantes), no del dato abierto; VigIA prioriza **el municipio y el delito**, y el equipo local hace el
@@ -86,16 +86,16 @@ las **modela con dato oficial** y hace visible su subregistro.
 
 | Región | Municipios modelados | Series modeladas | Hechos delictivos | Población |
 |---|---|---|---|---|
-| **Amazonía** | 44 / 56 | 498 | 118.731 | 1,13 M |
-| **Orinoquía** | 58 / 60 | 768 | 313.726 | 2,12 M |
-| **San Andrés y Providencia** | 2 / 2 | 21 | 14.300 | 62 k |
+| **Amazonía** | 44 / 56 | 498 | 118.731 | 1,13 millones |
+| **Orinoquía** | 58 / 60 | 768 | 313.726 | 2,12 millones |
+| **San Andrés y Providencia** | 2 / 2 | 21 | 14.300 | 62.000 |
 
 - Por construir sobre el **código DANE/DIVIPOLA** (no sobre los nombres inconsistentes de las fuentes), VigIA
   ubica correctamente municipios que un cruce por nombre —el atajo habitual— pierde por errores de escritura.
 - Las **tasas por 100.000 habitantes** (población DANE) hacen comparable un municipio amazónico de pocos
   miles con una capital — algo imposible con conteos crudos.
-- Los municipios **no** modelados (Guainía 1/6, Vaupés 3/5, Amazonas 7/11) tienen series demasiado ralas
-  (<12 meses con hechos). En vez de inventar un pronóstico falso, VigIA los **deja explícitos como vacío de
+- Los municipios **no** modelados (Guainía 1/6, Vaupés 3/5, Amazonas 7/11) tienen series con demasiados
+  meses sin hechos registrados (<12 meses con hechos). En vez de inventar un pronóstico falso, VigIA los **deja explícitos como vacío de
   información** — un insumo de política pública en sí mismo (¿por qué no se reporta?).
 
 ---

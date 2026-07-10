@@ -19,7 +19,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Renovación de token con deduplicación: si varias peticiones reciben 401 a la vez,
+// Renovación de token sin llamadas repetidas: si varias peticiones reciben 401 a la vez,
 // solo se dispara UN refresh y todas esperan su resultado.
 let refreshing: Promise<string | null> | null = null;
 
@@ -56,6 +56,28 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+// Traduce un error de red/servidor a un mensaje para el CIUDADANO, decidido por el CÓDIGO de
+// estado y nunca a partir del texto crudo del backend (que puede traer lenguaje de operador, como
+// instrucciones de pipeline o detalles internos). Así la interfaz pública nunca muestra comandos.
+export function errorMessage(e: unknown): string {
+  const ax = e as { response?: { status?: number }; code?: string };
+  const status = ax?.response?.status;
+  switch (status) {
+    case 401:
+    case 403:
+      return "Debe iniciar sesión para ver esta información.";
+    case 404:
+      return "No se encontraron datos para esta consulta.";
+    case 429:
+      return "Demasiadas solicitudes; espere un momento e intente de nuevo.";
+    case 503:
+      return "El servicio no está disponible en este momento. Intente de nuevo en unos minutos.";
+  }
+  if (ax?.code === "ECONNABORTED") return "La consulta tardó demasiado. Intente de nuevo.";
+  if (status == null) return "No fue posible conectar con el servicio. Revise su conexión.";
+  return "Ocurrió un problema al obtener los datos. Intente de nuevo.";
+}
 
 // ── Autenticación ──
 export interface AuthUser { id: string; username: string; role: string }
@@ -298,11 +320,17 @@ export interface BacktestExt {
   por_paso: BacktestStep[];
   estado: Estado;
 }
+export interface PoblacionCobertura {
+  disponible: boolean;
+  cobertura_pct: number | null;
+  estado: Estado;
+}
 export interface ModelHealth {
   generado_en: string;
   estado_global: Estado;
   frescura: Freshness;
   deriva_datos: DataDrift;
+  poblacion?: PoblacionCobertura | null;
   backtest_extendido: BacktestExt | null;
 }
 
@@ -369,6 +397,14 @@ export interface JusticiaDepartamento {
   tasa_judicializacion_pct: number;
   municipios: number;
 }
+// Tasa de judicialización NACIONAL por título del Código Penal (taxonomía de la Fiscalía).
+export interface JusticiaDelito {
+  titulo_delito: string;
+  total_procesos: number;
+  n_judicializados: number;
+  procesos_etapa_conocida: number;
+  tasa_judicializacion_pct: number;
+}
 
 // ── Señal en tiempo real (prensa: newsdata.io si hay key, si no GDELT) ──
 export interface RealtimeItem { titulo: string; url: string; fuente: string; fecha: string }
@@ -381,7 +417,7 @@ export interface RealtimeSignal {
 }
 
 // Noticias de seguridad recientes por departamento (o nacional si no se pasa cod). Es una señal
-// de prensa, NO cifras oficiales. Endpoint público y cacheado en el backend.
+// de prensa, NO cifras oficiales. Endpoint público, con caché en el backend.
 export const getRealtimeDepto = (cod?: string) =>
   api
     .get<RealtimeSignal>("/realtime/departamento", { params: cod ? { cod } : {} })
@@ -393,3 +429,5 @@ export const getJusticiaMunicipios = () =>
   api.get<JusticiaMunicipio[]>("/justicia/municipios").then((r) => r.data);
 export const getJusticiaDepartamentos = () =>
   api.get<JusticiaDepartamento[]>("/justicia/departamentos").then((r) => r.data);
+export const getJusticiaDelitos = () =>
+  api.get<JusticiaDelito[]>("/justicia/delitos").then((r) => r.data);

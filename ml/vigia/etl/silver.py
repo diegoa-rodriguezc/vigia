@@ -7,6 +7,8 @@ de fecha. Aquí se normalizan a un único modelo de evento delictivo
 
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 
 from vigia.config import settings
@@ -15,6 +17,38 @@ from vigia.etl.quality import quality_report
 from vigia.logging import get_logger
 
 log = get_logger(__name__)
+
+
+def _bronze_cap(dataset_id: str) -> tuple[bool, int | None]:
+    """Lee del linaje del bronze si la fuente se descargó con tope (SODA_MAX_ROWS).
+
+    Devuelve `(capped, row_cap)`. Ante meta ausente o ilegible, asume sin tope (False, None):
+    el flag es informativo y no debe tumbar la construcción de silver.
+    """
+    meta_path = settings.bronze_dir / f"{dataset_id}.meta.json"
+    if not meta_path.exists():
+        return False, None
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return False, None
+    return bool(meta.get("capped", False)), meta.get("row_cap")
+
+
+def _bronze_ingested_at(dataset_id: str) -> str | None:
+    """Fecha de ingesta del bronze (linaje). Los meta del bronze están gitignored: elevar la
+    fecha al informe de calidad la hace auditable desde el repo. Es una fecha derivada del
+    DATO (solo cambia al volver a descargar la fuente), no un reloj de pared que ensuciaría el
+    diff del reporte en cada ejecución. Ante meta ausente o ilegible devuelve None (informativo)."""
+    meta_path = settings.bronze_dir / f"{dataset_id}.meta.json"
+    if not meta_path.exists():
+        return None
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+    return meta.get("ingested_at")
+
 
 # Esquema unificado de salida
 UNIFIED_COLUMNS = [
@@ -88,7 +122,7 @@ def _to_dane5(series: pd.Series, family: str) -> pd.Series:
         digits = digits.str.slice(0, 5)
     code = digits.str.zfill(5).where(digits.str.len().between(1, 5), other=pd.NA)
     # Un código DANE válido nunca tiene '00' como departamento (los dptos van de 05 a 99):
-    # esto descarta placeholders como '00000' u '000xx' que la fuente trae con código en blanco.
+    # esto descarta marcadores como '00000' u '000xx' que la fuente trae con código en blanco.
     return code.where(code.str.slice(0, 2) != "00", other=pd.NA)
 
 
@@ -159,10 +193,10 @@ def normalize(df: pd.DataFrame, spec: DatasetSpec) -> pd.DataFrame:
     )
 
     out["fuente"] = spec.id
-    out["ingested_at"] = pd.Timestamp.utcnow()
+    out["ingested_at"] = pd.Timestamp.now("UTC")  # utcnow() se retira en pandas 4
 
     # Descarte de filas sin fecha válida o sin código de municipio (no localizables
-    # para análisis espacial ni para las tablas servidas).
+    # para análisis espacial ni para las tablas que expone el backend).
     out = out[out["fecha"].notna() & out["cod_municipio"].notna()].copy()
     out["anio"] = out["fecha"].dt.year.astype("int64")
     out["mes"] = out["fecha"].dt.month.astype("int64")
@@ -210,32 +244,64 @@ def build_silver(only: list[str] | None = None) -> pd.DataFrame:
     """Lee bronze, normaliza cada fuente de eventos y consolida `silver/eventos.parquet`."""
     settings.ensure_dirs()
     frames: list[pd.DataFrame] = []
+    procedencia: dict[str, dict[str, int | float]] = {}
     specs = [s for s in EVENT_DATASETS.values() if only is None or s.id in only]
 
     for spec in specs:
         src = settings.bronze_dir / f"{spec.id}.parquet"
         if not src.exists():
-            log.warning("Bronze ausente para %s (%s); omitido", spec.id, src.name)
+            log.warning(
+                "Sin datos de la fuente %s en la capa bronze (%s); fuente omitida",
+                spec.id,
+                src.name,
+            )
             continue
         raw = pd.read_parquet(src)
         if raw.empty:
             continue
         norm = normalize(raw, spec)
         log.info("Normalizado %s: %d filas -> %d válidas", spec.id, len(raw), len(norm))
+        # Conciliación crudo→silver auditable desde el repo (va al informe de calidad):
+        # los descartes provienen SOLO de fecha/código de municipio inválidos (ver normalize).
+        procedencia[spec.id] = {
+            "filas_crudas": int(len(raw)),
+            "filas_validas": int(len(norm)),
+            "descartadas_pct": round(100 * (1 - len(norm) / len(raw)), 2),
+        }
+        # Fecha de ingesta del bronze (linaje auditable desde el repo; se omite si el meta falta).
+        fecha_ingesta = _bronze_ingested_at(spec.id)
+        if fecha_ingesta:
+            procedencia[spec.id]["fecha_ingesta"] = fecha_ingesta
+        # Si el bronze se truncó por SODA_MAX_ROWS, `filas_crudas` NO es el volumen del portal
+        # sino el recortado: dejarlo explícito para que el reporte de calidad no mienta. Solo se
+        # inyecta cuando hubo tope; así una ejecución SIN tope produce la procedencia idéntica.
+        capped, row_cap = _bronze_cap(spec.id)
+        if capped:
+            procedencia[spec.id]["truncado"] = True
+            procedencia[spec.id]["row_cap"] = row_cap
         frames.append(norm)
 
     if not frames:
-        raise RuntimeError("No hay datos en bronze. Ejecuta primero `vigia ingest`.")
+        raise RuntimeError("No hay datos en bronze. Ejecute primero `vigia ingest`.")
 
     eventos = pd.concat(frames, ignore_index=True)
     eventos = _apply_official_names(eventos)
-    eventos = eventos.drop_duplicates()
+    # AQUÍ NO SE ELIMINAN FILAS REPETIDAS (a propósito): el grano de silver es el del publicador
+    # y una fila idéntica a otra es un hecho DISTINTO con atributos gruesos, no un duplicado. Un
+    # `drop_duplicates()` global llegó a borrar ~30 % de las filas (homicidios −21 %,
+    # capturas −66 %) y deflactaba todas las cifras. Evidencia de que las repetidas son
+    # legítimas: (1) las fuentes que el publicador entrega PRE-AGREGADAS (`cantidad`>1:
+    # hurto_personas, hurto_vehiculos, violencia_intrafamiliar) traen 0 filas repetidas — la
+    # repetición solo existe donde el grano es evento (`cantidad`≈1) y el esquema es estrecho;
+    # (2) la serie anual de homicidios con las repetidas conservadas reproduce la cifra oficial
+    # de la Policía (p. ej. 2023 ≈ 13,6 mil) y al eliminarlas queda 15-30 % por debajo; (3) la
+    # paginación SODA es estable (`$order=:id`) y no reintroduce filas. No restaurar el borrado.
 
     out = settings.silver_dir / "eventos.parquet"
     eventos.to_parquet(out, index=False)
-    log.info("Silver consolidado: %d eventos -> %s", len(eventos), out)
+    log.info("Capa silver consolidada: %d eventos -> %s", len(eventos), out)
 
     # Informe de calidad de datos (QA de CRISP-ML(Q))
-    report = quality_report(eventos)
+    report = quality_report(eventos, procedencia=procedencia)
     (settings.reports_dir / "silver_quality.json").write_text(report, encoding="utf-8")
     return eventos

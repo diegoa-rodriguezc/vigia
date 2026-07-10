@@ -11,6 +11,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 
+	"github.com/vigia/backend/internal/auth"
 	"github.com/vigia/backend/internal/config"
 	"github.com/vigia/backend/internal/mlclient"
 	"github.com/vigia/backend/internal/redisstore"
@@ -66,14 +67,29 @@ func TestForecastCacheHitMiss(t *testing.T) {
 		t.Fatalf("el ML debió llamarse 1 vez, se llamó %d", got)
 	}
 
-	// 3ª llamada con ?nocache=1 → vuelve a golpear al ML (bypass).
+	// 3ª llamada con ?nocache=1 SIN rol admin → el parámetro se ignora (sigue siendo HIT):
+	// el bypass abierto a cualquier cuenta ciudadana sería una denegación de servicio barata.
 	rec3 := httptest.NewRecorder()
-	h.Forecast(rec3, httptest.NewRequest(http.MethodGet, url+"&nocache=1", nil))
-	if rec3.Header().Get("X-Cache") != "MISS" {
-		t.Fatalf("nocache: esperaba MISS, obtuve %q", rec3.Header().Get("X-Cache"))
+	req3 := httptest.NewRequest(http.MethodGet, url+"&nocache=1", nil)
+	req3 = req3.WithContext(auth.ContextWithClaims(req3.Context(), &auth.Claims{Role: auth.RoleCitizen}))
+	h.Forecast(rec3, req3)
+	if rec3.Header().Get("X-Cache") != "HIT" {
+		t.Fatalf("nocache sin admin: esperaba HIT, obtuve %q", rec3.Header().Get("X-Cache"))
+	}
+	if got := atomic.LoadInt32(&hits); got != 1 {
+		t.Fatalf("sin admin el ML debió seguir en 1 llamada, fueron %d", got)
+	}
+
+	// 4ª llamada con ?nocache=1 y rol ADMIN → bypass concedido (vuelve a golpear al ML).
+	rec4 := httptest.NewRecorder()
+	req4 := httptest.NewRequest(http.MethodGet, url+"&nocache=1", nil)
+	req4 = req4.WithContext(auth.ContextWithClaims(req4.Context(), &auth.Claims{Role: auth.RoleAdmin}))
+	h.Forecast(rec4, req4)
+	if rec4.Header().Get("X-Cache") != "MISS" {
+		t.Fatalf("nocache admin: esperaba MISS, obtuve %q", rec4.Header().Get("X-Cache"))
 	}
 	if got := atomic.LoadInt32(&hits); got != 2 {
-		t.Fatalf("con nocache el ML debió llamarse 2 veces en total, fueron %d", got)
+		t.Fatalf("con admin el ML debió llamarse 2 veces en total, fueron %d", got)
 	}
 }
 

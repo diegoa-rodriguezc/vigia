@@ -66,7 +66,7 @@ func New(
 
 	r.Route("/api/v1", func(r chi.Router) {
 		// Salud: pública y sin límite (la usan el frontend y los healthchecks).
-		// /health = liveness (200 si el proceso sirve; `db` refleja la conectividad real).
+		// /health = liveness (200 si el proceso responde; `db` refleja la conectividad real).
 		// /ready  = readiness (503 si la BD no es alcanzable); la usa el HEALTHCHECK del contenedor.
 		r.Get("/health", h.Health)
 		r.Get("/ready", h.Ready)
@@ -101,6 +101,7 @@ func New(
 			r.Get("/justicia/resumen", h.JusticiaResumen)
 			r.Get("/justicia/municipios", h.JusticiaMunicipios)
 			r.Get("/justicia/departamentos", h.JusticiaDepartamentos)
+			r.Get("/justicia/delitos", h.JusticiaDelitos)
 			r.Get("/justicia/municipio", h.JusticiaMunicipioDetalle)
 		})
 

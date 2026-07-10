@@ -27,7 +27,7 @@ func TestNewsDataParseResults(t *testing.T) {
 		t.Fatalf("esperaba 2 items (el tercero sin link se descarta), obtuve %d", len(items))
 	}
 	if items[0].Fuente != "El Tiempo" || items[0].Fecha != "2026-01-15" {
-		t.Fatalf("parseo inesperado: %+v", items[0])
+		t.Fatalf("resultado inesperado: %+v", items[0])
 	}
 }
 

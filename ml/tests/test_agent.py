@@ -24,6 +24,48 @@ def test_execute_argumentos_invalidos_no_lanza():
     assert "error" in out
 
 
+def test_embudo_justicia_sin_codigo_devuelve_el_nacional(monkeypatch):
+    """Sin `cod_municipio`, la herramienta agrega el gold completo (embudo NACIONAL): la cifra
+    insignia de la Fiscalía no debe depender de la recuperación semántica (el agente llegó a
+    responder con la fila de Bogotá del ranking como si fuera el total del país)."""
+    import pandas as pd
+
+    fake = pd.DataFrame(
+        {
+            "cod_municipio": ["11001", "05001"],
+            "municipio": ["BOGOTÁ, D.C.", "MEDELLÍN"],
+            "total_procesos": [600, 400],
+            "n_judicializados": [30, 55],
+            "tasa_judicializacion_pct": [5.0, 13.75],
+        }
+    )
+    fake_delito = pd.DataFrame(
+        {
+            "titulo_delito": ["Delitos Contra La Vida", "Delitos Contra La Familia", "Raro"],
+            "total_procesos": [700_000, 300_000, 50],
+            "n_judicializados": [70_000, 60_000, 45],
+            "procesos_etapa_conocida": [700_000, 300_000, 50],
+            "tasa_judicializacion_pct": [10.0, 20.0, 90.0],
+        }
+    )
+    goldes = {"justicia_resumen": fake, "justicia_delito": fake_delito}
+    monkeypatch.setattr(tools, "_load_gold", lambda name: goldes.get(name))
+    out = tools.execute("embudo_justicia", {})
+    assert out["encontrado"] and out["nivel"] == "nacional"
+    assert out["total_procesos"] == 1000
+    assert out["n_judicializados"] == 85
+    assert out["tasa_judicializacion_pct"] == 8.5
+    # El modo nacional incluye los extremos por título penal; "Raro" (50 procesos) queda fuera
+    # del ranking por el umbral de volumen.
+    delito = out["tasa_por_delito"]
+    assert delito["menor_tasa"][0]["titulo_delito"] == "Delitos Contra La Vida"
+    assert delito["mayor_tasa"][0]["titulo_delito"] == "Delitos Contra La Familia"
+    assert all(r["titulo_delito"] != "Raro" for r in delito["menor_tasa"] + delito["mayor_tasa"])
+    # Con código sigue respondiendo por el municipio (sin regresión).
+    muni = tools.execute("embudo_justicia", {"cod_municipio": "05001"})
+    assert muni["encontrado"] and muni["municipio"] == "MEDELLÍN"
+
+
 def test_schemas_cubren_todas_las_herramientas():
     a = tools.anthropic_schemas()
     o = tools.openai_schemas()

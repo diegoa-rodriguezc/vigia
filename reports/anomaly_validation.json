@@ -1,15 +1,16 @@
 {
-  "n_anomalias": 18588,
+  "corte_dato": "2026-05",
+  "n_anomalias": 30243,
   "corroboracion_interna": {
-    "n_anomalias": 18588,
-    "n_corroboradas": 3825,
-    "fraccion_corroborada": 0.206,
-    "n_clusters_multidelito": 1793
+    "n_anomalias": 30243,
+    "n_corroboradas": 7433,
+    "fraccion_corroborada": 0.246,
+    "n_clusters_multidelito": 3453
   },
   "contra_eventos_documentados": {
     "n_eventos": 11,
-    "n_detectados": 7,
-    "recall": 0.636,
+    "n_detectados": 11,
+    "recall": 1.0,
     "window_months": 1,
     "by_categoria": false,
     "detalle": [
@@ -25,7 +26,7 @@
         "periodo": "2011-07",
         "categoria": "TERRORISMO",
         "descripcion": "Chiva bomba frente a la estación de Policía de Toribío, Cauca (FARC); 3 muertos, 460 viviendas afectadas",
-        "detectado": false
+        "detectado": true
       },
       {
         "cod_municipio": "11001",
@@ -39,21 +40,21 @@
         "periodo": "2019-01",
         "categoria": "HOMICIDIO",
         "descripcion": "Carro bomba en la Escuela de Cadetes General Santander, Bogotá (ELN); 22 cadetes muertos",
-        "detectado": false
+        "detectado": true
       },
       {
         "cod_municipio": "52678",
         "periodo": "2020-08",
         "categoria": "HOMICIDIO",
         "descripcion": "Masacre de Samaniego, Nariño; 8 jóvenes asesinados",
-        "detectado": false
+        "detectado": true
       },
       {
         "cod_municipio": "54001",
         "periodo": "2021-06",
         "categoria": "TERRORISMO",
         "descripcion": "Carro bomba en la Brigada 30 del Ejército, Cúcuta; decenas de heridos",
-        "detectado": false
+        "detectado": true
       },
       {
         "cod_municipio": "81794",
@@ -94,8 +95,8 @@
   },
   "contra_eventos_documentados_por_categoria": {
     "n_eventos": 11,
-    "n_detectados": 4,
-    "recall": 0.364,
+    "n_detectados": 7,
+    "recall": 0.636,
     "window_months": 1,
     "by_categoria": true,
     "detalle": [
@@ -104,7 +105,7 @@
         "periodo": "2003-02",
         "categoria": "HOMICIDIO",
         "descripcion": "Atentado con carro bomba al Club El Nogal, Bogotá (FARC); 36 muertos y 200+ heridos",
-        "detectado": false
+        "detectado": true
       },
       {
         "cod_municipio": "19821",
@@ -132,14 +133,14 @@
         "periodo": "2020-08",
         "categoria": "HOMICIDIO",
         "descripcion": "Masacre de Samaniego, Nariño; 8 jóvenes asesinados",
-        "detectado": false
+        "detectado": true
       },
       {
         "cod_municipio": "54001",
         "periodo": "2021-06",
         "categoria": "TERRORISMO",
         "descripcion": "Carro bomba en la Brigada 30 del Ejército, Cúcuta; decenas de heridos",
-        "detectado": false
+        "detectado": true
       },
       {
         "cod_municipio": "81794",

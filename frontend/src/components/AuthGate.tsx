@@ -14,8 +14,8 @@ export default function AuthGate({ feature, children }: { feature: string; child
     <div className="empty-state">
       <span className="empty-ic"><Icon name="shield" size={28} /></span>
       {registrationEnabled
-        ? <>Inicia sesión o crea una cuenta para usar {feature}.</>
-        : <>Inicia sesión para usar {feature}.</>}
+        ? <>Inicie sesión o cree una cuenta para usar {feature}.</>
+        : <>Inicie sesión para usar {feature}.</>}
       <div className="muted" style={{ marginTop: 6 }}>
         Es una función con cómputo de IA, protegida frente a abuso.{" "}
         {registrationEnabled && "El registro es gratuito; "}el resto del tablero es de acceso público.

@@ -22,7 +22,7 @@ func TestSimulateRequiereParametros(t *testing.T) {
 	}
 }
 
-// La caché de simulación distingue por palancas: cambiar una palanca es MISS (no sirve el
+// La caché de simulación distingue por palancas: cambiar una palanca es MISS (no reutiliza el
 // resultado de otro escenario), y repetir el mismo escenario es HIT.
 func TestSimulateCachePorPalancas(t *testing.T) {
 	var hits int32

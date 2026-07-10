@@ -1,6 +1,6 @@
 """Catálogo de conjuntos de datos abiertos de Seguridad y Defensa (datos.gov.co).
 
-Cada entrada describe cómo ingerir y normalizar la fuente. La capa *silver*
+Cada entrada describe cómo descargar y normalizar la fuente. La capa *silver*
 usa `schema_family` y `date_format` para unificar todas las fuentes en un
 único modelo de eventos delictivos.
 """
@@ -249,7 +249,7 @@ def naturaleza(categoria: str) -> str:
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Capa "Justicia" — Fiscalía General de la Nación (independiente de la Policía).
-# Es MICRO-DATO anonimizado (~23 M filas, una por proceso). NO entra a la serie de delitos
+# Es MICRO-DATO anonimizado (~23 millones de filas, una por proceso). NO entra a la serie de delitos
 # (silver/CATALOG) porque "noticia criminal / proceso" ≠ "hecho registrado" por la Policía →
 # sería doble conteo; vive como capa PARALELA. Su valor diferencial es la columna `etapa`
 # (Indagación → Investigación → Juicio → Ejecución de Penas), que da el EMBUDO DE
@@ -259,13 +259,13 @@ def naturaleza(categoria: str) -> str:
 # agregación `count(1)`+`$group` NO es viable (hasta un `count(*)` tarda ~80 s y cualquier
 # `$group` revienta el timeout; un app token no lo arregla — es límite de cómputo, no de cuota).
 # Por eso se traen SOLO las columnas de grupo por keyset (:id) y se agrega LOCALMENTE (ver
-# `soda.fetch_streamed_aggregate`): páginas estrechas de 50 k filas en ~2-3 s, ~13 min el total,
+# `soda.fetch_streamed_aggregate`): páginas estrechas de 50.000 filas en ~2-3 s, ~13 min el total,
 # reproducible SIN token. Esquema verificado contra la API.
 @dataclass(frozen=True)
 class AggregatedSpec:
-    """Fuente SODA2 ENORME que se ingiere por streaming de columnas + agregación LOCAL.
+    """Fuente SODA2 ENORME que se adquiere por streaming de columnas + agregación LOCAL.
 
-    No se descarga el micro-dato completo ni se agrega en el servidor (su backend no lo soporta):
+    No se descarga el micro-dato completo ni se agrega en el servidor (su backend no lo admite):
     se paginan solo `group_cols` por keyset y se cuentan en memoria (`count_as`).
     """
 
@@ -274,7 +274,9 @@ class AggregatedSpec:
     name: str
     group_cols: tuple[str, ...]  # columnas por las que se agrupa (se traen crudas y se cuentan)
     count_as: str = "n"  # nombre de la columna de conteo resultante
-    where: str | None = None  # $where opcional (filtro server-side ligero; el keyset se añade aparte)
+    where: str | None = (
+        None  # $where opcional (filtro server-side ligero; el keyset se añade aparte)
+    )
     notes: str = ""
 
 
@@ -282,13 +284,18 @@ JUSTICIA_PROCESOS = AggregatedSpec(
     id="justicia_procesos",
     soda_id="dbdv-iihs",  # "Procesos Fiscalía - V3" (público; la V2 es privada → 403)
     name="Procesos — Fiscalía General de la Nación (V3)",
-    # Grano municipio×año×etapa. Al agregar LOCALMENTE, el año SÍ puede ir en el grupo (no hay que
-    # particionar para esquivar el timeout, como sí haría falta server-side). 'Sin Información' en
-    # año/código se filtra después, en `etl/justicia.py`.
-    group_cols=("cod_dane_hecho", "etapa", "a_o_hecho"),
+    # Grano municipio×año×etapa×título penal. Al agregar LOCALMENTE, el año SÍ puede ir en el grupo
+    # (no hay que particionar para esquivar el timeout, como sí haría falta server-side). 'Sin
+    # Información' en año/código se filtra después, en `etl/justicia.py`.
+    # `titulo_delito` es el Título del Código Penal (~30 valores): la granularidad honesta para
+    # "¿qué delito se judicializa menos?". NO sirven: `tipo_delito` (pese al nombre trae el tipo de
+    # PROCESO: Concurso/Reparto), `delito` (miles de descripciones legales) ni `capitulo_delito` a
+    # solas ("Capítulo Único" se repite entre títulos → ambiguo). Verificado con una muestra real
+    # de la API (2026-07-09).
+    group_cols=("cod_dane_hecho", "etapa", "a_o_hecho", "titulo_delito"),
     count_as="n_procesos",
-    notes="micro-dato anonimizado (~23 M filas) agregado por streaming keyset; "
-    "'etapa' = embudo de judicialización",
+    notes="micro-dato anonimizado (~23 millones de filas) agregado por streaming keyset; "
+    "'etapa' = embudo de judicialización; 'titulo_delito' = título del Código Penal",
 )
 
 

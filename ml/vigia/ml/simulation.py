@@ -1,8 +1,8 @@
 """Simulación de escenarios "¿y si…?" sobre el pronóstico.
 
-Capa contrafactual encima del modelo de pronóstico (`forecasting.predict`). Permite
-explorar trayectorias alternativas moviendo palancas explícitas, separando con honestidad
-la procedencia de cada una:
+Capa de escenarios hipotéticos encima del modelo de pronóstico (`forecasting.predict`).
+Permite explorar trayectorias alternativas moviendo palancas explícitas, separando con
+honestidad la procedencia de cada una:
 
 - **Palanca del MODELO** — un *shock de población* (migración, crecimiento, retorno): escala
   la población del municipio y el modelo re-deriva `log_poblacion` y reconvierte tasa→conteo.
@@ -10,8 +10,8 @@ la procedencia de cada una:
 - **Palanca de SUPUESTO** — el efecto esperado de una *intervención* (un programa de seguridad):
   el modelo NO observa variables de política, así que el efecto lo aporta el usuario como un
   porcentaje de cambio de la incidencia, aplicado con una rampa temporal sobre la trayectoria
-  servida. Se reporta etiquetado como supuesto del usuario, no como una estimación causal del
-  modelo (no sobre-afirmar lo que los datos no soportan).
+  entregada. Se reporta etiquetado como supuesto del usuario, no como una estimación causal del
+  modelo (no sobreafirmar lo que los datos no respaldan).
 
 Un escenario sin palancas reproduce EXACTAMENTE el pronóstico base (`predict`): la simulación
 no altera el modelo, solo proyecta supuestos sobre su salida. Toda la ruta degrada con
@@ -88,7 +88,7 @@ def simulate(
     horizon: int = 6,
     model: ForecastModel | None = None,
 ) -> dict | None:
-    """Compara el pronóstico base con un escenario contrafactual.
+    """Compara el pronóstico base con un escenario hipotético («¿y si…?»).
 
     Devuelve un dict con la trayectoria base, la del escenario, el delta por mes y el acumulado
     de hechos evitados/adicionales, o None si no hay historia/modelo. La incertidumbre de la
@@ -115,7 +115,7 @@ def simulate(
         traj = [dict(p) for p in base]
 
     # Palanca de intervención (supuesto del usuario): factor multiplicativo con rampa sobre la
-    # trayectoria servida. Se aplica a media y banda por igual para que el rango acompañe a la
+    # trayectoria entregada. Se aplica a media y banda por igual para que el rango acompañe a la
     # proyección. clip a 0: una intervención no produce conteos negativos.
     factor_pct = scenario.intervencion_pct / 100.0
     for i, p in enumerate(traj, start=1):

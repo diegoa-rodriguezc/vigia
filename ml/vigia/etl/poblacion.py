@@ -1,4 +1,4 @@
-"""Población municipal (DANE) — denominador para tasas por 100k habitantes.
+"""Población municipal (DANE) — denominador para tasas por 100.000 habitantes.
 
 Fuente oficial: *proyecciones y retroproyecciones de población municipal por área*
 del DANE (CNPV 2018, actualización post-COVID). datos.gov.co NO publica una versión
@@ -8,13 +8,14 @@ dato abierto de una entidad pública.
 Cubre 2005-2035; los años previos de la serie delictiva (2003-2004)
 se respaldan con el primer año disponible al cruzar en `gold` (clip de año).
 
-La población habilita el modelado en TASAS por 100k habitantes (comparables entre Bogotá
+La población habilita el modelado en TASAS por 100.000 habitantes (comparables entre Bogotá
 y un municipio pequeño) y entra como feature exógena al pronóstico —la primera señal del
 modelo que no es autorregresiva—.
 """
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import unicodedata
@@ -90,7 +91,7 @@ def _read_one(content: bytes) -> pd.DataFrame:
         }
     )
     out = out.dropna(subset=["cod_municipio", "anio", "poblacion"])
-    # Descarta placeholders de código en blanco (mismo criterio que silver._to_dane5).
+    # Descarta marcadores de código en blanco (mismo criterio que silver._to_dane5).
     out = out[out["cod_municipio"].str.slice(0, 2) != "00"]
     return out[out["poblacion"] > 0]
 
@@ -98,8 +99,8 @@ def _read_one(content: bytes) -> pd.DataFrame:
 def ingest_poblacion() -> pd.DataFrame:
     """Descarga y consolida la población municipal del DANE en `bronze/poblacion.parquet`.
 
-    Concatena los archivos histórico (2005-2019) y proyectado (2020-2035), deduplicando por
-    `(cod_municipio, anio)`. Persiste el linaje en `poblacion.meta.json`.
+    Concatena los archivos histórico (2005-2019) y proyectado (2020-2035), conservando una sola
+    fila por `(cod_municipio, anio)`. Persiste el linaje en `poblacion.meta.json`.
     """
     settings.ensure_dirs()
     frames: list[pd.DataFrame] = []
@@ -111,7 +112,16 @@ def ingest_poblacion() -> pd.DataFrame:
         resp.raise_for_status()
         df = _read_one(resp.content)
         frames.append(df)
-        sources_meta.append({"url": url, "filas": int(len(df))})
+        # Checksum del archivo descargado (linaje verificable: los hashes de referencia están
+        # publicados en docs/DATASETS.md — si el DANE reemplaza el archivo, el meta lo delata).
+        sources_meta.append(
+            {
+                "url": url,
+                "filas": int(len(df)),
+                "bytes": len(resp.content),
+                "sha256": hashlib.sha256(resp.content).hexdigest(),
+            }
+        )
 
     pob = (
         pd.concat(frames, ignore_index=True)
@@ -147,10 +157,10 @@ def ingest_poblacion() -> pd.DataFrame:
 
 
 def load_poblacion() -> pd.DataFrame:
-    """Devuelve `[cod_municipio, anio, poblacion]`; lanza si no se ha ingerido aún."""
+    """Devuelve `[cod_municipio, anio, poblacion]`; lanza si aún no se ha descargado."""
     src = settings.bronze_dir / "poblacion.parquet"
     if not src.exists():
         raise RuntimeError(
-            "Población ausente en bronze. Ejecuta `vigia ingest` (o `ingest_poblacion`)."
+            "Población ausente en bronze. Ejecute `vigia ingest` (o `ingest_poblacion`)."
         )
     return pd.read_parquet(src)

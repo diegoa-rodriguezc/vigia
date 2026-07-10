@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { getMunicipios, getCategories, getSimulate, type MunicipioRef, type SimulateResponse } from "../api";
+import { getMunicipios, getCategories, getSimulate, errorMessage, type MunicipioRef, type SimulateResponse } from "../api";
 import { Combobox, ChartTooltip, LiveRegion, ExportButton, prettyCat, type ComboItem } from "./ui";
 import { Icon } from "./icons";
 
@@ -27,14 +27,14 @@ export default function Simulador() {
         setMunicipios(ms);
         setCod((c) => (ms.some((m) => m.cod_municipio === c) ? c : ms[0]?.cod_municipio ?? c));
       })
-      .catch(() => {});
+      .catch((e) => setError(errorMessage(e)));
   }, []);
 
   useEffect(() => {
     if (!cod) return;
     getCategories(cod)
       .then((cs) => { setCategorias(cs); setCategoria((cat) => (cs.includes(cat) ? cat : cs[0] ?? "")); })
-      .catch(() => {});
+      .catch((e) => setError(errorMessage(e)));
   }, [cod]);
 
   const municipioItems: ComboItem[] = useMemo(
@@ -58,7 +58,7 @@ export default function Simulador() {
       let msg: string;
       const muni = municipios.find((m) => m.cod_municipio === cod)?.municipio ?? cod;
       if (e?.response?.status === 404) msg = `No hay historial de ${prettyCat(categoria)} en ${muni} para simular.`;
-      else msg = e?.response?.data?.detail ?? e?.response?.data?.error ?? e.message;
+      else msg = errorMessage(e);
       setError(msg);
       setAnuncio(`Simulación no disponible: ${msg}`);
       setRes(null);
@@ -75,8 +75,9 @@ export default function Simulador() {
     <>
       <h2 className="section-title">Simulación de escenarios "¿y si…?"</h2>
       <p className="section-sub">
-        Proyecta el efecto de una intervención y/o un cambio de población sobre el pronóstico base,
-        y estima los hechos evitados. Apoya la decisión preventiva; no es una certeza.
+        Proyecta sobre el pronóstico base un escenario hipotético —una intervención supuesta y/o un
+        cambio de población— y calcula los hechos que se evitarían bajo ese supuesto. Apoya la
+        decisión preventiva; no es un efecto causal estimado por el modelo.
       </p>
       <LiveRegion message={anuncio} />
 
@@ -93,9 +94,9 @@ export default function Simulador() {
             </select>
           </label>
           <label className="field">
-            Efecto de la intervención: <b>{intervencion}%</b>
+            Intervención supuesta: <b>{intervencion}%</b>
             <input type="range" min={-50} max={20} step={5} value={intervencion}
-              onChange={(e) => setIntervencion(Number(e.target.value))} aria-label="Efecto esperado de la intervención en porcentaje" />
+              onChange={(e) => setIntervencion(Number(e.target.value))} aria-label="Intervención supuesta en porcentaje" />
           </label>
           <label className="field">
             Despliegue (meses): <b>{ramp}</b>
@@ -121,7 +122,7 @@ export default function Simulador() {
         {!res && !error && (
           <div className="empty-state">
             <span className="empty-ic"><Icon name="sliders" size={28} /></span>
-            Ajusta las palancas y pulsa <b>Simular</b> para comparar el escenario con el pronóstico base.
+            Ajuste las palancas y pulse <b>Simular</b> para comparar el escenario con el pronóstico base.
             <div className="muted" style={{ marginTop: 6 }}>
               La población es una palanca del modelo; la intervención es un supuesto del usuario.
             </div>
@@ -150,6 +151,7 @@ export default function Simulador() {
                 }))}
               />
             </div>
+            <div role="img" aria-label={`Gráfica que compara el pronóstico base con el escenario simulado de ${prettyCat(categoria)} y los hechos ${evitadosLabel} por mes.`}>
             <ResponsiveContainer width="100%" height={400}>
               <ComposedChart data={chart} margin={{ top: 24, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#26324a" />
@@ -159,9 +161,10 @@ export default function Simulador() {
                 <Legend />
                 <Bar dataKey="evitados" name={`Hechos ${evitadosLabel} (mes)`} fill="#34d399" fillOpacity={0.35} />
                 <Line type="monotone" dataKey="base" name="Pronóstico base" stroke="#fbbf24" strokeWidth={2} strokeDasharray="6 4" dot={false} />
-                <Line type="monotone" dataKey="escenario" name="Con intervención" stroke="#38bdf8" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="escenario" name="Escenario" stroke="#38bdf8" strokeWidth={2} dot={{ r: 3 }} />
               </ComposedChart>
             </ResponsiveContainer>
+            </div>
             <p className="muted" style={{ marginTop: 8, display: "inline-flex", alignItems: "flex-start", gap: 6 }}>
               <Icon name="info" size={15} /> {res.nota}
             </p>

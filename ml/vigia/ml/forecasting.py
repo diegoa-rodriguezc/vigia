@@ -8,12 +8,14 @@ municipios con pocos datos) y es reproducible con semilla fija.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 import joblib
 import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import mean_absolute_error
@@ -25,6 +27,9 @@ from vigia.ml.features import KEY, LAGS, TARGET, feature_columns, make_features
 log = get_logger(__name__)
 
 MODEL_PATH = settings.models_dir / "forecaster.joblib"
+# Metadatos del artefacto (versión de sklearn que lo serializó): un joblib NO es portable entre
+# versiones, y sin esto el error de carga dice qué pasó pero no QUIÉN escribió el modelo.
+META_PATH = MODEL_PATH.with_suffix(".meta.json")
 
 
 @dataclass
@@ -43,8 +48,8 @@ class ForecastModel:
     # se asumía el cuantil normal (1.2816), que con la dispersión cuasi-Poisson daba una banda
     # demasiado ANCHA (cobertura ~94%). Default = cuantil normal para modelos antiguos sin el campo.
     pi_scale: float = 1.2816
-    # Variable que modela el estimador: "rate" (hechos por 100k hab.) cuando hay población, o
-    # "count" (conteos) si no. El pronóstico SIEMPRE se sirve en conteos: en modo "rate" se
+    # Variable que modela el estimador: "rate" (hechos por 100.000 hab.) cuando hay población, o
+    # "count" (conteos) si no. El pronóstico SIEMPRE se entrega en conteos: en modo "rate" se
     # convierte multiplicando por la población. Modelar tasas iguala la escala entre municipios
     # (Bogotá vs uno pequeño) y mejora MAE y sMAPE frente a modelar conteos (ver bitácora).
     target_mode: str = "count"
@@ -58,11 +63,12 @@ _PI_LEVEL = 80
 # Tasa expresada por 100.000 habitantes (convención epidemiológica estándar).
 RATE_SCALE = 100_000.0
 
-# Peso del modelo en la predicción SERVIDA (resto: persistencia del último valor observado).
+# Peso del modelo en la predicción ENTREGADA (resto: persistencia del último valor observado).
 # El modelo global gana en volumen medio pero puede sobre-extrapolar en mega-ciudades (un error
-# de tasa pequeño × población enorme = gran error de conteo); mezclar con persistencia —fuerte en
-# alto volumen— doma ese overshoot SIN perder la ventaja en medio. Calibrado por backtest: 0.7
-# bate al baseline en MAE (1 paso y multipaso), sMAPE multipaso y el tercil alto (ver bitácora).
+# de tasa pequeño × población enorme = gran error de conteo); mezclar con persistencia —fuerte
+# en alto volumen— doma esa sobreestimación SIN perder la ventaja en medio. Calibrado por
+# backtest: 0.7 bate a la línea base en MAE (1 paso y multipaso), sMAPE multipaso y el tercil
+# alto (ver bitácora).
 _BLEND_W = 0.7
 
 
@@ -80,9 +86,9 @@ def _has_population(series: pd.DataFrame) -> bool:
 
 
 def _as_modeling_target(series: pd.DataFrame, mode: str) -> pd.DataFrame:
-    """Copia de la serie cuyo TARGET es la variable a modelar (conteo o tasa/100k).
+    """Copia de la serie cuyo TARGET es la variable a modelar (conteo o tasa).
 
-    En modo "rate" se sustituye el conteo por su tasa por 100k habitantes para que las
+    En modo "rate" se sustituye el conteo por su tasa por 100.000 habitantes para que las
     features de rezago/medias se computen sobre la tasa; la población se conserva para
     reconvertir la predicción a conteo.
     """
@@ -114,10 +120,11 @@ def _filter_active_series(series: pd.DataFrame, min_nonzero: int = 12) -> pd.Dat
 
 
 # Hiperparámetros del estimador, CONFIRMADOS por una búsqueda con CV TEMPORAL (walk-forward,
-# sin fuga) que puntuó 8 configuraciones por el MAE multipaso servido (ver bitácora Iteración 9 y
-# docs/CRISP-ML-Q.md): todas cayeron dentro del 1.4% y la mejor alternativa solo daba −0.8% de MAE
-# a costa de 2× el tiempo de entrenamiento → estos defaults quedan como óptimo práctico. NO ajustar
-# con k-fold aleatorio: barajaría el tiempo y filtraría el futuro (métricas engañosamente buenas).
+# sin fuga) que puntuó 8 configuraciones por el MAE multipaso de la predicción entregada (ver
+# bitácora Iteración 9 y docs/CRISP-ML-Q.md): todas cayeron dentro del 1.4% y la mejor alternativa
+# solo daba −0.8% de MAE a costa de 2× el tiempo de entrenamiento → estos defaults quedan como
+# óptimo práctico. NO ajustar con k-fold aleatorio: barajaría el tiempo y filtraría el futuro
+# (métricas engañosamente buenas).
 _HGB_PARAMS: dict = {
     "max_iter": 400,
     "learning_rate": 0.05,
@@ -134,8 +141,8 @@ def _new_estimator(overrides: dict | None = None) -> HistGradientBoostingRegress
 
     Nota empírica (bitácora en docs/CRISP-ML-Q.md): `loss="poisson"` extrapola por su enlace
     logarítmico y dispara el MAE en la recursión multipaso —de forma CATASTRÓFICA sobre conteos
-    (errores ~1e73), confirmado al re-probarlo incluso con población—. La pérdida cuadrática es
-    estable; la escala de los conteos se aborda modelando TASAS por 100k (no cambiando la pérdida).
+    (errores ~1e73), confirmado al volver a probarlo incluso con población—. La pérdida cuadrática
+    es estable; la escala de los conteos se aborda modelando TASAS (no cambiando la pérdida).
     """
     params = {**_HGB_PARAMS, **(overrides or {})}
     return HistGradientBoostingRegressor(random_state=settings.seed, **params)
@@ -168,7 +175,7 @@ def _metrics_block(
 ) -> dict:
     """Error del modelo y de las líneas base sobre el mismo conjunto.
 
-    Además de la persistencia (naive), reporta —cuando se aportan— la **baseline estacional**
+    Además de la persistencia (naive), reporta —cuando se aportan— la **línea base estacional**
     (mismo mes del año anterior, una vara más exigente en series con estacionalidad) y el
     **MASE** del modelo y de la persistencia (métrica escalada, interpretable en conteos dispersos).
     """
@@ -251,12 +258,12 @@ def _walk_forward(
     hgb_params: dict | None = None,
     make_estimator=None,
 ):
-    """Backtest walk-forward RECURSIVO multi-paso (rolling origin), sin fuga de datos.
+    """Backtest walk-forward RECURSIVO multipaso (rolling origin), sin fuga de datos.
 
     Para cada uno de los últimos `n_splits` orígenes temporales se entrena un estimador
     SOLO con el pasado y se pronostican `horizon` meses **de forma recursiva** —idéntico a
     `predict` en producción—, comparando contra los valores reales observados. Así se valida
-    el horizonte que de verdad se sirve (no solo 1 paso). La línea base es la **persistencia**
+    el horizonte que de verdad se entrega (no solo 1 paso). La línea base es la **persistencia**
     (último valor observado antes del origen, arrastrado por todo el horizonte).
 
     `make_estimator` permite inyectar un estimador alternativo (challenger) para comparar bajo el
@@ -285,7 +292,7 @@ def _walk_forward(
     for oi in range(first_origin, last_origin + 1):
         origin = periodos[oi]
         train_df = s[s["periodo"] < origin]  # conteos + poblacion
-        # Entrena en el ESPACIO DE MODELADO (tasa/100k en modo "rate"); features sobre la tasa.
+        # Entrena en el ESPACIO DE MODELADO (tasa en modo "rate"); features sobre la tasa.
         tf = make_features(_as_modeling_target(train_df, mode)).dropna(subset=[f"lag_{max_lag}"])
         if len(tf) < min_train:
             continue
@@ -298,9 +305,7 @@ def _walk_forward(
         # Escala de MASE: MAE ingenuo 1-paso DENTRO de la muestra de entrenamiento, por serie
         # (media de |yₜ−yₜ₋₁|). train_df va ordenado por serie+periodo, así que el diff es 1-paso.
         naive_mae = (
-            train_df.assign(_d=train_df.groupby(KEY)[TARGET].diff().abs())
-            .groupby(KEY)["_d"]
-            .mean()
+            train_df.assign(_d=train_df.groupby(KEY)[TARGET].diff().abs()).groupby(KEY)["_d"].mean()
         )
         hist = _as_modeling_target(train_df, mode).copy()  # recursión en espacio de modelado
         for h, tp in enumerate(periodos[oi : oi + horizon], start=1):
@@ -325,14 +330,14 @@ def _walk_forward(
             base_arr = np.nan_to_num(baseline_val.reindex(keys_idx).to_numpy().astype(float))
             vol_arr = vol_lookup.reindex(keys_idx).to_numpy()
             scale_arr = naive_mae.reindex(keys_idx).to_numpy().astype(float)  # MASE (NaN ok)
-            # Baseline ESTACIONAL-ingenua: conteo del mismo mes del año anterior (tp−12 meses), por
-            # calendario y solo con datos anteriores al origen (tp−12 < origin si h≤12 → sin fuga).
-            # Vara más exigente que la persistencia en series con estacionalidad marcada.
+            # Línea base ESTACIONAL-ingenua: conteo del mismo mes del año anterior (tp−12 meses),
+            # por calendario y solo con datos anteriores al origen (tp−12 < origin si h≤12 → sin
+            # fuga). Vara más exigente que la persistencia en series con estacionalidad marcada.
             season_tp = pd.Timestamp(tp) - pd.DateOffset(months=12)
             season_lookup = train_df.loc[train_df["periodo"] == season_tp].set_index(KEY)[TARGET]
             season_arr = np.nan_to_num(season_lookup.reindex(keys_idx).to_numpy().astype(float))
-            # Predicción SERVIDA = blend modelo+persistencia (la recursión sigue realimentando la
-            # del modelo, arriba). La banda/cobertura se calibran sobre este predictor servido.
+            # Predicción ENTREGADA = mezcla modelo+persistencia (la recursión sigue realimentando
+            # la del modelo, arriba). La banda/cobertura se calibran sobre este predictor entregado.
             y_served = _BLEND_W * cmp["_yhat"].to_numpy(dtype=float) + (1 - _BLEND_W) * base_arr
             acc["step"].append(np.full(len(cmp), h, dtype=int))
             acc["y_true"].append(cmp["_y"].to_numpy(dtype=float))
@@ -393,12 +398,12 @@ def train(
     """Entrena el modelo con backtesting walk-forward recursivo (sin fuga de datos).
 
     `test_months` es el **horizonte** (en meses) que valida el backtest de forma recursiva
-    —el mismo que sirve `predict` en producción— y `n_splits` el número de orígenes
+    —el mismo que entrega `predict` en producción— y `n_splits` el número de orígenes
     temporales del rolling. El modelo final se reentrena con TODO el histórico para no
     ignorar los meses más recientes.
     """
     series = _filter_active_series(series, min_nonzero=min_nonzero)
-    # Modela TASAS por 100k habitantes si hay población (mejora MAE y sMAPE frente a conteos);
+    # Modela TASAS por 100.000 habitantes si hay población (mejora MAE y sMAPE frente a conteos);
     # si la población no está disponible, cae a conteos (comportamiento previo). El backtest,
     # el reporte y `predict` operan en CONTEOS: la tasa es solo el espacio interno de modelado.
     mode = "rate" if _has_population(series) else "count"
@@ -412,13 +417,13 @@ def train(
     if len(feats) < 50:
         raise RuntimeError(
             f"Datos insuficientes para entrenar ({len(feats)} muestras tras filtrar series "
-            f"con <{min_nonzero} meses no nulos). Ingesta datasets completos "
-            "(`vigia ingest` sin SODA_MAX_ROWS) o reduce min_nonzero."
+            f"con <{min_nonzero} meses no nulos). Ingestar los datasets completos "
+            "(`vigia ingest` sin SODA_MAX_ROWS) o reduzca min_nonzero."
         )
 
-    # Backtest walk-forward RECURSIVO multi-paso contra la línea base ingenua (persistencia).
+    # Backtest walk-forward RECURSIVO multipaso contra la línea base ingenua (persistencia).
     # Reporta tanto el error a 1 paso (comparable, headline) como el del horizonte completo
-    # que se sirve, su degradación por paso, la cobertura empírica de la banda y el desglose
+    # que se entrega, su degradación por paso, la cobertura empírica de la banda y el desglose
     # por volumen de serie (que reconcilia el MAE frente a la línea base).
     metrics: dict = {}
     dispersion = 0.0
@@ -426,7 +431,7 @@ def train(
     bt = _walk_forward(series, cols, n_splits=n_splits, horizon=test_months, mode=mode)
     if bt is not None:
         step, yt, yp, bl, vol = bt["step"], bt["y_true"], bt["y_pred"], bt["baseline"], bt["vol"]
-        bls, sc = bt["bl_season"], bt["scale"]  # baseline estacional y escala MASE por punto
+        bls, sc = bt["bl_season"], bt["scale"]  # línea base estacional y escala MASE por punto
         one = step == 1
         # Dispersión cuasi-Poisson (Pearson) de los residuos a 1 paso: Var(residuo) ≈ φ·nivel.
         # Da una banda que ESCALA con el nivel de cada serie; un σ global daría intervalos
@@ -537,8 +542,30 @@ def train(
         target_mode=mode,
     )
     settings.ensure_dirs()
+    # El meta se invalida ANTES de reescribir el artefacto y se repone DESPUÉS con escritura a
+    # archivo temporal + `replace` (atómico en el mismo directorio): un fallo a mitad de camino
+    # deja joblib sin meta (el error de carga degrada al mensaje base), nunca un meta de una
+    # ejecución anterior que atribuya el artefacto a una versión equivocada.
+    META_PATH.unlink(missing_ok=True)
     joblib.dump(fitted, MODEL_PATH)
-    log.info("Modelo guardado en %s", MODEL_PATH)
+    meta_tmp = META_PATH.with_suffix(".tmp")
+    meta_tmp.write_text(
+        json.dumps(
+            {
+                "sklearn": sklearn.__version__,
+                "numpy": np.__version__,
+                "trained_at": fitted.trained_at,
+            }
+        ),
+        encoding="utf-8",
+    )
+    meta_tmp.replace(META_PATH)
+    log.info(
+        "Modelo guardado en %s (sklearn %s, numpy %s)",
+        MODEL_PATH,
+        sklearn.__version__,
+        np.__version__,
+    )
     return fitted
 
 
@@ -551,17 +578,24 @@ def load_model() -> ForecastModel:
     mensaje indica reentrenar para regenerar el artefacto con la versión instalada.
     """
     if not MODEL_PATH.exists():
-        raise RuntimeError("Modelo ausente. Ejecuta primero `vigia train`.")
+        raise RuntimeError("Modelo ausente. Ejecute primero `vigia train`.")
     try:
         return joblib.load(MODEL_PATH)
     except Exception as exc:  # noqa: BLE001 — cualquier fallo de carga = artefacto inservible
-        import sklearn
-
+        origen = ""
+        try:
+            meta = json.loads(META_PATH.read_text(encoding="utf-8"))
+            origen = f"; el artefacto fue entrenado con scikit-learn {meta['sklearn']}"
+            if meta.get("numpy"):
+                origen += f" y numpy {meta['numpy']}"
+            origen += f" el {meta.get('trained_at', '¿fecha desconocida?')}"
+        except Exception:  # noqa: BLE001 — sin meta (artefacto anterior al registro de origen) el mensaje base sigue siendo accionable
+            pass
         log.error("No se pudo deserializar el modelo (%s): %s", MODEL_PATH, exc)
         raise RuntimeError(
-            "Modelo incompatible con la versión instalada de scikit-learn "
-            f"({sklearn.__version__}). Reentrena con `vigia train` "
-            "(o `make docker-pipeline`) para regenerarlo."
+            "Modelo incompatible con las versiones instaladas de scikit-learn "
+            f"({sklearn.__version__}) / numpy ({np.__version__}){origen}. Reentrene con "
+            "`vigia train` (o `make docker-pipeline`) para regenerarlo."
         ) from exc
 
 
@@ -582,7 +616,7 @@ def predict(
     if hist.empty:
         return []
 
-    # En modo "rate" la recursión opera sobre la TASA/100k (espacio de modelado); cada paso se
+    # En modo "rate" la recursión opera sobre la TASA (espacio de modelado); cada paso se
     # reconvierte a conteo con la población para servir/banda. La población es ~constante intra-año
     # y se arrastra en la última fila.
     mode = getattr(model, "target_mode", "count")
@@ -605,7 +639,7 @@ def predict(
             yhat_cnt = yhat_m * pop / RATE_SCALE
         else:
             yhat_cnt = yhat_m
-        # Predicción servida: blend con persistencia (doma overshoot en alto volumen).
+        # Predicción entregada: mezcla con persistencia (doma la sobreestimación en alto volumen).
         yhat = _BLEND_W * yhat_cnt + (1 - _BLEND_W) * persist
         half = pi_scale * (phi * max(yhat, 1.0)) ** 0.5 * (step**0.5)
         next_periodo = hist["periodo"].max() + pd.DateOffset(months=1)

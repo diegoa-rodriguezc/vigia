@@ -3,8 +3,8 @@
 // NOTICIAS de prensa (no cifras oficiales de criminalidad); así debe etiquetarse en la UI.
 //
 // GDELT rate-limita con dureza (≈1 petición / 5 s y penaliza el abuso), por lo que este cliente
-// SIEMPRE debe consumirse detrás de una caché (Redis, en el handler): el tráfico público se sirve
-// de caché y GDELT se golpea, a lo sumo, una vez por departamento cada pocos minutos.
+// SIEMPRE debe consumirse detrás de una caché (Redis, en el handler): el tráfico público se
+// responde desde la caché y GDELT se golpea, a lo sumo, una vez por departamento cada pocos minutos.
 package realtime
 
 import (

@@ -174,9 +174,9 @@ class OpenAIEmbeddings(EmbeddingProvider):
 
 # ───────────────────────── LLM ─────────────────────────
 class LLMProvider(ABC):
-    # ¿El proveedor soporta tool-use (agente)? Por defecto NO: el bucle del agente cae al RAG
-    # clásico salvo en los proveedores que lo implementan (Anthropic/OpenAI). `tool_format`
-    # indica en qué formato espera los esquemas de herramienta (lo provee `rag.tools`).
+    # ¿El proveedor admite el uso de herramientas (agente)? Por defecto NO: el bucle del agente
+    # cae al RAG clásico salvo en los proveedores que lo implementan (Anthropic/OpenAI).
+    # `tool_format` indica en qué formato espera los esquemas de herramienta (los da `rag.tools`).
     supports_tools: bool = False
     tool_format: str = "openai"
 
@@ -187,7 +187,7 @@ class LLMProvider(ABC):
         """Un turno del agente: dado el transcripto y los esquemas de herramienta, devuelve
         un `Turn` (texto final o llamadas a herramienta). Solo lo implementan los proveedores
         con `supports_tools = True`."""
-        raise NotImplementedError("Este proveedor no soporta tool-use.")
+        raise NotImplementedError("Este proveedor no admite el uso de herramientas.")
 
 
 class OllamaLLM(LLMProvider):
@@ -246,6 +246,7 @@ class AnthropicLLM(LLMProvider):
         msg = self.client.messages.create(
             model=self.model,
             max_tokens=1024,
+            temperature=settings.llm_temperature,
             system=system,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -255,6 +256,7 @@ class AnthropicLLM(LLMProvider):
         msg = self.client.messages.create(
             model=self.model,
             max_tokens=1024,
+            temperature=settings.llm_temperature,
             system=system,
             tools=tools,
             messages=_to_anthropic_messages(transcript),
@@ -281,6 +283,7 @@ class OpenAILLM(LLMProvider):
     def generate(self, system: str, prompt: str) -> str:
         resp = self.client.chat.completions.create(
             model=self.model,
+            temperature=settings.llm_temperature,
             messages=[
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt},
@@ -291,6 +294,7 @@ class OpenAILLM(LLMProvider):
     def turn(self, system: str, transcript: list[dict], tools: list[dict]) -> Turn:
         resp = self.client.chat.completions.create(
             model=self.model,
+            temperature=settings.llm_temperature,
             tools=tools,
             messages=_to_openai_messages(system, transcript),
         )

@@ -40,13 +40,13 @@ _series_cache: dict = {"mtime": None, "df": None}
 def _series() -> pd.DataFrame:
     path = settings.gold_dir / "serie_mensual.parquet"
     if not path.exists():
-        raise RuntimeError("Datos gold ausentes. Ejecuta el pipeline ETL.")
+        raise RuntimeError("Datos gold ausentes. Ejecute el pipeline ETL.")
     mtime = path.stat().st_mtime
     if _series_cache["mtime"] != mtime:
         _series_cache["df"] = pd.read_parquet(path)
         _series_cache["mtime"] = mtime
         log.info(
-            "Serie gold (re)cargada: %d filas, %d categorías",
+            "Serie mensual de la capa gold cargada: %d filas, %d categorías",
             len(_series_cache["df"]),
             _series_cache["df"]["categoria"].nunique(),
         )
@@ -111,13 +111,13 @@ def simulate(req: SimulateRequest) -> SimulateResponse:
 def monitoring() -> dict:
     """Reporte de salud del modelo (frescura de datos, deriva/PSI, backtest extendido).
 
-    Sirve el artefacto reproducible `reports/model_health.json` que genera `vigia health`.
+    Devuelve el artefacto reproducible `reports/model_health.json` que genera `vigia health`.
     """
     import json
 
     path = settings.reports_dir / "model_health.json"
     if not path.exists():
-        raise HTTPException(status_code=404, detail="Sin reporte de salud. Ejecuta `vigia health`.")
+        raise HTTPException(status_code=404, detail="Sin reporte de salud. Ejecute `vigia health`.")
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -150,7 +150,7 @@ def brief(cod_municipio: str) -> BriefResponse:
 def rag_chat(req: ChatRequest) -> ChatResponse:
     """Asistente ciudadano sobre datos oficiales.
 
-    Usa el AGENTE con herramientas si el proveedor LLM lo soporta (Anthropic/OpenAI); si no,
+    Usa el AGENTE con herramientas si el proveedor LLM lo admite (Anthropic/OpenAI); si no,
     cae al RAG clásico. La decisión vive en `rag.agent.answer` (transparente para el backend).
     """
     from vigia.rag.agent import answer

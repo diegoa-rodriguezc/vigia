@@ -1,4 +1,4 @@
-// Package repository accede a las tablas gold en PostgreSQL servidas por la API.
+// Package repository accede a las tablas gold en PostgreSQL que expone la API.
 package repository
 
 import (
@@ -86,7 +86,7 @@ func (r *Repository) Available() bool { return r != nil && r.pool != nil }
 
 // Ping verifica la conectividad REAL con la base de datos (no solo que el pool exista). Lo usa
 // la sonda de readiness para distinguir "BD inalcanzable" (no listo) de "BD accesible pero sin
-// poblar" (listo: los endpoints de datos devuelven 503 accionable, pero la conexión está viva).
+// datos" (listo: los endpoints de datos devuelven 503 accionable, pero la conexión está viva).
 func (r *Repository) Ping(ctx context.Context) error {
 	if !r.Available() {
 		return ErrNoDB
@@ -551,6 +551,42 @@ func (r *Repository) JusticiaMunicipios(ctx context.Context) ([]JusticiaMunicipi
 			return nil, err
 		}
 		out = append(out, m)
+	}
+	return out, mapErr(rows.Err())
+}
+
+// JusticiaDelito es la fila del ranking nacional por título del Código Penal.
+type JusticiaDelito struct {
+	TituloDelito          string  `json:"titulo_delito"`
+	TotalProcesos         int64   `json:"total_procesos"`
+	NJudicializados       int64   `json:"n_judicializados"`
+	ProcesosEtapaConocida int64   `json:"procesos_etapa_conocida"`
+	TasaJudicializacion   float64 `json:"tasa_judicializacion_pct"`
+}
+
+// JusticiaDelitos devuelve la tasa de judicialización NACIONAL por título del Código Penal
+// (taxonomía propia de la Fiscalía, ~30 filas), ordenada por volumen de procesos.
+func (r *Repository) JusticiaDelitos(ctx context.Context) ([]JusticiaDelito, error) {
+	if !r.Available() {
+		return nil, ErrNoDB
+	}
+	rows, err := r.pool.Query(ctx,
+		`SELECT titulo_delito, total_procesos, n_judicializados,
+		        procesos_etapa_conocida, tasa_judicializacion_pct
+		 FROM justicia_delito
+		 ORDER BY total_procesos DESC`)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	defer rows.Close()
+	out := []JusticiaDelito{}
+	for rows.Next() {
+		var d JusticiaDelito
+		if err := rows.Scan(&d.TituloDelito, &d.TotalProcesos, &d.NJudicializados,
+			&d.ProcesosEtapaConocida, &d.TasaJudicializacion); err != nil {
+			return nil, err
+		}
+		out = append(out, d)
 	}
 	return out, mapErr(rows.Err())
 }

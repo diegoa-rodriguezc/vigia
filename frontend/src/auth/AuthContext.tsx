@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Feature flags del backend (p. ej. si el registro está habilitado). Ante fallo, se asume
-  // habilitado (comportamiento por defecto); la guarda autoritativa vive en el servidor.
+  // habilitado (comportamiento por defecto); la validación que decide vive en el servidor.
   useEffect(() => {
     getConfig()
       .then((c) => setRegistrationEnabled(c.registration_enabled))

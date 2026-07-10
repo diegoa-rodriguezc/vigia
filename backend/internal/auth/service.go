@@ -180,7 +180,7 @@ func (s *Service) Register(ctx context.Context, username, password string) (Toke
 	if err != nil {
 		return TokenPair{}, PublicUser{}, err
 	}
-	u, err := s.users.CreateUser(ctx, username, hash, "citizen")
+	u, err := s.users.CreateUser(ctx, username, hash, RoleCitizen)
 	if err != nil {
 		return TokenPair{}, PublicUser{}, err // incluye ErrUsernameTaken
 	}

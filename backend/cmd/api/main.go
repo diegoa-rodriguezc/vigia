@@ -22,7 +22,7 @@ import (
 // runHealthcheck consulta la sonda de READINESS local y termina con código 0 (listo) o 1.
 // Pensado para el HEALTHCHECK del contenedor distroless (sin shell ni curl). Se usa /ready (no
 // /health) a propósito: así el contenedor se marca "unhealthy" si la BD es inalcanzable, en vez
-// de reportar sano mientras los endpoints de datos dan 503. Una BD accesible pero sin poblar
+// de reportar sano mientras los endpoints de datos dan 503. Una BD accesible pero aún sin datos
 // sigue dando 200 (readiness) → el arranque sin datos no rompe el healthcheck.
 func runHealthcheck() {
 	port := os.Getenv("BACKEND_PORT")

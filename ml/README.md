@@ -74,10 +74,11 @@ pytest -q
 Configurable por `LLM_PROVIDER` (`ollama` | `anthropic` | `openai`) y `EMBED_PROVIDER`. Por defecto
 usa **Ollama local** (cero costo, sin enviar datos a terceros). Ver `.env.example`.
 
-> **Nota honesta sobre el agente con herramientas.** El **agente** (`rag/agent.py`, que el LLM use
-> herramientas y las encadene) solo se activa con un proveedor que soporte uso de herramientas (*tool-use*:
-> **Anthropic/OpenAI**); con **Ollama local** —el camino por defecto— el asistente cae con elegancia
-> al **RAG clásico** (`rag/pipeline.py`), sin regresión pero **sin encadenado de herramientas**. Para la
-> demo del agente, usar `LLM_PROVIDER=anthropic` u `openai`. La única **red neuronal** del proyecto (`MLPRegressor`
-> en `ml/challenger.py`) es un **arnés de evaluación**: no se sirve en producción —el modelo servido es
+> [!NOTE]
+> El **agente** (`rag/agent.py`, que el LLM use herramientas y las encadene) solo se activa con 
+> un proveedor que soporte uso de herramientas (*tool-use*: **Anthropic/OpenAI**); con 
+> **Ollama local** —el camino por defecto— el asistente cae con elegancia al **RAG clásico** 
+> (`rag/pipeline.py`), sin regresión pero **sin encadenado de herramientas**. Para la demo del agente, 
+> usar `LLM_PROVIDER=anthropic` u `openai`. La única **red neuronal** del proyecto (`MLPRegressor`
+> en `ml/challenger.py`) es un **arnés de evaluación**: no llega a producción —el modelo en producción es
 > *gradient boosting* (`HistGradientBoostingRegressor`)—.

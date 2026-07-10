@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { getMunicipios, getBrief, type MunicipioRef, type BriefResponse } from "../api";
-import { Combobox, LiveRegion, prettyCat, nfmt, type ComboItem } from "./ui";
+import { getMunicipios, getBrief, errorMessage, type MunicipioRef, type BriefResponse } from "../api";
+import { Combobox, LiveRegion, prettyCat, nfmt, dfmt, type ComboItem } from "./ui";
 import { Icon } from "./icons";
 
 // Vista "Informe": genera un informe ejecutivo de seguridad por municipio (IA generativa
@@ -21,7 +21,7 @@ export default function Informe({ initialCod }: { initialCod?: string | null }) 
         setMunicipios(ms);
         setCod((c) => (ms.some((m) => m.cod_municipio === c) ? c : ms[0]?.cod_municipio ?? c));
       })
-      .catch(() => {});
+      .catch((e) => setError(errorMessage(e)));
   }, []);
 
   // Deep-link desde el drill-down del Panorama: al llegar un municipio preseleccionado, úsalo.
@@ -39,7 +39,7 @@ export default function Informe({ initialCod }: { initialCod?: string | null }) 
     setError(null);
     setBrief(null);
     setCopiado(false);
-    setAnuncio("Generando el informe, puede tardar hasta un minuto.");
+    setAnuncio("Generando el informe, puede tardar uno o dos minutos.");
     try {
       const r = await getBrief(cod);
       setBrief(r);
@@ -49,7 +49,7 @@ export default function Informe({ initialCod }: { initialCod?: string | null }) 
       const msg =
         status === 404
           ? "No hay datos suficientes para ese municipio."
-          : (e?.response?.data?.detail ?? e?.response?.data?.error ?? e.message);
+          : errorMessage(e);
       setError(msg);
       setAnuncio(`Informe no disponible: ${msg}`);
     } finally {
@@ -97,10 +97,11 @@ export default function Informe({ initialCod }: { initialCod?: string | null }) 
         {!brief && !error && !loading && (
           <div className="empty-state">
             <span className="empty-ic"><Icon name="file-text" size={28} /></span>
-            Elige un municipio y pulsa <b>Generar informe</b>.
+            Elija un municipio y pulse <b>Generar informe</b>.
             <div className="muted" style={{ marginTop: 6 }}>
               El texto lo redacta un modelo de lenguaje a partir de las cifras oficiales; según el
-              proveedor puede tardar desde unos segundos (gestionado) hasta ~30-90 s (local en CPU).
+              proveedor tarda unos segundos (gestionado) o ~30-90 s con el modelo local en CPU
+              (hasta ~2 min en frío).
             </div>
           </div>
         )}
@@ -149,7 +150,7 @@ export default function Informe({ initialCod }: { initialCod?: string | null }) 
               ))}
               {brief.datos.justicia && (
                 <span className="chip">
-                  <Icon name="layers" size={12} /> Judicialización {brief.datos.justicia.tasa_judicializacion_pct}%
+                  <Icon name="layers" size={12} /> Judicialización {dfmt(brief.datos.justicia.tasa_judicializacion_pct, 2)} %
                 </span>
               )}
             </div>

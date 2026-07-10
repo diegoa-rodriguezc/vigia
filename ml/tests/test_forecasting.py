@@ -38,8 +38,15 @@ def _series(n_series=8, n_meses=48):
 
 def test_backtest_genera_metricas_y_dispersion():
     model = forecasting.train(_series(), test_months=6)
-    for key in ("smape", "baseline_smape", "mae", "baseline_mae", "resid_dispersion", "pi_level",
-                "pi_scale"):
+    for key in (
+        "smape",
+        "baseline_smape",
+        "mae",
+        "baseline_mae",
+        "resid_dispersion",
+        "pi_level",
+        "pi_scale",
+    ):
         assert key in model.metrics
     assert model.resid_dispersion > 0
     # La escala de la banda se calibró empíricamente (conformal), no es el cuantil normal asumido.
@@ -66,8 +73,14 @@ def test_backtest_reporta_mase_y_baseline_estacional():
     además de la persistencia; y los skill scores relativos a ambas."""
     model = forecasting.train(_series(), test_months=6)
     m = model.metrics
-    for key in ("mase", "baseline_mase", "baseline_estacional_mae", "baseline_estacional_smape",
-                "skill_mae_vs_persistencia_pct", "skill_mae_vs_estacional_pct"):
+    for key in (
+        "mase",
+        "baseline_mase",
+        "baseline_estacional_mae",
+        "baseline_estacional_smape",
+        "skill_mae_vs_persistencia_pct",
+        "skill_mae_vs_estacional_pct",
+    ):
         assert key in m, key
     assert m["mase"] > 0
     # La vara estacional también aparece a nivel multipaso y en el desglose por volumen.
@@ -85,7 +98,7 @@ def test_backtest_valida_horizonte_volumen_y_cobertura():
     # #4: desglose por tercil de volumen, con veredicto por estrato.
     assert isinstance(m["por_volumen"], list) and m["por_volumen"]
     assert {"estrato", "mae", "baseline_mae", "gana_modelo"} <= set(m["por_volumen"][0])
-    # #5: validación multi-paso recursiva del horizonte que se sirve.
+    # #5: validación multi-paso recursiva del horizonte que se entrega.
     mp = m["multipaso"]
     assert mp["horizon"] == 4
     assert mp["por_paso"] and len(mp["por_paso"]) <= 4
@@ -124,3 +137,69 @@ def test_predict_municipio_sin_historia_devuelve_vacio():
     series = _series()
     model = forecasting.train(series, test_months=6)
     assert forecasting.predict(series, "99999", "HOMICIDIO", horizon=6, model=model) == []
+
+
+def test_train_escribe_meta_con_version_de_sklearn():
+    """`train` deja junto al joblib un meta.json con la versión que serializó el artefacto."""
+    import json
+
+    import sklearn
+
+    forecasting.train(_series(), test_months=4)
+    meta = json.loads(forecasting.META_PATH.read_text(encoding="utf-8"))
+    assert meta["sklearn"] == sklearn.__version__
+    assert meta["trained_at"]
+
+
+def test_load_model_ilegible_nombra_ambas_versiones(monkeypatch, tmp_path):
+    """Un artefacto ilegible con meta al lado produce un error que nombra la versión de origen
+    (quien lo escribió) y la del runtime (quien intenta leerlo) — diagnóstico en una línea."""
+    import json
+
+    import pytest
+    import sklearn
+
+    modelo = tmp_path / "forecaster.joblib"
+    modelo.write_bytes(b"no soy un joblib")
+    meta = tmp_path / "forecaster.meta.json"
+    meta.write_text(json.dumps({"sklearn": "1.7.2", "trained_at": "2026-07-03"}), encoding="utf-8")
+    monkeypatch.setattr(forecasting, "MODEL_PATH", modelo)
+    monkeypatch.setattr(forecasting, "META_PATH", meta)
+    with pytest.raises(RuntimeError) as excinfo:
+        forecasting.load_model()
+    msg = str(excinfo.value)
+    assert "1.7.2" in msg  # versión de ORIGEN (del meta)
+    assert sklearn.__version__ in msg  # versión del RUNTIME
+    assert "vigia train" in msg  # sigue siendo accionable
+
+
+def test_load_model_ilegible_sin_meta_degrada_con_elegancia(monkeypatch, tmp_path):
+    """Artefacto viejo sin meta.json: se conserva el mensaje base (runtime + reentrena)."""
+    import pytest
+    import sklearn
+
+    modelo = tmp_path / "forecaster.joblib"
+    modelo.write_bytes(b"no soy un joblib")
+    monkeypatch.setattr(forecasting, "MODEL_PATH", modelo)
+    monkeypatch.setattr(forecasting, "META_PATH", tmp_path / "forecaster.meta.json")
+    with pytest.raises(RuntimeError) as excinfo:
+        forecasting.load_model()
+    msg = str(excinfo.value)
+    assert sklearn.__version__ in msg
+    assert "vigia train" in msg
+
+
+def test_load_model_ausente_pide_entrenar(monkeypatch, tmp_path):
+    """Sin artefacto en disco, el error pide entrenar (rama distinta de la de ilegible).
+
+    Se usa un subdirectorio VACÍO: el `tmp_path` raíz es el mismo del fixture de aislamiento
+    (conftest), que ya copió allí el modelo real si existe.
+    """
+    import pytest
+
+    vacio = tmp_path / "vacio"
+    vacio.mkdir()
+    monkeypatch.setattr(forecasting, "MODEL_PATH", vacio / "forecaster.joblib")
+    with pytest.raises(RuntimeError) as excinfo:
+        forecasting.load_model()
+    assert "vigia train" in str(excinfo.value)

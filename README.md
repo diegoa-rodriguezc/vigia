@@ -296,7 +296,8 @@ el cómputo de IA); las otras cuatro son públicas. Dos caminos:
 
 1. **Panorama** (público) — observe los KPI nacionales y el mapa; **haga clic en un departamento** para ver
    sus señales de prensa recientes en el panel derecho, y en un municipio del ranking para su desglose.
-2. **Alertas tempranas** (público) — repuntes atípicos *relativos a cada territorio*, con su severidad y su valor z.
+2. **Alertas tempranas** (público) — repuntes atípicos *relativos a cada territorio*, con su severidad y su
+   valor z; **pulse el departamento de una alerta** para corroborarla con la prensa reciente de ese territorio.
 3. **Justicia** (público) — embudo de judicialización de la Fiscalía (tasa nacional **8,49 %**) y los
    **delitos que menos se judicializan** (por título del Código Penal — el menor: injuria y calumnia,
    **0,34 %**).
@@ -463,13 +464,23 @@ datasets de la Policía; el GeoJSON solo aporta la geometría. Los teselados de 
 
 **Señal en tiempo real (prensa).** El dato oficial de la Policía es **mensual y con rezago**; como
 complemento, el tablero incorpora una **señal en tiempo real** de prensa. En la pestaña **Panorama**, al
-seleccionar un departamento en el mapa, el panel de la derecha carga sus **noticias de seguridad recientes**.
-Son **noticias, no cifras oficiales** —así se etiqueta en la interfaz— y aportan contexto vivo sobre el
+seleccionar un departamento en el mapa, el panel de la derecha carga sus **noticias de seguridad recientes**;
+en **Alertas tempranas**, pulsar el departamento de una alerta abre el mismo panel como **corroboración
+cualitativa** del repunte estadístico (la prensa cubre los últimos días, por lo que aplica a las alertas
+recientes). Son **noticias, no cifras oficiales** —así se etiqueta en la interfaz— y aportan contexto vivo sobre el
 dato estadístico. La fuente es **newsdata.io** cuando se configura una `NEWSDATA_API_KEY` (gratuita), o
 **GDELT** (*Global Database of Events, Language and Tone*, sin token) como respaldo. El backend guarda en caché la
 señal en Redis, así que es pública y ligera. No existe una API nacional de criminalidad en tiempo real
 (verificado en el *Asset Inventory*); estas fuentes internacionales cubren ese eje sin mezclar unidades
 distintas con la estadística oficial.
+
+**¿La señal en tiempo real alimenta el modelo de pronóstico?** No, y es una decisión deliberada: las
+noticias y los hechos registrados son **unidades distintas** (una noticia no equivale a un delito, y la
+cobertura de prensa sigue sus propios sesgos), así que inyectarlas al modelo sin haber **medido** su valor
+predictivo degradaría un pronóstico que hoy está validado retrospectivamente. Por eso la señal se combina
+con el dato oficial **donde sí aporta sin ese riesgo**: como contexto vivo en el mapa y como corroboración
+cualitativa de las alertas, siempre etiquetada como prensa. Integrarla como variable del modelo queda como
+línea futura, condicionada a demostrar mejora en la validación retrospectiva.
 
 ## 🗺️ Alineación con las Hojas de Ruta de Datos Abiertos Estratégicos
 

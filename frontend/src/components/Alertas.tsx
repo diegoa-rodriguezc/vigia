@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getAnomalies, getStats, errorMessage, type Anomalia, type Stats } from "../api";
 import { StatTile, SkeletonRows, Pagination, LiveRegion, ExportButton, nfmt, dfmt, prettyCat } from "./ui";
 import { Icon } from "./icons";
+import SenalesRecientes from "./SenalesRecientes";
 
 type SortKey = "periodo" | "departamento" | "municipio" | "categoria" | "cantidad" | "score_z" | "severidad";
 
@@ -13,6 +14,9 @@ export default function Alertas() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [anuncio, setAnuncio] = useState("");  // mensaje para el lector de pantalla
+
+  // Corroboración de prensa: departamento de la alerta seleccionada (null = panel oculto).
+  const [selDepto, setSelDepto] = useState<{ cod: string; nombre: string } | null>(null);
 
   const [sev, setSev] = useState<"TODAS" | "ALTA" | "MEDIA">("TODAS");
   const [qInput, setQInput] = useState("");
@@ -138,7 +142,8 @@ export default function Alertas() {
         <StatTile icon={<Icon name="alert-triangle" />} tone="warn" label="Severidad media" value={statsErr ? "—" : nfmt(stats?.anomalias_media ?? 0)} loading={!stats && !statsErr} hint="picos moderados" />
       </div>
 
-      <div className="card">
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "stretch" }}>
+      <div className="card" style={{ flex: "3 1 380px", minWidth: 0 }}>
         <h3><Icon name="bell" /> Alertas</h3>
         <p className="card-sub">
           {loading ? "Cargando…" : `${nfmt(total)} ${total === 1 ? "alerta" : "alertas"} según el filtro (orden aplicado en el servidor).`}
@@ -194,7 +199,15 @@ export default function Alertas() {
                 {data.map((a) => (
                   <tr key={`${a.cod_municipio}-${a.categoria}-${a.periodo}`}>
                     <td className="num">{a.periodo}</td>
-                    <td className="muted">{a.departamento}</td>
+                    <td className="muted">
+                      <button
+                        className="link-btn"
+                        onClick={() => setSelDepto({ cod: a.cod_municipio.slice(0, 2), nombre: a.departamento })}
+                        aria-label={`Ver prensa reciente de ${a.departamento}`}
+                      >
+                        {a.departamento}
+                      </button>
+                    </td>
                     <td>{a.municipio}</td>
                     <td>{prettyCat(a.categoria)}</td>
                     <td className="num text-right">{nfmt(a.cantidad)}</td>
@@ -216,6 +229,24 @@ export default function Alertas() {
             onPage={setPage} onSize={(s) => { setPageSize(s); setPage(1); }}
           />
         )}
+      </div>
+
+      {/* Corroboración cualitativa: prensa reciente del departamento de la alerta pulsada.
+          Reusa el panel (y el endpoint público con caché) de Panorama; aquí onClear CIERRA. */}
+      {selDepto && (
+        <div style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column" }}>
+          <SenalesRecientes
+            cod={selDepto.cod}
+            nombre={selDepto.nombre}
+            onClear={() => setSelDepto(null)}
+            clearLabel="✕ Cerrar"
+          />
+          <p className="muted" style={{ fontSize: "0.72rem", marginTop: 6, marginBottom: 0 }}>
+            <Icon name="info" size={12} /> La prensa cubre los últimos días: sirve para corroborar
+            alertas <b>recientes</b>, no los meses antiguos de la tabla.
+          </p>
+        </div>
+      )}
       </div>
     </>
   );

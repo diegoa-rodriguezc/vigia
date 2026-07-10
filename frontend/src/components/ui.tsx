@@ -152,6 +152,13 @@ export function SkeletonRows({ rows = 6, cols = 4 }: { rows?: number; cols?: num
 }
 
 // ── Tooltip temático para recharts ──
+
+// Valor de una fila del tooltip. Una serie de RANGO (p. ej. la banda de incertidumbre del
+// pronóstico) trae el valor como par [inferior, superior]: sin este caso, React concatenaría
+// el arreglo sin separador («112.73140.12»).
+export const tipValue = (v: unknown) =>
+  Array.isArray(v) ? `${nfmt(v[0])} – ${nfmt(v[1])}` : typeof v === "number" ? nfmt(v) : v;
+
 export function ChartTooltip({ active, payload, label, suffix = "" }: any) {
   if (!active || !payload?.length) return null;
   return (
@@ -162,7 +169,7 @@ export function ChartTooltip({ active, payload, label, suffix = "" }: any) {
           <div className="t-row" key={i}>
             <span className="swatch" style={{ background: p.color || p.stroke || p.fill }} />
             <span>{p.name}:</span>
-            <b>{typeof p.value === "number" ? nfmt(p.value) : p.value}{suffix}</b>
+            <b>{tipValue(p.value)}{suffix}</b>
           </div>
         )
       ))}

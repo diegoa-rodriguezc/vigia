@@ -74,7 +74,7 @@ A continuación se presentan las capturas de pantalla de la aplicación:
 | Simulador | Salud del modelo |
 |---|---|
 | [![Simulador — base vs escenario y hechos evitados](docs/screenshots/05-simulador.png)](docs/screenshots/05-simulador.png) | [![Salud del modelo — semáforo de frescura, deriva (PSI) y backtest 12m](docs/screenshots/06-salud.png)](docs/screenshots/06-salud.png) |
-| Palancas de intervención/población con **base vs escenario** y el KPI de **hechos evitados** (supuesto del usuario, no efecto causal estimado por el modelo). | **Semáforo** de frescura, **deriva (PSI - Population Stability Index)** y validación retrospectiva (*backtest*) a 12 meses con la degradación del error por horizonte. |
+| Palancas de intervención/población con **base vs escenario** y el KPI de **hechos evitados** (supuesto del usuario, no efecto causal estimado por el modelo). | **Semáforo** de frescura, **deriva (PSI - Population Stability Index)**, **cobertura poblacional** (denominador de las tasas) y validación retrospectiva (*backtest*) a 12 meses con la degradación del error por horizonte. |
 
 | Justicia | Informe (IA generativa) |
 |---|---|

@@ -41,7 +41,7 @@ export default function SaludModelo() {
   );
   if (!data) return null;
 
-  const { frescura: fr, deriva_datos: dr, backtest_extendido: bt, estado_global } = data;
+  const { frescura: fr, deriva_datos: dr, poblacion: pob, backtest_extendido: bt, estado_global } = data;
   const chart = (bt?.por_paso ?? []).map((p) => ({
     paso: p.paso, modelo: p.mae, persistencia: p.baseline_mae,
   }));
@@ -50,8 +50,9 @@ export default function SaludModelo() {
     <>
       <h2 className="section-title">Salud del modelo</h2>
       <p className="section-sub">
-        Monitoreo continuo (sin reentrenar): frescura de datos, deriva de distribución y validación
-        del horizonte largo. Refuerza la trazabilidad y el gobierno del modelo.
+        Monitoreo continuo (sin reentrenar): frescura de datos, deriva de distribución, cobertura del
+        denominador poblacional y validación del horizonte largo. Refuerza la trazabilidad y el
+        gobierno del modelo.
       </p>
 
       <div className="card" style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
@@ -80,6 +81,23 @@ export default function SaludModelo() {
             {dr.nota ?? `cambio de volumen ${dr.cambio_volumen_pct != null ? dfmt(dr.cambio_volumen_pct, 1) : "—"} % (últimos ${dr.ventana_meses} m)`}
           </div>
         </div>
+
+        {pob && (
+          <div className="kpi">
+            <div className="kpi-top">
+              <span className="kpi-label">Cobertura poblacional</span>
+              <Semaforo estado={pob.estado} />
+            </div>
+            <div className="kpi-value">
+              {pob.disponible && pob.cobertura_pct != null ? <>{dfmt(pob.cobertura_pct, 1)} <span style={{ fontSize: "0.9rem" }}>%</span></> : "—"}
+            </div>
+            <div className="kpi-hint">
+              {pob.disponible
+                ? "de la serie con población DANE (tasas por 100.000 hab.)"
+                : "sin población DANE: el modelo degrada a conteos"}
+            </div>
+          </div>
+        )}
 
         {bt && (
           <div className="kpi">

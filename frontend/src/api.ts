@@ -320,11 +320,17 @@ export interface BacktestExt {
   por_paso: BacktestStep[];
   estado: Estado;
 }
+export interface PoblacionCobertura {
+  disponible: boolean;
+  cobertura_pct: number | null;
+  estado: Estado;
+}
 export interface ModelHealth {
   generado_en: string;
   estado_global: Estado;
   frescura: Freshness;
   deriva_datos: DataDrift;
+  poblacion?: PoblacionCobertura | null;
   backtest_extendido: BacktestExt | null;
 }
 

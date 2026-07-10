@@ -64,8 +64,8 @@ class Settings(BaseSettings):
     # Defaults = valores históricos (cero cambio de comportamiento). `num_ctx` y `keep_alive` los
     # COMPARTEN el LLM y el embedder (deben coincidir: ver providers.py).
     ollama_temperature: float = Field(default=0.2, alias="OLLAMA_TEMPERATURE")
-    # Tope de tokens generados: en CPU acota la latencia. OJO: subirlo puede reventar el muro de
-    # timeouts (~240s) y, con modelos "thinking", agotarse pensando (ver ollama_think).
+    # Tope de tokens generados: en CPU acota la latencia. Advertencia: subirlo puede reventar
+    # el muro de timeouts (~240s) y, con modelos "thinking", agotarse pensando (ver ollama_think).
     ollama_num_predict: int = Field(default=220, alias="OLLAMA_NUM_PREDICT")
     # Ventana de contexto: más RAM. El embedder lo usa como batch (evita 500 en chunks largos).
     ollama_num_ctx: int = Field(default=2048, alias="OLLAMA_NUM_CTX")
@@ -96,9 +96,10 @@ class Settings(BaseSettings):
     rag_top_k: int = Field(default=5, alias="RAG_TOP_K")
 
     # ── Agente RAG (tool-use) ──
-    # Cuando está activo Y el proveedor LLM soporta tool-use (Anthropic/OpenAI), el asistente actúa
-    # como AGENTE: el LLM decide qué herramienta invocar (pronóstico, anomalías, justicia, serie,
-    # base de conocimiento). Con Ollama local (sin tool-use fiable en modelos pequeños) o si se
+    # Cuando está activo Y el proveedor LLM admite el uso de herramientas (Anthropic/OpenAI), el
+    # asistente actúa como AGENTE: el LLM decide qué herramienta invocar (pronóstico, anomalías,
+    # justicia, serie, base de conocimiento). Con Ollama local (sin tool-use fiable en modelos
+    # pequeños) o si se
     # desactiva, cae al RAG clásico —sin regresión—. `max_steps` acota el nº de turnos del agente.
     rag_agent_enabled: bool = Field(default=True, alias="RAG_AGENT_ENABLED")
     rag_agent_max_steps: int = Field(default=4, alias="RAG_AGENT_MAX_STEPS")

@@ -16,7 +16,9 @@ lo que no sabe? Cuatro señales, todas puntuables sin juicio humano:
 Evalúa el CAMINO DE PRODUCCIÓN (`rag.agent.answer`: agente con herramientas si el
 proveedor lo admite; RAG clásico si no) contra la base indexada y el gold vigentes, por
 lo que requiere BD + proveedor LLM activos (correr dentro del contenedor: `docker compose
-exec ml python -m vigia rag-eval`). Reporte reproducible en `reports/rag_eval.json`.
+exec ml python -m vigia rag-eval`). Reporte reproducible en `reports/rag_eval.json`; el
+nombre de salida es parametrizable (`--out`) para versionar la medición de varios caminos
+(agente con proveedor gestionado / Ollama + RAG clásico) sin que una sobrescriba a la otra.
 """
 
 from __future__ import annotations
@@ -63,6 +65,19 @@ _FRASES_ABSTENCION = (
     "no se reconoc",  # raíz: cubre "no se reconoce/reconoció (el municipio)"
     "no logre identificar",  # "no logré identificar el municipio…" (rehúsa pidiendo uno válido)
     "no se pudo obtener",
+    # Formas pasivas/impersonales del LLM local (qwen3, RAG clásico): "la respuesta no puede
+    # ser proporcionada/respondida", "no se puede proporcionar una respuesta", "la pregunta
+    # no está dentro del ámbito…". Como el resto, solo se evalúan en preguntas que esperan
+    # rehusar y siempre junto al chequeo de no inventar cifras.
+    "no puede ser proporcionad",  # raíz: proporcionada/proporcionado
+    "no puede ser respondid",  # raíz: respondida/respondido
+    "no se puede proporcionar",
+    "no esta dentro del ambito",
+    # La redacción del LLM local varía entre ejecuciones (temperatura > 0): también rehúsa
+    # describiendo el hueco del contexto ("el contexto no incluye/contiene/menciona…").
+    "no incluye",
+    "no contiene",
+    "no menciona",
     "mi funcion",
     "seguridad y justicia en colombia",
     "seguridad ciudadana y justicia",
@@ -191,9 +206,7 @@ def build_golden_set() -> list[Pregunta]:
                 Pregunta(
                     id=f"cat_{cat}_{anio}",
                     categoria="categoria_anual",
-                    texto=(
-                        f"¿Cuántos hechos de {cat} se registraron a nivel nacional en {anio}?"
-                    ),
+                    texto=(f"¿Cuántos hechos de {cat} se registraron a nivel nacional en {anio}?"),
                     cifras=[int(fila["cantidad"].iloc[0])],
                 )
             )
@@ -252,6 +265,49 @@ def build_golden_set() -> list[Pregunta]:
                     cifras=[int(r["total_procesos"])],
                 )
             )
+    # 4c) Superlativo por título del Código Penal: el delito que MENOS se judicializa. La
+    # respuesta esperada se deriva del gold con el MISMO umbral de volumen que usan el reporte
+    # y las cards (títulos con pocos procesos quedan fuera del ranking).
+    jd_path = settings.gold_dir / "justicia_delito.parquet"
+    if jd_path.exists():
+        from vigia.etl.justicia import _MIN_PROCESOS_TASA
+
+        jd = pd.read_parquet(jd_path)
+        eleg = jd[
+            (jd["procesos_etapa_conocida"] >= _MIN_PROCESOS_TASA)
+            & (jd["titulo_delito"] != "Sin información")
+        ]
+        if not eleg.empty:
+            peor = eleg.nsmallest(1, "tasa_judicializacion_pct").iloc[0]
+            preguntas.append(
+                Pregunta(
+                    id="justicia_delito_menor",
+                    categoria="justicia",
+                    texto=(
+                        "¿Qué tipo de delito (título del Código Penal) tiene la menor tasa de "
+                        "judicialización según la Fiscalía?"
+                    ),
+                    texto_esperado=str(peor["titulo_delito"]),
+                )
+            )
+
+    # 4b) Fuente administrativa (transparencia institucional): el conteo real de una fuente
+    # de gestión (demandas notificadas) sale de su parquet bronze, igual que su data card.
+    # Prueba que el asistente aprovecha las cards administrativas, no solo las series de delitos.
+    # (Se usa "demandas" y no "auditorías internas" porque el guardarraíl de alcance del agente
+    # reencuadra esto último como fuera de dominio; el litigio contra la Policía sí es transparencia
+    # que el asistente responde.)
+    dem_path = settings.bronze_dir / "demandas_notificadas.parquet"
+    if dem_path.exists():
+        n_dem = len(pd.read_parquet(dem_path, columns=["tipo_de_demanda"]))
+        preguntas.append(
+            Pregunta(
+                id="admin_demandas",
+                categoria="administrativo",
+                texto="¿Cuántas demandas se han notificado a la Policía Nacional?",
+                cifras=[n_dem],
+            )
+        )
 
     # 5) Fuera de alcance: la conducta correcta es REHUSAR sin inventar cifras.
     fuera = [
@@ -263,8 +319,7 @@ def build_golden_set() -> list[Pregunta]:
         ("fuera_futbol", "¿Cómo quedó el partido de la selección Colombia?"),
     ]
     preguntas += [
-        Pregunta(id=i, categoria="fuera_alcance", texto=t, espera_abstencion=True)
-        for i, t in fuera
+        Pregunta(id=i, categoria="fuera_alcance", texto=t, espera_abstencion=True) for i, t in fuera
     ]
     # Municipio inexistente: rehusar (el resolvedor difuso NO debe adivinar con confianza).
     preguntas.append(
@@ -341,13 +396,15 @@ def evaluate(preguntas: list[Pregunta] | None = None, answer_fn=None, modo: str 
         try:
             res = answer_fn(p.texto)
             texto, fuentes = res.answer, len(getattr(res, "sources", []) or [])
-            modo = getattr(res, "modo", "rag-clasico")
+            # Variable propia (no `modo`): reasignar el parámetro dentro del bucle haría que
+            # `modo_solicitado` reportara el modo de la última respuesta, no el pedido.
+            modo_res = getattr(res, "modo", "rag-clasico")
             fila = {
                 "id": p.id,
                 "categoria": p.categoria,
                 "pregunta": p.texto,
                 "esperado": p.cifras or p.decimal or p.texto_esperado or "abstención",
-                "modo": modo,
+                "modo": modo_res,
                 "n_fuentes": fuentes,
                 "latencia_s": round(time.monotonic() - t0, 1),
                 **_puntuar(p, texto, fuentes),
@@ -383,6 +440,14 @@ def evaluate(preguntas: list[Pregunta] | None = None, answer_fn=None, modo: str 
         "generado_en": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "llm_provider": settings.llm_provider,
         "embed_provider": settings.embed_provider,
+        # Temperatura de muestreo efectiva del proveedor en uso (OLLAMA_TEMPERATURE en el
+        # local, LLM_TEMPERATURE en los gestionados). Se registra porque la obediencia del
+        # guardarraíl y la estabilidad de las respuestas entre ejecuciones dependen de ella.
+        "temperatura": (
+            settings.ollama_temperature
+            if settings.llm_provider.lower() == "ollama"
+            else settings.llm_temperature
+        ),
         "modo_solicitado": modo,
         "modo_efectivo": modos_reales[0] if len(modos_reales) == 1 else modos_reales,
         "n_preguntas": len(detalle),
@@ -417,12 +482,20 @@ def evaluate(preguntas: list[Pregunta] | None = None, answer_fn=None, modo: str 
 
 
 def write_report(
-    preguntas: list[Pregunta] | None = None, answer_fn=None, modo: str = "auto"
+    preguntas: list[Pregunta] | None = None,
+    answer_fn=None,
+    modo: str = "auto",
+    out_name: str = "rag_eval.json",
 ) -> dict:
-    """Evalúa y persiste `reports/rag_eval.json` (reproducible, versionable)."""
+    """Evalúa y persiste el reporte en `reports/<out_name>` (reproducible, versionable).
+
+    `out_name` permite conservar los reportes de VARIOS caminos (p. ej. `rag_eval.json`
+    para el agente con proveedor gestionado y `rag_eval_ollama.json` para el camino por
+    defecto Ollama + RAG clásico) sin que una ejecución sobrescriba la otra.
+    """
     reporte = evaluate(preguntas, answer_fn=answer_fn, modo=modo)
     settings.ensure_dirs()
-    out = settings.reports_dir / "rag_eval.json"
+    out = settings.reports_dir / out_name
     out.write_text(json.dumps(reporte, ensure_ascii=False, indent=2), encoding="utf-8")
     log.info("Reporte de evaluación del asistente escrito en %s", out)
     return reporte

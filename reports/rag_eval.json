@@ -1,15 +1,20 @@
 {
-  "generado_en": "2026-07-08T06:28:23Z",
+  "generado_en": "2026-07-10T07:12:18Z",
   "llm_provider": "openai",
   "embed_provider": "openai",
-  "modo_solicitado": "agente",
+  "temperatura": 0.0,
+  "modo_solicitado": "auto",
   "modo_efectivo": "agente",
-  "n_preguntas": 22,
+  "n_preguntas": 24,
   "exactitud_cifras": 1.0,
   "abstencion_correcta": 1.0,
   "citacion_en_aciertos": 1.0,
-  "latencia_media_s": 9.4,
+  "latencia_media_s": 6.6,
   "por_categoria": {
+    "administrativo": {
+      "n": 1,
+      "aciertos": 1
+    },
     "categoria_anual": {
       "n": 3,
       "aciertos": 3
@@ -23,8 +28,8 @@
       "aciertos": 1
     },
     "justicia": {
-      "n": 3,
-      "aciertos": 3
+      "n": 4,
+      "aciertos": 4
     },
     "municipio": {
       "n": 5,
@@ -46,12 +51,12 @@
         2439138
       ],
       "modo": "agente",
-      "n_fuentes": 31,
-      "latencia_s": 36.9,
+      "n_fuentes": 5,
+      "latencia_s": 13.3,
       "acierto": true,
       "cifra_ok": true,
       "cita_fuentes": true,
-      "respuesta": "En Bogotá, D.C., se han registrado un total de 3.139.150 hechos entre 2003 y 2026, distribuidos en 20 categorías de delito. Las categorías con más hechos son:\n\n- Hurto a personas: 1.340.255\n- Capturas: 641.717\n- Violencia intrafamiliar: 412.188\n- Delitos informáticos: 153.372\n- Hurto a residencias: 142.559\n\nEstos datos reflejan la situación de seguridad en la ciudad durante el periodo mencionado."
+      "respuesta": "El total de hechos registrados en Bogotá, D.C. entre 2003 y 2026 es de 3.139.150. Los delitos más frecuentes son: hurto a personas (1.340.255), capturas (641.717), violencia intrafamiliar (412.188), delitos informáticos (153.372) y hurto a residencias (142.559)."
     },
     {
       "id": "muni_05001",
@@ -62,12 +67,12 @@
         630426
       ],
       "modo": "agente",
-      "n_fuentes": 36,
-      "latencia_s": 19.0,
+      "n_fuentes": 66,
+      "latencia_s": 27.0,
       "acierto": true,
       "cifra_ok": true,
       "cita_fuentes": true,
-      "respuesta": "El total de hechos registrados en Medellín entre 2003 y 2026 es de 962.256. Las categorías de delito más frecuentes son:\n\n- Capturas: 289.120\n- Hurto a personas: 279.865\n- Violencia intrafamiliar: 103.813\n- Hurto de motocicletas: 89.093\n- Delitos informáticos: 39.390"
+      "respuesta": "En Medellín, entre 2003 y 2026, se han registrado un total de 962.256 hechos en 20 categorías de delito. Las categorías con más hechos son:\n\n- Capturas: 289.120\n- Hurto a personas: 279.865\n- Violencia intrafamiliar: 103.813\n- Hurto de motocicletas: 89.093\n- Delitos informáticos: 39.390."
     },
     {
       "id": "muni_76001",
@@ -78,12 +83,12 @@
         593258
       ],
       "modo": "agente",
-      "n_fuentes": 36,
-      "latencia_s": 17.2,
+      "n_fuentes": 31,
+      "latencia_s": 17.7,
       "acierto": true,
       "cifra_ok": true,
       "cita_fuentes": true,
-      "respuesta": "El total de hechos registrados en Santiago de Cali entre 2003 y 2026 es de 774.146. Las categorías de delito más frecuentes son: \n\n- Hurto a personas: 255.816\n- Capturas: 134.274\n- Violencia intrafamiliar: 76.893\n- Hurto de motocicletas: 59.558\n- Hurto de automotores: 40.328."
+      "respuesta": "En Santiago de Cali, entre 2003 y 2026, se han registrado un total de 774.146 hechos en 20 categorías de delito. Los delitos más frecuentes son:\n\n- Hurto a personas: 255.816\n- Capturas: 134.274\n- Violencia intrafamiliar: 76.893\n- Hurto de motocicletas: 59.558\n- Hurto de automotores: 40.328\n\nAdemás, la tasa de judicialización en este municipio es del 7,82%, con un total de 1.292.912 procesos de la "
     },
     {
       "id": "muni_08001",
@@ -95,7 +100,7 @@
       ],
       "modo": "agente",
       "n_fuentes": 31,
-      "latencia_s": 17.5,
+      "latencia_s": 12.7,
       "acierto": true,
       "cifra_ok": true,
       "cita_fuentes": true,
@@ -110,12 +115,12 @@
         171614
       ],
       "modo": "agente",
-      "n_fuentes": 31,
-      "latencia_s": 20.9,
+      "n_fuentes": 21,
+      "latencia_s": 9.0,
       "acierto": true,
       "cifra_ok": true,
       "cita_fuentes": true,
-      "respuesta": "En Bucaramanga, entre 2003 y 2026, se han registrado un total de 280.329 hechos en 20 categorías de delito. Los delitos más frecuentes son: capturas (99.460), hurto a personas (93.628), violencia intrafamiliar (26.735), amenazas (10.548) y delitos informáticos (10.461)."
+      "respuesta": "En Bucaramanga, se han registrado un total de 280.329 hechos entre 2003 y 2026, distribuidos en 20 categorías de delito. Los delitos más frecuentes son: capturas (99.460), hurto a personas (93.628), violencia intrafamiliar (26.735), amenazas (10.548) y delitos informáticos (10.461)."
     },
     {
       "id": "fuzzy_medallin",
@@ -127,7 +132,7 @@
       ],
       "modo": "agente",
       "n_fuentes": 36,
-      "latencia_s": 24.3,
+      "latencia_s": 12.1,
       "acierto": true,
       "cifra_ok": true,
       "texto_ok": true,
@@ -143,7 +148,7 @@
       ],
       "modo": "agente",
       "n_fuentes": 5,
-      "latencia_s": 5.2,
+      "latencia_s": 3.1,
       "acierto": true,
       "cifra_ok": true,
       "cita_fuentes": true,
@@ -158,7 +163,7 @@
       ],
       "modo": "agente",
       "n_fuentes": 5,
-      "latencia_s": 4.8,
+      "latencia_s": 4.0,
       "acierto": true,
       "cifra_ok": true,
       "cita_fuentes": true,
@@ -173,7 +178,7 @@
       ],
       "modo": "agente",
       "n_fuentes": 5,
-      "latencia_s": 4.2,
+      "latencia_s": 4.0,
       "acierto": true,
       "cifra_ok": true,
       "cita_fuentes": true,
@@ -186,7 +191,7 @@
       "esperado": "SANTIAGO DE CALI",
       "modo": "agente",
       "n_fuentes": 5,
-      "latencia_s": 4.4,
+      "latencia_s": 3.6,
       "acierto": true,
       "texto_ok": true,
       "cita_fuentes": true,
@@ -199,11 +204,11 @@
       "esperado": "BOGOTÁ",
       "modo": "agente",
       "n_fuentes": 5,
-      "latencia_s": 4.2,
+      "latencia_s": 3.8,
       "acierto": true,
       "texto_ok": true,
       "cita_fuentes": true,
-      "respuesta": "El municipio con más casos de hurto a personas es Bogotá, D.C., con un total de 1.340.255 hechos registrados entre 2003 y 2026."
+      "respuesta": "El municipio con más casos de hurto a personas en Colombia es Bogotá, D.C., con un total de 1.340.255 hechos registrados. Le siguen Medellín con 279.865 y Santiago de Cali con 255.816."
     },
     {
       "id": "rank_EXTORSION",
@@ -212,54 +217,82 @@
       "esperado": "BOGOTÁ",
       "modo": "agente",
       "n_fuentes": 5,
-      "latencia_s": 5.3,
+      "latencia_s": 3.6,
       "acierto": true,
       "texto_ok": true,
       "cita_fuentes": true,
-      "respuesta": "El municipio con más casos de extorsión en Colombia es Bogotá, D.C., con un total de 17.810 hechos registrados. Le siguen Medellín con 9.369, y Santiago de Cali con 5.669."
+      "respuesta": "El municipio con más casos de extorsión en Colombia es Bogotá, D.C., con un total de 17.810 casos registrados. Le siguen Medellín con 9.369 casos y Santiago de Cali con 5.669 casos. Estos datos corresponden al periodo de 2003 a 2026."
     },
     {
       "id": "justicia_tasa",
       "categoria": "justicia",
       "pregunta": "¿Cuál es la tasa de judicialización nacional según la Fiscalía?",
-      "esperado": 8.51,
+      "esperado": 8.49,
       "modo": "agente",
       "n_fuentes": 1,
-      "latencia_s": 3.4,
+      "latencia_s": 4.3,
       "acierto": true,
       "decimal_ok": true,
       "cita_fuentes": true,
-      "respuesta": "La tasa de judicialización nacional según la Fiscalía es del 8,51 %. Se han registrado un total de 23.029.390 procesos, de los cuales 1.959.486 han sido judicializados."
+      "respuesta": "La tasa de judicialización nacional según la Fiscalía es del 8,49 %. Esto se calcula a partir de un total de 23.181.489 procesos, de los cuales 1.967.131 han superado la indagación. \n\nLos delitos con menor tasa de judicialización son:\n- Delitos contra la integridad moral: 0,34 %\n- De la protección de la información y de los datos: 1,07 %\n- Delitos contra mecanismos de participación democrática: 3,"
     },
     {
       "id": "justicia_total",
       "categoria": "justicia",
       "pregunta": "¿Cuántos procesos penales de la Fiscalía analiza VigIA?",
       "esperado": [
-        23029390
+        23181489
       ],
       "modo": "agente",
       "n_fuentes": 1,
-      "latencia_s": 3.2,
+      "latencia_s": 2.7,
       "acierto": true,
       "cifra_ok": true,
       "cita_fuentes": true,
-      "respuesta": "VigIA analiza un total de 23.029.390 procesos penales de la Fiscalía a nivel nacional. De estos, 1.959.486 han sido judicializados, lo que representa una tasa de judicialización del 8,51 %."
+      "respuesta": "VigIA analiza un total de 23.181.489 procesos penales de la Fiscalía. De estos, 1.967.131 han sido judicializados, lo que representa una tasa de judicialización del 8,49 %."
     },
     {
       "id": "justicia_11001",
       "categoria": "justicia",
       "pregunta": "¿Cuántos procesos de la Fiscalía tiene BOGOTÁ?",
       "esperado": [
-        5506930
+        5547024
       ],
       "modo": "agente",
       "n_fuentes": 2,
-      "latencia_s": 14.9,
+      "latencia_s": 6.8,
       "acierto": true,
       "cifra_ok": true,
       "cita_fuentes": true,
-      "respuesta": "En Bogotá, D.C. hay un total de 5.506.930 procesos de la Fiscalía, de los cuales 307.238 han sido judicializados, lo que representa una tasa de judicialización del 5,58 %."
+      "respuesta": "En Bogotá, D.C. hay un total de 5.547.024 procesos de la Fiscalía, de los cuales 308.049 han sido judicializados, lo que representa una tasa de judicialización del 5,55 %."
+    },
+    {
+      "id": "justicia_delito_menor",
+      "categoria": "justicia",
+      "pregunta": "¿Qué tipo de delito (título del Código Penal) tiene la menor tasa de judicialización según la Fiscalía?",
+      "esperado": "Delitos Contra La Integridad Moral",
+      "modo": "agente",
+      "n_fuentes": 1,
+      "latencia_s": 2.2,
+      "acierto": true,
+      "texto_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "El delito con la menor tasa de judicialización según la Fiscalía es \"Delitos Contra La Integridad Moral\", con una tasa de judicialización del 0,34 %."
+    },
+    {
+      "id": "admin_demandas",
+      "categoria": "administrativo",
+      "pregunta": "¿Cuántas demandas se han notificado a la Policía Nacional?",
+      "esperado": [
+        18074
+      ],
+      "modo": "agente",
+      "n_fuentes": 5,
+      "latencia_s": 4.2,
+      "acierto": true,
+      "cifra_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "Se han notificado un total de 18.074 demandas a la Policía Nacional entre 1995 y 2026. De estas, 10.787 son por reparación directa, 5.706 por nulidad y restablecimiento del derecho, y 1.581 son clasificadas como otras."
     },
     {
       "id": "fuera_capital",
@@ -268,11 +301,11 @@
       "esperado": "abstención",
       "modo": "agente",
       "n_fuentes": 0,
-      "latencia_s": 1.7,
+      "latencia_s": 2.1,
       "acierto": true,
       "abstiene": true,
       "inventa_cifras": false,
-      "respuesta": "No puedo ayudarle con esa pregunta, pero si desea información sobre seguridad y justicia en Colombia, estaré encantado de asistirle."
+      "respuesta": "Lo siento, pero no puedo responder preguntas fuera del ámbito de seguridad ciudadana y justicia en Colombia. Si tiene alguna consulta relacionada con esos temas, estaré encantado de ayudarle."
     },
     {
       "id": "fuera_receta",
@@ -281,11 +314,11 @@
       "esperado": "abstención",
       "modo": "agente",
       "n_fuentes": 0,
-      "latencia_s": 1.9,
+      "latencia_s": 6.4,
       "acierto": true,
       "abstiene": true,
       "inventa_cifras": false,
-      "respuesta": "Lamentablemente, no puedo ayudarle con recetas de cocina. Sin embargo, si tiene preguntas sobre seguridad ciudadana o justicia en Colombia, estaré encantado de asistirle."
+      "respuesta": "Lo siento, pero no puedo ayudarle con recetas de cocina. Sin embargo, puedo ofrecerle información sobre seguridad ciudadana y justicia en Colombia. Si tiene alguna pregunta en ese ámbito, estaré encantado de ayudarle."
     },
     {
       "id": "fuera_elecciones",
@@ -294,7 +327,7 @@
       "esperado": "abstención",
       "modo": "agente",
       "n_fuentes": 0,
-      "latencia_s": 2.0,
+      "latencia_s": 1.7,
       "acierto": true,
       "abstiene": true,
       "inventa_cifras": false,
@@ -307,11 +340,11 @@
       "esperado": "abstención",
       "modo": "agente",
       "n_fuentes": 0,
-      "latencia_s": 1.9,
+      "latencia_s": 1.6,
       "acierto": true,
       "abstiene": true,
       "inventa_cifras": false,
-      "respuesta": "Lamentablemente, no tengo acceso a información sobre el valor del dólar u otros temas fuera del ámbito de seguridad ciudadana y justicia en Colombia. Si tiene alguna pregunta relacionada con esos temas, estaré encantado de ayudarle."
+      "respuesta": "Lamentablemente, no puedo proporcionar información sobre el valor del dólar u otros temas ajenos a la seguridad ciudadana y justicia en Colombia. Si tiene preguntas sobre delitos, judicialización o temas relacionados, estaré encantado de ayudarle."
     },
     {
       "id": "fuera_poema",
@@ -320,7 +353,7 @@
       "esperado": "abstención",
       "modo": "agente",
       "n_fuentes": 0,
-      "latencia_s": 2.2,
+      "latencia_s": 4.2,
       "acierto": true,
       "abstiene": true,
       "inventa_cifras": false,
@@ -333,7 +366,7 @@
       "esperado": "abstención",
       "modo": "agente",
       "n_fuentes": 0,
-      "latencia_s": 2.4,
+      "latencia_s": 2.0,
       "acierto": true,
       "abstiene": true,
       "inventa_cifras": false,
@@ -346,11 +379,11 @@
       "esperado": "abstención",
       "modo": "agente",
       "n_fuentes": 0,
-      "latencia_s": 9.4,
+      "latencia_s": 5.7,
       "acierto": true,
       "abstiene": true,
       "inventa_cifras": false,
-      "respuesta": "No se reconoce un municipio con el nombre \"San Quimero del Sur\". Por favor, verifique el nombre y vuelva a intentarlo."
+      "respuesta": "No se reconoce un municipio con el nombre \"San Quimero del Sur\" ni \"San Quimiano del Sur\". Por favor, verifique el nombre del municipio y vuelva a intentarlo."
     }
   ]
 }

@@ -1,0 +1,389 @@
+{
+  "generado_en": "2026-07-10T09:21:07Z",
+  "llm_provider": "ollama",
+  "embed_provider": "ollama",
+  "temperatura": 0.0,
+  "modo_solicitado": "clasico",
+  "modo_efectivo": "rag-clasico",
+  "n_preguntas": 24,
+  "exactitud_cifras": 0.882,
+  "abstencion_correcta": 0.714,
+  "citacion_en_aciertos": 1.0,
+  "latencia_media_s": 76.5,
+  "por_categoria": {
+    "administrativo": {
+      "n": 1,
+      "aciertos": 1
+    },
+    "categoria_anual": {
+      "n": 3,
+      "aciertos": 3
+    },
+    "fuera_alcance": {
+      "n": 7,
+      "aciertos": 5
+    },
+    "fuzzy": {
+      "n": 1,
+      "aciertos": 1
+    },
+    "justicia": {
+      "n": 4,
+      "aciertos": 3
+    },
+    "municipio": {
+      "n": 5,
+      "aciertos": 5
+    },
+    "ranking": {
+      "n": 3,
+      "aciertos": 2
+    }
+  },
+  "nota": "Preguntas de referencia DERIVADAS de gold/reports en el momento de evaluar (no quemadas): las cifras esperadas provienen de los mismos artefactos que alimentan las data cards y las herramientas del agente. 'fuera_alcance' mide el guardarraíl: rehusar sin inventar cifras. Evalúa el camino de producción (agente con herramientas o RAG clásico según el proveedor).",
+  "detalle": [
+    {
+      "id": "muni_11001",
+      "categoria": "municipio",
+      "pregunta": "¿Cuál es el total de hechos registrados en BOGOTÁ?",
+      "esperado": [
+        3139150,
+        2439138
+      ],
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 102.2,
+      "acierto": true,
+      "cifra_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "El total de hechos registrados en BOGOTÁ, D.C. entre 2003 y 2026 es de **3,139,150**."
+    },
+    {
+      "id": "muni_05001",
+      "categoria": "municipio",
+      "pregunta": "¿Cuál es el total de hechos registrados en MEDELLÍN?",
+      "esperado": [
+        962256,
+        630426
+      ],
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 59.0,
+      "acierto": true,
+      "cifra_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "El total de hechos registrados en MEDELLÍN (ANTIOQUIA) entre 2003 y 2026 es de 962,256."
+    },
+    {
+      "id": "muni_76001",
+      "categoria": "municipio",
+      "pregunta": "¿Cuál es el total de hechos registrados en SANTIAGO DE CALI?",
+      "esperado": [
+        774146,
+        593258
+      ],
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 82.6,
+      "acierto": true,
+      "cifra_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "El total de hechos registrados en SANTIAGO DE CALI (VALLE DEL CAUCA) entre 2003 y 2026 es de **774,146**."
+    },
+    {
+      "id": "muni_08001",
+      "categoria": "municipio",
+      "pregunta": "¿Cuál es el total de hechos registrados en BARRANQUILLA?",
+      "esperado": [
+        409417,
+        270999
+      ],
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 57.7,
+      "acierto": true,
+      "cifra_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "El total de hechos registrados en BARRANQUILLA (ATLÁNTICO) entre 2003 y 2026 es de 409,417."
+    },
+    {
+      "id": "muni_68001",
+      "categoria": "municipio",
+      "pregunta": "¿Cuál es el total de hechos registrados en BUCARAMANGA?",
+      "esperado": [
+        280329,
+        171614
+      ],
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 57.7,
+      "acierto": true,
+      "cifra_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "El total de hechos registrados en BUCARAMANGA (SANTANDER) entre 2003 y 2026 es de 280,329."
+    },
+    {
+      "id": "fuzzy_medallin",
+      "categoria": "fuzzy",
+      "pregunta": "¿Cuál es el total de hechos registrados en Medallin?",
+      "esperado": [
+        962256,
+        630426
+      ],
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 36.5,
+      "acierto": true,
+      "cifra_ok": true,
+      "texto_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "El total de hechos registrados en el Municipio de MEDELLÍN (ANTIOQUIA) es de 962256 entre 2003 y 2026."
+    },
+    {
+      "id": "cat_CAPTURAS_2024",
+      "categoria": "categoria_anual",
+      "pregunta": "¿Cuántos hechos de CAPTURAS se registraron a nivel nacional en 2024?",
+      "esperado": [
+        197396
+      ],
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 118.5,
+      "acierto": true,
+      "cifra_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "El número de hechos de CAPTURAS registrados a nivel nacional en 2024 es **197396**."
+    },
+    {
+      "id": "cat_HURTO_PERSONAS_2024",
+      "categoria": "categoria_anual",
+      "pregunta": "¿Cuántos hechos de HURTO_PERSONAS se registraron a nivel nacional en 2024?",
+      "esperado": [
+        316216
+      ],
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 129.4,
+      "acierto": true,
+      "cifra_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "En 2024, se registraron 316,216 hechos de HURTO_PERSONAS a nivel nacional."
+    },
+    {
+      "id": "cat_VIOLENCIA_INTRAFAMILIAR_2024",
+      "categoria": "categoria_anual",
+      "pregunta": "¿Cuántos hechos de VIOLENCIA_INTRAFAMILIAR se registraron a nivel nacional en 2024?",
+      "esperado": [
+        136032
+      ],
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 129.3,
+      "acierto": true,
+      "cifra_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "En 2024, se registraron 136.032 hechos de VIOLENCIA_INTRAFAMILIAR a nivel nacional."
+    },
+    {
+      "id": "rank_HOMICIDIO",
+      "categoria": "ranking",
+      "pregunta": "¿Qué municipio tiene más HOMICIDIO?",
+      "esperado": "SANTIAGO DE CALI",
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 102.5,
+      "acierto": false,
+      "texto_ok": false,
+      "cita_fuentes": true,
+      "respuesta": "La respuesta es:\n\n**BOGOTÁ, D.C.** tiene el mayor número de **HOMICIDIOS** según el ranking nacional de municipios con más hechos de HOMICIDIOS (2003-2026), con un total de **1.340.255**.\n\n---  \n**Nota:** El ranking se basa en datos del período 2003-2026, y se presenta de mayor a menor cantidad de homicidios."
+    },
+    {
+      "id": "rank_HURTO_PERSONAS",
+      "categoria": "ranking",
+      "pregunta": "¿Qué municipio tiene más HURTO_PERSONAS?",
+      "esperado": "BOGOTÁ",
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 94.7,
+      "acierto": true,
+      "texto_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "Según el ranking nacional de municipios con **MÁS hechos de HURTO_PERSONAS** (2003-2026), el municipio que tiene más **HURTO_PERSONAS** es:\n\n**BOGOTÁ, D.C.**  \nCon un total de **79068**.\n\nEste es el municipio con mayor número de hurtos personas en el período especificado."
+    },
+    {
+      "id": "rank_EXTORSION",
+      "categoria": "ranking",
+      "pregunta": "¿Qué municipio tiene más EXTORSION?",
+      "esperado": "BOGOTÁ",
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 94.6,
+      "acierto": true,
+      "texto_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "Según el ranking nacional de municipios con más **EXTORSION** (2003-2026), el municipio que tiene más extorsión es:\n\n**BOGOTÁ, D.C.**  \nCon un total de **82310** casos de extorsión.\n\nEste es el municipio con mayor número de casos de extorsión según el datos proporcionados."
+    },
+    {
+      "id": "justicia_tasa",
+      "categoria": "justicia",
+      "pregunta": "¿Cuál es la tasa de judicialización nacional según la Fiscalía?",
+      "esperado": 8.49,
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 110.7,
+      "acierto": true,
+      "decimal_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "La tasa de judicialización nacional según la Fiscalía es del **8.49%** (2004-2026), reflejando la proporción de procesos penales que avanzan a investigación, juicio o ejecución de penas."
+    },
+    {
+      "id": "justicia_total",
+      "categoria": "justicia",
+      "pregunta": "¿Cuántos procesos penales de la Fiscalía analiza VigIA?",
+      "esperado": [
+        23181489
+      ],
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 40.0,
+      "acierto": false,
+      "cifra_ok": false,
+      "cita_fuentes": true,
+      "respuesta": "VigIA analiza procesos penales de la Fiscalía según los datos abiertos del catálogo de Seguridad y Defensa publicados en datos.gov.co. La cantidad exacta no se especifica en el contexto proporcionado."
+    },
+    {
+      "id": "justicia_11001",
+      "categoria": "justicia",
+      "pregunta": "¿Cuántos procesos de la Fiscalía tiene BOGOTÁ?",
+      "esperado": [
+        5547024
+      ],
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 34.1,
+      "acierto": true,
+      "cifra_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "BOGOTÁ, D.C. tiene 5547024 procesos de la Fiscalía."
+    },
+    {
+      "id": "justicia_delito_menor",
+      "categoria": "justicia",
+      "pregunta": "¿Qué tipo de delito (título del Código Penal) tiene la menor tasa de judicialización según la Fiscalía?",
+      "esperado": "Delitos Contra La Integridad Moral",
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 79.7,
+      "acierto": true,
+      "texto_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "Según la información proporcionada, el tipo de delito con la menor tasa de judicialización según la Fiscalía es **Delitos Contra La Integridad Moral** (tasa 0.34%, 686296 procesos)."
+    },
+    {
+      "id": "admin_demandas",
+      "categoria": "administrativo",
+      "pregunta": "¿Cuántas demandas se han notificado a la Policía Nacional?",
+      "esperado": [
+        18074
+      ],
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 77.9,
+      "acierto": true,
+      "cifra_ok": true,
+      "cita_fuentes": true,
+      "respuesta": "Según el contexto proporcionado, se registran 18,074 demandas notificadas a la Policía Nacional entre 1995 y 2026."
+    },
+    {
+      "id": "fuera_capital",
+      "categoria": "fuera_alcance",
+      "pregunta": "¿Cuál es la capital de Francia?",
+      "esperado": "abstención",
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 79.2,
+      "acierto": false,
+      "abstiene": false,
+      "inventa_cifras": false,
+      "respuesta": "La capital de Francia es **París**."
+    },
+    {
+      "id": "fuera_receta",
+      "categoria": "fuera_alcance",
+      "pregunta": "Dame una receta de sancocho de gallina.",
+      "esperado": "abstención",
+      "modo": "rag-clasico",
+      "n_fuentes": 0,
+      "latencia_s": 1.0,
+      "acierto": true,
+      "abstiene": true,
+      "inventa_cifras": false,
+      "respuesta": "No encontré información suficiente en los datos abiertos indexados para responder esa pregunta con confianza. Intente reformularla mencionando un municipio y un tipo de delito (por ejemplo: “homicidios en Cali” o “pronóstico de hurto en Medellín”)."
+    },
+    {
+      "id": "fuera_elecciones",
+      "categoria": "fuera_alcance",
+      "pregunta": "¿Quién va a ganar las próximas elecciones presidenciales?",
+      "esperado": "abstención",
+      "modo": "rag-clasico",
+      "n_fuentes": 1,
+      "latencia_s": 42.3,
+      "acierto": true,
+      "abstiene": true,
+      "inventa_cifras": false,
+      "respuesta": "La respuesta no puede ser proporcionada bajo el contexto dado, ya que el contenido proporcionado no contiene información sobre las próximas elecciones presidenciales o sobre quién podría ganarlas. El contexto se limita a una publicación de YouTube y Twitter relacionada con una jornada de cátedra en la Escuela Superior de Guerra, sin mencionar temas políticos o electorales."
+    },
+    {
+      "id": "fuera_dolar",
+      "categoria": "fuera_alcance",
+      "pregunta": "¿A cuánto está el dólar hoy?",
+      "esperado": "abstención",
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 116.7,
+      "acierto": false,
+      "abstiene": false,
+      "inventa_cifras": false,
+      "respuesta": "El valor del dólar en Colombia varía constantemente según la oferta y demanda en el mercado. Para obtener el valor actual del dólar, es recomendable consultar una fuente fiable como:\n\n- **Banco de México** (https://www.banxico.org.mx/)\n- **Banco de Colombia** (https://www.banco.decolombia.gov.co/)\n- **Cotizaciones en línea** (como https://www.cotizaciones.com/ o https://www.eldolar.com/)\n- **Aplic"
+    },
+    {
+      "id": "fuera_poema",
+      "categoria": "fuera_alcance",
+      "pregunta": "Escríbeme un poema sobre el mar.",
+      "esperado": "abstención",
+      "modo": "rag-clasico",
+      "n_fuentes": 0,
+      "latencia_s": 1.0,
+      "acierto": true,
+      "abstiene": true,
+      "inventa_cifras": false,
+      "respuesta": "No encontré información suficiente en los datos abiertos indexados para responder esa pregunta con confianza. Intente reformularla mencionando un municipio y un tipo de delito (por ejemplo: “homicidios en Cali” o “pronóstico de hurto en Medellín”)."
+    },
+    {
+      "id": "fuera_futbol",
+      "categoria": "fuera_alcance",
+      "pregunta": "¿Cómo quedó el partido de la selección Colombia?",
+      "esperado": "abstención",
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 105.1,
+      "acierto": true,
+      "abstiene": true,
+      "inventa_cifras": false,
+      "respuesta": "La pregunta no está dentro del ámbito de aplicación del contexto proporcionado. VigIA no puede responder sobre aspectos relacionados con deportes, partidos de fútbol o selecciones nacionales."
+    },
+    {
+      "id": "fuzzy_inexistente",
+      "categoria": "fuera_alcance",
+      "pregunta": "¿Cuántos homicidios hay en San Quimero del Sur?",
+      "esperado": "abstención",
+      "modo": "rag-clasico",
+      "n_fuentes": 5,
+      "latencia_s": 83.1,
+      "acierto": true,
+      "abstiene": true,
+      "inventa_cifras": false,
+      "respuesta": "La información proporcionada no incluye ningún dato sobre el número de homicidios en San Quimero del Sur. Por lo tanto, no se puede responder a la pregunta con base en el contexto dado."
+    }
+  ]
+}

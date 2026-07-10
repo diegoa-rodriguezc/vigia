@@ -16,6 +16,7 @@ from vigia.rag.evaluation import (
     _extraer_enteros,
     build_golden_set,
     evaluate,
+    write_report,
 )
 
 
@@ -66,6 +67,16 @@ def test_abstencion_detecta_el_rehusar_de_produccion():
         'Lo siento, no logré identificar el municipio de "San Quimero del Sur". '
         "Por favor proporcione el nombre de un municipio válido."
     )
+    # Formas pasivas/impersonales del LLM local (qwen3, camino por defecto): detectadas en la
+    # evaluación real del RAG clásico; el modelo SÍ rehusaba pero el detector no las cubría.
+    assert _es_abstencion("La respuesta no puede ser proporcionada bajo el contexto dado.")
+    assert _es_abstencion("La pregunta no puede ser respondida basada en el contexto.")
+    assert _es_abstencion("No se puede proporcionar una respuesta basada en el contexto dado.")
+    assert _es_abstencion("La pregunta no está dentro del ámbito de aplicación del contexto.")
+    # Rehusar describiendo el hueco del contexto (otra redacción del mismo LLM local).
+    assert _es_abstencion("La información proporcionada no incluye ningún dato sobre eso.")
+    assert _es_abstencion("El contexto no contiene datos económicos.")
+    assert _es_abstencion("El contexto no menciona a ese municipio ni su cantidad de homicidios.")
     assert not _es_abstencion("En Bogotá se registraron 97 homicidios en mayo.")
 
 
@@ -86,6 +97,7 @@ def test_evaluate_puntua_aciertos_fallos_y_abstenciones():
     rep = evaluate(preguntas, answer_fn=lambda t: canned[t])
 
     assert rep["n_preguntas"] == 4
+    assert "temperatura" in rep  # parámetro de reproducibilidad, siempre registrado
     assert rep["exactitud_cifras"] == 1.0  # q1 (cifra) y q2 (texto) aciertan
     assert rep["abstencion_correcta"] == 0.5  # q3 sí; q4 rehúsa pero inventa cifra
     assert rep["citacion_en_aciertos"] == 0.5  # q1 cita, q2 (clásico simulado) no
@@ -108,6 +120,27 @@ def test_evaluate_una_pregunta_fallida_no_tumba_el_lote():
     por_id = {d["id"]: d for d in rep["detalle"]}
     assert por_id["ok"]["acierto"] and not por_id["boom"]["acierto"]
     assert "error" in por_id["boom"]
+
+
+def test_write_report_respeta_nombre_de_salida_y_modo_solicitado(tmp_path, monkeypatch):
+    """`out_name` conserva los reportes de varios caminos (una ejecución no sobrescribe la
+    otra), y `modo_solicitado` es el modo pedido — no el de la última respuesta (regresión:
+    la variable `modo` se reasignaba dentro del bucle)."""
+    from vigia.config import settings
+
+    monkeypatch.setattr(settings, "data_dir", tmp_path / "data")
+    monkeypatch.setattr(settings, "reports_dir", tmp_path / "reports")
+    preguntas = [Pregunta(id="q1", categoria="municipio", texto="¿A?", cifras=[5])]
+    rep = write_report(
+        preguntas,
+        answer_fn=lambda t: _RespuestaClasica("Son 5 hechos."),
+        modo="clasico",
+        out_name="rag_eval_ollama.json",
+    )
+    assert (tmp_path / "reports" / "rag_eval_ollama.json").exists()
+    assert not (tmp_path / "reports" / "rag_eval.json").exists()  # el por defecto, intacto
+    assert rep["modo_solicitado"] == "clasico"
+    assert rep["modo_efectivo"] == "rag-clasico"
 
 
 def test_build_golden_set_derivado_de_gold(tmp_path, monkeypatch):

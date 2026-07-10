@@ -157,7 +157,7 @@ def ingest_poblacion() -> pd.DataFrame:
 
 
 def load_poblacion() -> pd.DataFrame:
-    """Devuelve `[cod_municipio, anio, poblacion]`; lanza si no se ha ingerido aún."""
+    """Devuelve `[cod_municipio, anio, poblacion]`; lanza si aún no se ha descargado."""
     src = settings.bronze_dir / "poblacion.parquet"
     if not src.exists():
         raise RuntimeError(

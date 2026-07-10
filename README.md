@@ -414,7 +414,7 @@ existe una **segunda familia con otro esquema y otro formato de fecha**, y unifi
 evento es el reto técnico central de la plataforma (`silver.py`). La **diversidad** del ecosistema va por
 donde aporta señal distinta: **cuatro entidades públicas** (Policía, Fiscalía, DANE y el Ministerio de
 Defensa) y **seis modalidades de dato** — series tabulares por API, un micro-dato de 23,2 millones de filas
-ingerido por paginación continua (Fiscalía, con su dimensión penal), referencias del DANE (DIVIPOLA y la
+adquirido por paginación continua (Fiscalía, con su dimensión penal), referencias del DANE (DIVIPOLA y la
 población municipal, esta última fuera del portal), cartografía GeoJSON del MGN, un PDF de política pública
 para el pilar no estructurado del RAG, y la señal de prensa en tiempo real (newsdata.io/GDELT).
 **Concentración donde está el dato oficial; diversificación donde hay señal nueva.**
@@ -425,7 +425,7 @@ cubrir la mitad de *"Justicia"* del reto, VigIA incorpora el dataset *Procesos F
 → Juicio → Ejecución de Penas), una señal que ningún conteo de delitos tiene. Hallazgo nacional real: **solo
 ~8,5 % de las noticias criminales superan la indagación** (Bogotá, 5,6 %). No se fusiona con la serie de la
 Policía (*proceso* ≠ *hecho registrado* → sería doble conteo). Como su API de agregación no es viable a ese
-volumen, se ingiere por **paginación continua por clave (*streaming keyset*) + agregación local**
+volumen, se adquiere por **paginación continua por clave (*streaming keyset*) + agregación local**
 (reproducible sin token). Detalle, cifras y
 *Advertencias de uso* en [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md#capa-justicia--fiscalía-general-de-la-nación-fuente-de-otra-entidad-capa-paralela).
 

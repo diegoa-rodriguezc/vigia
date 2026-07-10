@@ -73,7 +73,7 @@ def ingest_one(spec: DatasetSpec) -> pd.DataFrame:
 
 
 def ingest_aggregated(spec: AggregatedSpec) -> pd.DataFrame:
-    """Ingiere una fuente ENORME por streaming de columnas + agregación LOCAL, con linaje.
+    """Adquiere una fuente ENORME por streaming de columnas + agregación LOCAL, con linaje.
 
     Para micro-dato inviable de agregar server-side (p. ej. ~23 millones de procesos de la Fiscalía,
     cuyo backend revienta el timeout en cualquier `$group`): se traen solo `group_cols` por

@@ -61,8 +61,8 @@ def quality_report(df: pd.DataFrame, procedencia: dict[str, dict] | None = None)
             "filas_crudas → filas_validas por fuente; los descartes provienen solo de fecha o "
             "código de municipio inválidos. No se eliminan filas repetidas: una fila idéntica "
             "a otra es un hecho distinto con atributos gruesos, no un duplicado del publicador. "
-            "`ingerido_el` es la fecha de ingesta del bronze de cada fuente (linaje auditable "
-            "sin correr el pipeline; los meta del bronze no se versionan)."
+            "`fecha_ingesta` viene del linaje del bronze de cada fuente (auditable sin correr "
+            "el pipeline; los meta del bronze no se versionan)."
         ),
         "rango_fechas": {
             "min": str(df["fecha"].min().date()) if len(df) else None,
@@ -94,7 +94,7 @@ def _truncation_alerts(procedencia: dict[str, dict] | None) -> list[str]:
         if p.get("truncado"):
             cap = p.get("row_cap")
             alerts.append(
-                f"Fuente '{fuente}' ingerida con tope SODA_MAX_ROWS={cap}: volumen posiblemente "
+                f"Fuente '{fuente}' descargada con tope SODA_MAX_ROWS={cap}: volumen posiblemente "
                 "PARCIAL; los conteos de esta fuente y sus derivados NO representan el total real."
             )
     return alerts

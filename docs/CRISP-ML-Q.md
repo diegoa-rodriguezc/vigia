@@ -51,10 +51,10 @@ una **decisión de diseño argumentada** en el README (§Datos abiertos utilizad
 del reto, se incorpora *Procesos Fiscalía V3* (`dbdv-iihs`, ~23 millones de procesos) con su dimensión diferencial: **judicialización** (Indagación → Investigación → Juicio → Ejecución). **No se fusiona** con la
 serie de la Policía (*proceso* ≠ *hecho registrado* → doble conteo): es una capa paralela
 (`etl/justicia.py`). Como la agregación server-side no es viable a ese volumen (el backend revienta el
-*timeout* en cualquier `$group`; un app token no lo arregla), se ingiere por **streaming keyset + agregación
+*timeout* en cualquier `$group`; un app token no lo arregla), se adquiere por **streaming keyset + agregación
 local** (paginación continua por clave) — reproducible sin token (~15-25 min), con **reintento por página**
 ante cortes de red (el avance no se pierde: la clave de paginación hace el reintento repetible) y colapso
-periódico del acumulado (RAM acotada). El grano ingerido incluye el **título del Código Penal**
+periódico del acumulado (RAM acotada). El grano adquirido incluye el **título del Código Penal**
 (`titulo_delito`, 24 valores — la taxonomía propia de la Fiscalía), lo que permite responder **"¿qué delito
 se judicializa menos?"**: la tasa por título se publica en `gold/justicia_delito.parquet`,
 `reports/justicia.json` (`tasa_por_delito`, con umbral mínimo de 10.000 procesos de etapa conocida para que
@@ -413,7 +413,7 @@ con un LLM de 1,7B.
    esa ejecución, a 1 paso):* el modelo mostraba ventaja en sMAPE (≈72 vs ≈101) y una **brecha en MAE** que se
    ensanchaba (≈6,1 vs ≈2,5): las nuevas series urbanas son de **alto volumen y fuerte autocorrelación
    mensual**, donde "repetir el último valor" es aún más difícil de batir en error absoluto. **Reconciliación
-   con la ejecución actual (catálogo completo + periodo extendido a 2026-05):** al ingerir el histórico
+   con la ejecución actual (catálogo completo + periodo extendido a 2026-05):** al descargar el histórico
    completo, la ventaja en sMAPE **a 1 paso** se estrechó y **se revirtió** (hoy ≈126 vs ≈118, la persistencia
    a corto plazo es muy fuerte); la ventaja del modelo se **concentra en el horizonte multipaso** (sMAPE
    ≈113 vs ≈115) y en el **tercil de volumen medio**. El diagnóstico de fondo se mantiene: el aporte del
@@ -684,7 +684,7 @@ Comparar `silver_quality.json` entre ejecuciones consecutivas. **Señales y umbr
 - **Cobertura** (`municipios_unicos`, `categorias`, `rango_fechas`): caídas o estancamiento de la fecha
   máxima → la fuente no trae el mes nuevo.
 - **Linaje por fuente** (`procedencia`): además de la conciliación crudo→silver, cada fuente lleva su
-  **fecha de ingesta** (`ingerido_el`, elevada desde el meta del bronze — que no se versiona — al reporte
+  **fecha de ingesta** (`fecha_ingesta`, elevada desde el meta del bronze — que no se versiona — al reporte
   versionado): la procedencia del dato es auditable desde el repo sin correr el pipeline.
 - **Alertas estructurales** (`alertas`): cualquier entrada no vacía (nulos, cantidades ≤0, fechas futuras)
   detiene la promoción a gold.

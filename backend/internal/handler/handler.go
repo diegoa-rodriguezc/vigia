@@ -187,7 +187,7 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 
 // Ready es la sonda de READINESS: 200 solo si la BD es alcanzable; 503 si no. La usa el
 // HEALTHCHECK del contenedor, de modo que el orquestador marca "unhealthy" cuando la base está
-// caída (y NO cuando solo está sin poblar: el ping igual responde). Así el healthcheck deja de
+// caída (y NO cuando solo está sin datos: el ping igual responde). Así el healthcheck deja de
 // mentir (antes daba 200 con todos los datos en 503).
 func (h *Handler) Ready(w http.ResponseWriter, r *http.Request) {
 	if h.dbReachable(r.Context()) {

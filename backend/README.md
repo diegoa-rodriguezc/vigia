@@ -49,5 +49,5 @@ go run ./cmd/api        # requiere DATABASE_URL y ML_API_URL (ver .env)
 go test ./...
 ```
 
-El backend arranca aunque la base de datos aún no esté poblada: los endpoints de datos responden
+El backend arranca aunque la base de datos aún no tenga datos: los endpoints de datos responden
 `503` con mensaje accionable hasta que el pipeline (`make docker-pipeline`) cargue las tablas gold.

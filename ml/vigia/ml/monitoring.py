@@ -220,7 +220,7 @@ def population_coverage(series: pd.DataFrame) -> dict:
             "cobertura_pct": 0.0,
             "estado": "amarillo",
             "nota": "sin denominador poblacional: el modelo opera en conteos "
-            "(re-ingiera la fuente `poblacion` y reconstruya gold)",
+            "(vuelva a descargar la fuente `poblacion` y reconstruya gold)",
         }
     cobertura = round(100 * float(series["poblacion"].notna().mean()), 1)
     return {

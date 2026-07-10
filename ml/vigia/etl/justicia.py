@@ -187,7 +187,7 @@ def build_justicia() -> pd.DataFrame:
         delito_path.unlink()
         log.warning(
             "Bronze sin 'titulo_delito': se retiró el gold por delito anterior "
-            "(re-ingiera justicia_procesos para regenerarlo)."
+            "(vuelva a descargar justicia_procesos para regenerarlo)."
         )
     _write_report(anual, resumen, delito, procedencia)
     log.info(

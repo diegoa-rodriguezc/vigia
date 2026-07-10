@@ -28,7 +28,7 @@ def _pct(v: float | None, dec: int = 1, *, de_fraccion: bool = False) -> str:
 
 
 @app.command()
-def ingest(only: list[str] = typer.Option(None, help="Ingerir solo estos dataset ids")) -> None:
+def ingest(only: list[str] = typer.Option(None, help="Descargar solo estos dataset ids")) -> None:
     """Descarga los datos abiertos (SODA2) a la capa bronze."""
     from vigia.etl.bronze import ingest_all
 

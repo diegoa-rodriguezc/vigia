@@ -1,6 +1,6 @@
 """Catálogo de conjuntos de datos abiertos de Seguridad y Defensa (datos.gov.co).
 
-Cada entrada describe cómo ingerir y normalizar la fuente. La capa *silver*
+Cada entrada describe cómo descargar y normalizar la fuente. La capa *silver*
 usa `schema_family` y `date_format` para unificar todas las fuentes en un
 único modelo de eventos delictivos.
 """
@@ -263,7 +263,7 @@ def naturaleza(categoria: str) -> str:
 # reproducible SIN token. Esquema verificado contra la API.
 @dataclass(frozen=True)
 class AggregatedSpec:
-    """Fuente SODA2 ENORME que se ingiere por streaming de columnas + agregación LOCAL.
+    """Fuente SODA2 ENORME que se adquiere por streaming de columnas + agregación LOCAL.
 
     No se descarga el micro-dato completo ni se agrega en el servidor (su backend no lo admite):
     se paginan solo `group_cols` por keyset y se cuentan en memoria (`count_as`).

@@ -65,7 +65,7 @@ def test_attach_poblacion_clip_de_anio(monkeypatch):
 
 
 def test_attach_poblacion_degrada_si_falta(monkeypatch):
-    """Sin población ingerida, la columna queda nula (degradación elegante)."""
+    """Sin población descargada, la columna queda nula (degradación elegante)."""
     import vigia.etl.poblacion as pmod
     from vigia.etl import gold
 

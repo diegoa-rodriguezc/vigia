@@ -29,7 +29,7 @@ def _attach_poblacion(series: pd.DataFrame) -> pd.DataFrame:
 
     La proyección DANE cubre 2005-2035; los años fuera de rango (2003-2004, o futuros) se
     respaldan con el año disponible más cercano (clip), evitando nulos en los extremos de la
-    serie. Si la población no se ha ingerido, la columna queda nula y el modelo opera sin
+    serie. Si la población no se ha descargado, la columna queda nula y el modelo opera sin
     tasas (degradación elegante, como con DIVIPOLA).
     """
     try:

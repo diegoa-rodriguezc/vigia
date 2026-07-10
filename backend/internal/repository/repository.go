@@ -86,7 +86,7 @@ func (r *Repository) Available() bool { return r != nil && r.pool != nil }
 
 // Ping verifica la conectividad REAL con la base de datos (no solo que el pool exista). Lo usa
 // la sonda de readiness para distinguir "BD inalcanzable" (no listo) de "BD accesible pero sin
-// poblar" (listo: los endpoints de datos devuelven 503 accionable, pero la conexión está viva).
+// datos" (listo: los endpoints de datos devuelven 503 accionable, pero la conexión está viva).
 func (r *Repository) Ping(ctx context.Context) error {
 	if !r.Available() {
 		return ErrNoDB

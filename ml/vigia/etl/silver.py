@@ -20,7 +20,7 @@ log = get_logger(__name__)
 
 
 def _bronze_cap(dataset_id: str) -> tuple[bool, int | None]:
-    """Lee del linaje del bronze si la fuente se ingirió con tope (SODA_MAX_ROWS).
+    """Lee del linaje del bronze si la fuente se descargó con tope (SODA_MAX_ROWS).
 
     Devuelve `(capped, row_cap)`. Ante meta ausente o ilegible, asume sin tope (False, None):
     el flag es informativo y no debe tumbar la construcción de silver.
@@ -38,8 +38,8 @@ def _bronze_cap(dataset_id: str) -> tuple[bool, int | None]:
 def _bronze_ingested_at(dataset_id: str) -> str | None:
     """Fecha de ingesta del bronze (linaje). Los meta del bronze están gitignored: elevar la
     fecha al informe de calidad la hace auditable desde el repo. Es una fecha derivada del
-    DATO (solo cambia al re-ingerir), no un reloj de pared que ensuciaría el diff del reporte
-    en cada ejecución. Ante meta ausente o ilegible devuelve None (informativo)."""
+    DATO (solo cambia al volver a descargar la fuente), no un reloj de pared que ensuciaría el
+    diff del reporte en cada ejecución. Ante meta ausente o ilegible devuelve None (informativo)."""
     meta_path = settings.bronze_dir / f"{dataset_id}.meta.json"
     if not meta_path.exists():
         return None
@@ -269,9 +269,9 @@ def build_silver(only: list[str] | None = None) -> pd.DataFrame:
             "descartadas_pct": round(100 * (1 - len(norm) / len(raw)), 2),
         }
         # Fecha de ingesta del bronze (linaje auditable desde el repo; se omite si el meta falta).
-        ingerido = _bronze_ingested_at(spec.id)
-        if ingerido:
-            procedencia[spec.id]["ingerido_el"] = ingerido
+        fecha_ingesta = _bronze_ingested_at(spec.id)
+        if fecha_ingesta:
+            procedencia[spec.id]["fecha_ingesta"] = fecha_ingesta
         # Si el bronze se truncó por SODA_MAX_ROWS, `filas_crudas` NO es el volumen del portal
         # sino el recortado: dejarlo explícito para que el reporte de calidad no mienta. Solo se
         # inyecta cuando hubo tope; así una ejecución SIN tope produce la procedencia idéntica.

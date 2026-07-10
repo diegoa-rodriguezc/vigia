@@ -98,6 +98,19 @@ func TestJusticiaMunicipiosNoDB(t *testing.T) {
 	}
 }
 
+// JusticiaDelitos sin base de datos devuelve 503 (no 500).
+func TestJusticiaDelitosNoDB(t *testing.T) {
+	h := New(nil, nil, nil, config.Config{})
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/justicia/delitos", nil)
+	rec := httptest.NewRecorder()
+
+	h.JusticiaDelitos(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("esperaba 503, obtuve %d", rec.Code)
+	}
+}
+
 // JusticiaMunicipioDetalle sin el parámetro cod_municipio devuelve 400 (no toca la BD).
 func TestJusticiaMunicipioDetalleRequiereCod(t *testing.T) {
 	h := New(nil, nil, nil, config.Config{})

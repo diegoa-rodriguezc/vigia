@@ -555,6 +555,42 @@ func (r *Repository) JusticiaMunicipios(ctx context.Context) ([]JusticiaMunicipi
 	return out, mapErr(rows.Err())
 }
 
+// JusticiaDelito es la fila del ranking nacional por título del Código Penal.
+type JusticiaDelito struct {
+	TituloDelito          string  `json:"titulo_delito"`
+	TotalProcesos         int64   `json:"total_procesos"`
+	NJudicializados       int64   `json:"n_judicializados"`
+	ProcesosEtapaConocida int64   `json:"procesos_etapa_conocida"`
+	TasaJudicializacion   float64 `json:"tasa_judicializacion_pct"`
+}
+
+// JusticiaDelitos devuelve la tasa de judicialización NACIONAL por título del Código Penal
+// (taxonomía propia de la Fiscalía, ~30 filas), ordenada por volumen de procesos.
+func (r *Repository) JusticiaDelitos(ctx context.Context) ([]JusticiaDelito, error) {
+	if !r.Available() {
+		return nil, ErrNoDB
+	}
+	rows, err := r.pool.Query(ctx,
+		`SELECT titulo_delito, total_procesos, n_judicializados,
+		        procesos_etapa_conocida, tasa_judicializacion_pct
+		 FROM justicia_delito
+		 ORDER BY total_procesos DESC`)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	defer rows.Close()
+	out := []JusticiaDelito{}
+	for rows.Next() {
+		var d JusticiaDelito
+		if err := rows.Scan(&d.TituloDelito, &d.TotalProcesos, &d.NJudicializados,
+			&d.ProcesosEtapaConocida, &d.TasaJudicializacion); err != nil {
+			return nil, err
+		}
+		out = append(out, d)
+	}
+	return out, mapErr(rows.Err())
+}
+
 // JusticiaDepartamento agrega la tasa de judicialización por departamento (para la coropleta).
 type JusticiaDepartamento struct {
 	CodDepartamento     string  `json:"cod_departamento"`

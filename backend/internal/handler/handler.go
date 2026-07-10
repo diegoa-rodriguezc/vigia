@@ -461,8 +461,8 @@ func (h *Handler) Monitoring(w http.ResponseWriter, r *http.Request) {
 }
 
 // Brief reenvía el informe ejecutivo de seguridad de un municipio (IA generativa) del servicio
-// ML. Es cómputo de LLM (caro) → protegido con JWT y cacheado por municipio (se invalida al
-// reentrenar/repipeline; usa `?nocache=1` para forzar). El cod_municipio se valida numérico
+// ML. Es cómputo de LLM (caro) → protegido con JWT y guardado en caché por municipio (se invalida
+// al reentrenar/repipeline; usa `?nocache=1` para forzar). El cod_municipio se valida numérico
 // antes de construir la ruta del ML (evita inyección en el path).
 func (h *Handler) Brief(w http.ResponseWriter, r *http.Request) {
 	cod := r.URL.Query().Get("cod_municipio")
@@ -560,6 +560,16 @@ func (h *Handler) JusticiaResumen(w http.ResponseWriter, r *http.Request) {
 // JusticiaMunicipios devuelve el ranking de municipios por procesos/tasa de judicialización.
 func (h *Handler) JusticiaMunicipios(w http.ResponseWriter, r *http.Request) {
 	data, err := h.repo.JusticiaMunicipios(r.Context())
+	if err != nil {
+		statusForRepoErr(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, data)
+}
+
+// JusticiaDelitos devuelve la tasa de judicialización nacional por título del Código Penal.
+func (h *Handler) JusticiaDelitos(w http.ResponseWriter, r *http.Request) {
+	data, err := h.repo.JusticiaDelitos(r.Context())
 	if err != nil {
 		statusForRepoErr(w, err)
 		return

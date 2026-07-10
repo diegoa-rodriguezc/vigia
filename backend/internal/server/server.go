@@ -101,6 +101,7 @@ func New(
 			r.Get("/justicia/resumen", h.JusticiaResumen)
 			r.Get("/justicia/municipios", h.JusticiaMunicipios)
 			r.Get("/justicia/departamentos", h.JusticiaDepartamentos)
+			r.Get("/justicia/delitos", h.JusticiaDelitos)
 			r.Get("/justicia/municipio", h.JusticiaMunicipioDetalle)
 		})
 

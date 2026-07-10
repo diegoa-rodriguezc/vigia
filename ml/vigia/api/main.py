@@ -150,7 +150,7 @@ def brief(cod_municipio: str) -> BriefResponse:
 def rag_chat(req: ChatRequest) -> ChatResponse:
     """Asistente ciudadano sobre datos oficiales.
 
-    Usa el AGENTE con herramientas si el proveedor LLM lo soporta (Anthropic/OpenAI); si no,
+    Usa el AGENTE con herramientas si el proveedor LLM lo admite (Anthropic/OpenAI); si no,
     cae al RAG clásico. La decisión vive en `rag.agent.answer` (transparente para el backend).
     """
     from vigia.rag.agent import answer

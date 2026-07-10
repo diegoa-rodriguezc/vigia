@@ -93,9 +93,9 @@ def test_reporte_versionado_muestra_modelo_ganando_multipaso():
     mp = data["metricas_backtest"]["multipaso"]
     assert mp["smape"] < mp["baseline_smape"], "el sMAPE multipaso debe batir a la persistencia"
     # #4: el reporte debe exponer MASE (métrica escalada, no degenerada en conteos dispersos) y la
-    # baseline ESTACIONAL (mismo mes del año anterior) junto a la persistencia.
+    # línea base ESTACIONAL (mismo mes del año anterior) junto a la persistencia.
     mb = data["metricas_backtest"]
     assert "mase" in mb and mb["mase"] > 0, "falta MASE en el reporte"
-    assert "baseline_estacional_mae" in mb, "falta la baseline estacional en el reporte"
-    assert "baseline_estacional_mae" in mp, "falta la baseline estacional multipaso"
+    assert "baseline_estacional_mae" in mb, "falta la línea base estacional en el reporte"
+    assert "baseline_estacional_mae" in mp, "falta la línea base estacional multipaso"
     assert isinstance(data["supera_linea_base_estacional_mae_multipaso"], bool)

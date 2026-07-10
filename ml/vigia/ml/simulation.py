@@ -11,7 +11,7 @@ honestidad la procedencia de cada una:
   el modelo NO observa variables de política, así que el efecto lo aporta el usuario como un
   porcentaje de cambio de la incidencia, aplicado con una rampa temporal sobre la trayectoria
   entregada. Se reporta etiquetado como supuesto del usuario, no como una estimación causal del
-  modelo (no sobre-afirmar lo que los datos no soportan).
+  modelo (no sobreafirmar lo que los datos no respaldan).
 
 Un escenario sin palancas reproduce EXACTAMENTE el pronóstico base (`predict`): la simulación
 no altera el modelo, solo proyecta supuestos sobre su salida. Toda la ruta degrada con

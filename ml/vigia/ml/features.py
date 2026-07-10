@@ -21,7 +21,8 @@ TARGET = "cantidad"
 # actual y producía sobreestimaciones de +120 %). Con 60 meses la identidad de la serie se
 # conserva (con `min_periods=1`, las series más cortas que la ventana obtienen exactamente
 # su media expansiva) y el backtest mejora en MAE 1 paso, multipaso, MASE y el tercil alto
-# (barrido medido en la bitácora de docs/CRISP-ML-Q.md). No volver a la expansiva sin re-medir.
+# (análisis de sensibilidad medido en la bitácora de docs/CRISP-ML-Q.md). No volver a la
+# expansiva sin re-medir.
 HIST_WINDOW = 60
 
 

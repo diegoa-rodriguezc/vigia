@@ -141,8 +141,8 @@ def _new_estimator(overrides: dict | None = None) -> HistGradientBoostingRegress
 
     Nota empírica (bitácora en docs/CRISP-ML-Q.md): `loss="poisson"` extrapola por su enlace
     logarítmico y dispara el MAE en la recursión multipaso —de forma CATASTRÓFICA sobre conteos
-    (errores ~1e73), confirmado al re-probarlo incluso con población—. La pérdida cuadrática es
-    estable; la escala de los conteos se aborda modelando TASAS (no cambiando la pérdida).
+    (errores ~1e73), confirmado al volver a probarlo incluso con población—. La pérdida cuadrática
+    es estable; la escala de los conteos se aborda modelando TASAS (no cambiando la pérdida).
     """
     params = {**_HGB_PARAMS, **(overrides or {})}
     return HistGradientBoostingRegressor(random_state=settings.seed, **params)
@@ -175,7 +175,7 @@ def _metrics_block(
 ) -> dict:
     """Error del modelo y de las líneas base sobre el mismo conjunto.
 
-    Además de la persistencia (naive), reporta —cuando se aportan— la **baseline estacional**
+    Además de la persistencia (naive), reporta —cuando se aportan— la **línea base estacional**
     (mismo mes del año anterior, una vara más exigente en series con estacionalidad) y el
     **MASE** del modelo y de la persistencia (métrica escalada, interpretable en conteos dispersos).
     """
@@ -258,7 +258,7 @@ def _walk_forward(
     hgb_params: dict | None = None,
     make_estimator=None,
 ):
-    """Backtest walk-forward RECURSIVO multi-paso (rolling origin), sin fuga de datos.
+    """Backtest walk-forward RECURSIVO multipaso (rolling origin), sin fuga de datos.
 
     Para cada uno de los últimos `n_splits` orígenes temporales se entrena un estimador
     SOLO con el pasado y se pronostican `horizon` meses **de forma recursiva** —idéntico a
@@ -330,9 +330,9 @@ def _walk_forward(
             base_arr = np.nan_to_num(baseline_val.reindex(keys_idx).to_numpy().astype(float))
             vol_arr = vol_lookup.reindex(keys_idx).to_numpy()
             scale_arr = naive_mae.reindex(keys_idx).to_numpy().astype(float)  # MASE (NaN ok)
-            # Baseline ESTACIONAL-ingenua: conteo del mismo mes del año anterior (tp−12 meses), por
-            # calendario y solo con datos anteriores al origen (tp−12 < origin si h≤12 → sin fuga).
-            # Vara más exigente que la persistencia en series con estacionalidad marcada.
+            # Línea base ESTACIONAL-ingenua: conteo del mismo mes del año anterior (tp−12 meses),
+            # por calendario y solo con datos anteriores al origen (tp−12 < origin si h≤12 → sin
+            # fuga). Vara más exigente que la persistencia en series con estacionalidad marcada.
             season_tp = pd.Timestamp(tp) - pd.DateOffset(months=12)
             season_lookup = train_df.loc[train_df["periodo"] == season_tp].set_index(KEY)[TARGET]
             season_arr = np.nan_to_num(season_lookup.reindex(keys_idx).to_numpy().astype(float))
@@ -421,7 +421,7 @@ def train(
             "(`vigia ingest` sin SODA_MAX_ROWS) o reduzca min_nonzero."
         )
 
-    # Backtest walk-forward RECURSIVO multi-paso contra la línea base ingenua (persistencia).
+    # Backtest walk-forward RECURSIVO multipaso contra la línea base ingenua (persistencia).
     # Reporta tanto el error a 1 paso (comparable, headline) como el del horizonte completo
     # que se entrega, su degradación por paso, la cobertura empírica de la banda y el desglose
     # por volumen de serie (que reconcilia el MAE frente a la línea base).
@@ -431,7 +431,7 @@ def train(
     bt = _walk_forward(series, cols, n_splits=n_splits, horizon=test_months, mode=mode)
     if bt is not None:
         step, yt, yp, bl, vol = bt["step"], bt["y_true"], bt["y_pred"], bt["baseline"], bt["vol"]
-        bls, sc = bt["bl_season"], bt["scale"]  # baseline estacional y escala MASE por punto
+        bls, sc = bt["bl_season"], bt["scale"]  # línea base estacional y escala MASE por punto
         one = step == 1
         # Dispersión cuasi-Poisson (Pearson) de los residuos a 1 paso: Var(residuo) ≈ φ·nivel.
         # Da una banda que ESCALA con el nivel de cada serie; un σ global daría intervalos

@@ -1,5 +1,5 @@
 {
-  "experimento": "barrido de _BLEND_W (Iteración 12) — backtest único con peso 1.0, re-mezcla exacta a posteriori",
+  "experimento": "análisis de sensibilidad de _BLEND_W (Iteración 12) — backtest único con peso 1.0, re-mezcla exacta a posteriori",
   "generado": "2026-07-08T15:52:05",
   "n_origins": 3,
   "horizon": 6,
@@ -11,7 +11,7 @@
     "estacional_mae_1paso": 2.7168,
     "estacional_mae_multipaso": 3.2028
   },
-  "barrido": [
+  "sensibilidad": [
     {
       "peso_modelo": 1.0,
       "paso1": {

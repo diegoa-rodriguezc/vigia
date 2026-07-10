@@ -1,5 +1,5 @@
-# Barrido de la mezcla modelo/persistencia (_BLEND_W) — experimento de la Iteración 12
-# (docs/CRISP-ML-Q.md, bitácora). Regenera reports/blend_sweep.json.
+# Análisis de sensibilidad de la mezcla modelo/persistencia (_BLEND_W) — experimento de la
+# Iteración 12 (docs/CRISP-ML-Q.md, bitácora). Regenera reports/blend_sweep.json.
 #
 # Cómo funciona: la recursión de `_walk_forward` realimenta SIEMPRE la predicción cruda del
 # modelo (la mezcla se aplica solo al evaluar y al entregar), así que UN único backtest con
@@ -68,8 +68,8 @@ for w in (1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3):
     )
 
 out = {
-    "experimento": "barrido de _BLEND_W (Iteración 12) — backtest único con peso 1.0, "
-    "re-mezcla exacta a posteriori",
+    "experimento": "análisis de sensibilidad de _BLEND_W (Iteración 12) — backtest único "
+    "con peso 1.0, re-mezcla exacta a posteriori",
     "generado": datetime.datetime.now().isoformat(timespec="seconds"),
     "n_origins": int(bt["n_origins"]),
     "horizon": int(bt["horizon"]),
@@ -82,7 +82,7 @@ out = {
         "estacional_mae_1paso": resultados[0]["paso1"].get("baseline_estacional_mae"),
         "estacional_mae_multipaso": resultados[0]["multipaso"].get("baseline_estacional_mae"),
     },
-    "barrido": resultados,
+    "sensibilidad": resultados,
 }
 dest = settings.reports_dir / "blend_sweep.json"
 dest.write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")

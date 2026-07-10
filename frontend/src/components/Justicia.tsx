@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer } from "recharts";
 import {
-  getJusticiaResumen, getJusticiaMunicipios, getJusticiaDepartamentos,
-  type JusticiaResumenNacional, type JusticiaMunicipio, type JusticiaDepartamento,
+  getJusticiaResumen, getJusticiaMunicipios, getJusticiaDepartamentos, getJusticiaDelitos, errorMessage,
+  type JusticiaResumenNacional, type JusticiaMunicipio, type JusticiaDepartamento, type JusticiaDelito,
 } from "../api";
 import { StatTile, SkeletonRows, Pagination, ExportButton, ChartTooltip, usePagination, nfmt, dfmt } from "./ui";
 import { Icon } from "./icons";
@@ -25,6 +25,11 @@ const colorEtapa = (etapa: string, clase: string) =>
 
 const pct = (n: number) => `${dfmt(n, 2)} %`;
 
+// Volumen mínimo de procesos con etapa conocida para que un título del Código Penal entre al
+// ranking de tasas (mismo umbral que el reporte reproducible): con pocos procesos una tasa
+// extrema es ruido, no señal.
+const MIN_PROCESOS_DELITO = 10000;
+
 type SortKey = "municipio" | "departamento" | "total_procesos" | "n_judicializados" | "tasa_judicializacion_pct";
 
 // `aria-sort` para la cabecera de la columna activa (lectores de pantalla).
@@ -35,6 +40,7 @@ export default function Justicia() {
   const [resumen, setResumen] = useState<JusticiaResumenNacional | null>(null);
   const [municipios, setMunicipios] = useState<JusticiaMunicipio[]>([]);
   const [departamentos, setDepartamentos] = useState<JusticiaDepartamento[]>([]);
+  const [delitos, setDelitos] = useState<JusticiaDelito[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("");
@@ -47,8 +53,13 @@ export default function Justicia() {
       getJusticiaResumen().then((d) => { if (alive) setResumen(d); }),
       getJusticiaMunicipios().then((d) => { if (alive) setMunicipios(d); }),
       getJusticiaDepartamentos().then((d) => { if (alive) setDepartamentos(d); }),
+      // El desglose por delito es OPCIONAL (una base cargada antes de esta versión no tiene la
+      // tabla): si falla, la tarjeta se oculta sin marcar en error la pestaña completa.
+      getJusticiaDelitos()
+        .then((d) => { if (alive) setDelitos(d); })
+        .catch(() => { if (alive) setDelitos([]); }),
     ])
-      .catch((e) => { if (alive) setError(e?.response?.data?.error ?? e.message); })
+      .catch((e) => { if (alive) setError(errorMessage(e)); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, []);
@@ -70,6 +81,16 @@ export default function Justicia() {
       .slice(0, 12)
       .map((d) => ({ name: d.departamento, tasa: d.tasa_judicializacion_pct }));
   }, [departamentos]);
+
+  // Títulos del Código Penal con MENOR tasa de judicialización (de menor a mayor), entre los
+  // de volumen suficiente — responde "¿qué delito se judicializa menos?".
+  const menosJudicializados = useMemo(() => {
+    return [...delitos]
+      .filter((d) => d.procesos_etapa_conocida >= MIN_PROCESOS_DELITO && d.titulo_delito !== "Sin información")
+      .sort((a, b) => a.tasa_judicializacion_pct - b.tasa_judicializacion_pct)
+      .slice(0, 12)
+      .map((d) => ({ name: d.titulo_delito, tasa: d.tasa_judicializacion_pct }));
+  }, [delitos]);
 
   // Ranking de municipios filtrado + ordenado (cliente) + paginación.
   const vista = useMemo(() => {
@@ -94,6 +115,16 @@ export default function Justicia() {
   const arrow = (key: SortKey) =>
     sortKey === key ? <span className="arrow"> {sortDir === "asc" ? "▲" : "▼"}</span> : null;
 
+  // Cabecera ordenable ACCESIBLE: el control es un <button> dentro del <th> (foco y teclado
+  // nativos: Enter/Espacio ordenan), y el th conserva role columnheader + aria-sort.
+  const thSort = (key: SortKey, label: string, extra = "") => (
+    <th className={`sortable ${extra}`} aria-sort={ariaSort(sortKey === key, sortDir)}>
+      <button type="button" className={`th-sort ${sortKey === key ? "active" : ""}`} onClick={() => toggleSort(key)}>
+        {label}{arrow(key)}
+      </button>
+    </th>
+  );
+
   const pg = usePagination(vista, 10, `${filtro}|${sortKey}|${sortDir}`);
 
   if (error) return (
@@ -116,7 +147,9 @@ export default function Justicia() {
           Capa <b>paralela</b> a los delitos de la Policía (un <i>proceso</i> no es un <i>hecho registrado</i>:
           no son comparables 1:1). El volumen lo domina la <b>indagación</b>, por eso el indicador clave es la
           <b> tasa de judicialización</b> (sobre etapas conocidas), no el conteo bruto. Los años recientes
-          subcuentan por el <b>rezago judicial</b>.
+          quedan subestimados por el <b>rezago judicial</b>, y las tasas mezclan <b>cohortes de hechos de
+          2004-2026</b> (un proceso reciente aún puede avanzar de etapa): sirven para comparar territorios o
+          delitos entre sí, no años recientes contra antiguos.
         </span>
       </p>
 
@@ -138,6 +171,7 @@ export default function Justicia() {
           avanza a investigación, juicio o ejecución de penas.
         </p>
         {loading ? <div className="skeleton" style={{ height: 240 }} /> : (
+          <div role="img" aria-label="Gráfica de barras del embudo de judicialización nacional por etapa de la cadena penal.">
           <ResponsiveContainer width="100%" height={Math.max(220, embudo.length * 48)}>
             <BarChart data={embudo} layout="vertical" margin={{ left: 8, right: 24 }}>
               <XAxis type="number" stroke="#94a3b8" fontSize={11}
@@ -149,6 +183,7 @@ export default function Justicia() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         )}
         <div className="legend" style={{ marginTop: 10 }}>
           <span><span className="dot" style={{ background: "#fbbf24" }} />Estancado (indagación)</span>
@@ -165,6 +200,7 @@ export default function Justicia() {
             Tasa = judicializados / procesos de etapa conocida (solo departamentos con ≥ 5.000 procesos, para
             que la tasa sea estable).
           </p>
+          <div role="img" aria-label="Gráfica de barras de los departamentos ordenados por tasa de judicialización.">
           <ResponsiveContainer width="100%" height={Math.max(220, topDeptos.length * 30)}>
             <BarChart data={topDeptos} layout="vertical" margin={{ left: 8, right: 24 }}>
               <XAxis type="number" stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `${v}%`} />
@@ -173,6 +209,28 @@ export default function Justicia() {
               <Bar dataKey="tasa" name="Tasa" fill="#38bdf8" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {menosJudicializados.length > 0 && (
+        <div className="card">
+          <h3><Icon name="bar-chart" /> Delitos que menos se judicializan</h3>
+          <p className="card-sub">
+            Tasa de judicialización por <b>título del Código Penal</b> (taxonomía propia de la Fiscalía,
+            nacional), de menor a mayor. Solo títulos con ≥ 10.000 procesos de etapa conocida (una tasa
+            sobre pocos procesos es ruido); la taxonomía penal no es 1:1 con las categorías de la Policía.
+          </p>
+          <div role="img" aria-label="Gráfica de barras de los títulos del Código Penal con menor tasa de judicialización.">
+          <ResponsiveContainer width="100%" height={Math.max(220, menosJudicializados.length * 34)}>
+            <BarChart data={menosJudicializados} layout="vertical" margin={{ left: 8, right: 24 }}>
+              <XAxis type="number" stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `${v}%`} />
+              <YAxis type="category" dataKey="name" width={250} stroke="#94a3b8" fontSize={10} />
+              <RTooltip cursor={{ fill: "rgba(56,189,248,0.08)" }} content={<ChartTooltip suffix="%" />} />
+              <Bar dataKey="tasa" name="Tasa" fill="#fbbf24" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+          </div>
         </div>
       )}
 
@@ -215,21 +273,11 @@ export default function Justicia() {
             <thead>
               <tr>
                 <th className="rank">#</th>
-                <th className="sortable" onClick={() => toggleSort("municipio")} aria-sort={ariaSort(sortKey === "municipio", sortDir)}>
-                  <span className={sortKey === "municipio" ? "active" : ""}>Municipio{arrow("municipio")}</span>
-                </th>
-                <th className="sortable" onClick={() => toggleSort("departamento")} aria-sort={ariaSort(sortKey === "departamento", sortDir)}>
-                  <span className={sortKey === "departamento" ? "active" : ""}>Departamento{arrow("departamento")}</span>
-                </th>
-                <th className="sortable text-right" onClick={() => toggleSort("total_procesos")} aria-sort={ariaSort(sortKey === "total_procesos", sortDir)}>
-                  <span className={sortKey === "total_procesos" ? "active" : ""}>Procesos{arrow("total_procesos")}</span>
-                </th>
-                <th className="sortable text-right" onClick={() => toggleSort("n_judicializados")} aria-sort={ariaSort(sortKey === "n_judicializados", sortDir)}>
-                  <span className={sortKey === "n_judicializados" ? "active" : ""}>Judicializados{arrow("n_judicializados")}</span>
-                </th>
-                <th className="sortable text-right" onClick={() => toggleSort("tasa_judicializacion_pct")} aria-sort={ariaSort(sortKey === "tasa_judicializacion_pct", sortDir)}>
-                  <span className={sortKey === "tasa_judicializacion_pct" ? "active" : ""}>Tasa{arrow("tasa_judicializacion_pct")}</span>
-                </th>
+                {thSort("municipio", "Municipio")}
+                {thSort("departamento", "Departamento")}
+                {thSort("total_procesos", "Procesos", "text-right")}
+                {thSort("n_judicializados", "Judicializados", "text-right")}
+                {thSort("tasa_judicializacion_pct", "Tasa", "text-right")}
               </tr>
             </thead>
             {loading ? <SkeletonRows rows={10} cols={6} /> : (

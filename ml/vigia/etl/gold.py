@@ -127,6 +127,10 @@ def build_gold() -> dict[str, pd.DataFrame]:
     eventos = eventos.assign(
         _cant_delito=eventos["cantidad"].where(~es_respuesta, 0),
         _cant_respuesta=eventos["cantidad"].where(es_respuesta, 0),
+        # Solo categorías de DELITO: la cifra alimenta "tipos de delito" en el tablero,
+        # el drill-down y las data cards del RAG; contar también las 3 respuestas
+        # mezclaría universos con el KPI nacional. `nunique` ignora los NaN del where().
+        _cat_delito=eventos["categoria"].where(~es_respuesta),
     )
     resumen_mpio = (
         eventos.groupby("cod_municipio", dropna=False)
@@ -134,7 +138,7 @@ def build_gold() -> dict[str, pd.DataFrame]:
             total_hechos=("cantidad", "sum"),
             total_delitos=("_cant_delito", "sum"),
             total_respuestas=("_cant_respuesta", "sum"),
-            categorias=("categoria", "nunique"),
+            categorias=("_cat_delito", "nunique"),
             primer_anio=("anio", "min"),
             ultimo_anio=("anio", "max"),
         )

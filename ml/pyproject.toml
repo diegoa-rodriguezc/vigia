@@ -10,7 +10,10 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
-    "pandas>=2.1",
+    # pandas con tope de MAYOR: el salto 2→3 cambió comportamientos (verificado compatible:
+    # la suite completa y el backtest reproducen las cifras bajo 3.0); pandas 4 ya anuncia
+    # retiros (Pandas4Warning) → no dejar que un build lo resuelva sin verificarlo antes.
+    "pandas>=2.1,<4",
     "pyarrow>=14",
     "numpy>=1.26,<3",
     "requests>=2.31",

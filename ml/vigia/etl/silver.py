@@ -193,7 +193,7 @@ def normalize(df: pd.DataFrame, spec: DatasetSpec) -> pd.DataFrame:
     )
 
     out["fuente"] = spec.id
-    out["ingested_at"] = pd.Timestamp.utcnow()
+    out["ingested_at"] = pd.Timestamp.now("UTC")  # utcnow() se retira en pandas 4
 
     # Descarte de filas sin fecha válida o sin código de municipio (no localizables
     # para análisis espacial ni para las tablas que expone el backend).

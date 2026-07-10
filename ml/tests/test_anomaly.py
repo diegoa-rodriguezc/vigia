@@ -1,5 +1,7 @@
 """Pruebas de detección de anomalías: detecta picos relativos a cada serie."""
 
+import zlib
+
 import numpy as np
 import pandas as pd
 
@@ -7,7 +9,12 @@ from vigia.ml.anomaly import detect
 
 
 def _serie(cod, nivel, n_meses=36, spike_idx=None, spike_val=None, categoria="HOMICIDIO"):
-    rng = np.random.default_rng(abs(hash((cod, categoria))) % (2**32))
+    # Semilla DETERMINISTA entre procesos (crc32), no `hash()`: el hash de cadenas de Python
+    # se aleatoriza por proceso (PYTHONHASHSEED), así que cada ejecución generaba datos
+    # DISTINTOS y el resultado del test quedaba al azar — el CI atrapó una semilla donde la
+    # serie pequeña quedaba con MAD=0 (residuos mayoritariamente idénticos por los conteos
+    # enteros) y el detector silenciaba el pico (z=NaN→0). Medido: 2 de 60 semillas fallaban.
+    rng = np.random.default_rng(zlib.crc32(f"{cod}|{categoria}".encode()))
     fechas = pd.period_range("2020-01", periods=n_meses, freq="M").to_timestamp()
     cantidad = np.clip(np.round(rng.normal(nivel, max(1, nivel * 0.1), n_meses)), 0, None).astype(
         int

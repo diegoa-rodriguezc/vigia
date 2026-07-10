@@ -2,14 +2,20 @@ import { useEffect, useState } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { getMonitoring, type ModelHealth, type Estado } from "../api";
+import { getMonitoring, errorMessage, type ModelHealth, type Estado } from "../api";
 import { ChartTooltip, nfmt, dfmt } from "./ui";
 import { Icon } from "./icons";
 
 const LABEL: Record<Estado, string> = { verde: "Saludable", amarillo: "Atención", rojo: "Crítico" };
 
-function Semaforo({ estado, size = 12 }: { estado: Estado; size?: number }) {
-  return <span className={`sem-dot sem-${estado}`} style={{ width: size, height: size }} aria-hidden="true" />;
+// El estado (verde/amarillo/rojo) va SOLO en el color, así que el punto lleva etiqueta accesible
+// por defecto; `decorativo` lo oculta al lector de pantalla cuando el texto adyacente ya nombra el
+// estado (evita que lo anuncie dos veces).
+function Semaforo({ estado, size = 12, decorativo = false }: { estado: Estado; size?: number; decorativo?: boolean }) {
+  const props = { className: `sem-dot sem-${estado}`, style: { width: size, height: size } };
+  return decorativo
+    ? <span {...props} aria-hidden="true" />
+    : <span {...props} role="img" aria-label={`Estado: ${LABEL[estado]}`} />;
 }
 
 export default function SaludModelo() {
@@ -21,8 +27,8 @@ export default function SaludModelo() {
     getMonitoring()
       .then(setData)
       .catch((e) => setError(e?.response?.status === 404
-        ? "Aún no hay reporte de salud. Ejecuta el pipeline o `vigia health`."
-        : (e?.response?.data?.error ?? e.message)))
+        ? "Aún no hay un reporte de salud del modelo disponible."
+        : errorMessage(e)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -49,7 +55,7 @@ export default function SaludModelo() {
       </p>
 
       <div className="card" style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <Semaforo estado={estado_global} size={16} />
+        <Semaforo estado={estado_global} size={16} decorativo />
         <strong>Estado global: {LABEL[estado_global]}</strong>
         <span className="muted" style={{ fontSize: "0.8rem" }}>· generado {data.generado_en}</span>
       </div>
@@ -60,7 +66,7 @@ export default function SaludModelo() {
             <span className="kpi-label">Frescura de datos</span>
             <Semaforo estado={fr.estado} />
           </div>
-          <div className="kpi-value">{fr.lag_meses ?? "—"} <span style={{ fontSize: "0.9rem" }}>mes(es)</span></div>
+          <div className="kpi-value">{fr.lag_meses ?? "—"} <span style={{ fontSize: "0.9rem" }}>{fr.lag_meses === 1 ? "mes" : "meses"}</span></div>
           <div className="kpi-hint">de rezago · datos a {fr.periodo_max ?? "—"}</div>
         </div>
 
@@ -97,6 +103,7 @@ export default function SaludModelo() {
             Error (MAE) del modelo vs la persistencia ingenua a cada mes de pronóstico, con el mismo
             backtest walk-forward sin fuga. El error crece con el horizonte (recursión).
           </p>
+          <div role="img" aria-label="Gráfica de líneas del error (MAE) del modelo frente a la persistencia ingenua, por mes de pronóstico.">
           <ResponsiveContainer width="100%" height={320}>
             <LineChart data={chart} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#26324a" />
@@ -108,8 +115,9 @@ export default function SaludModelo() {
               <Line type="monotone" dataKey="persistencia" name="Persistencia (MAE)" stroke="#fbbf24" strokeWidth={2} strokeDasharray="6 4" dot={false} />
             </LineChart>
           </ResponsiveContainer>
+          </div>
           <p className="muted" style={{ marginTop: 6, fontSize: "0.8rem" }}>
-            {bt && `Validado sobre ${nfmt(bt.n_origins)} origen(es) temporales.`} PSI: &lt;0,1 estable · 0,1-0,25 deriva moderada · &gt;0,25 significativa.
+            {bt && `Validado sobre ${bt.n_origins === 1 ? "1 origen temporal" : `${nfmt(bt.n_origins)} orígenes temporales`}.`} PSI: &lt;0,1 estable · 0,1-0,25 deriva moderada · &gt;0,25 significativa.
           </p>
         </div>
       )}

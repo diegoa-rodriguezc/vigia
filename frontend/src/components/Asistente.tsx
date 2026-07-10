@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { askAssistant, type Fuente } from "../api";
+import { askAssistant, errorMessage, type Fuente } from "../api";
 import { LiveRegion } from "./ui";
 import { Icon } from "./icons";
 
@@ -50,9 +50,9 @@ export default function Asistente() {
       setMensajes((m) => [...m, { rol: "bot", texto: res.respuesta, fuentes: res.fuentes }]);
       setAnuncio(`Respuesta recibida: ${res.respuesta}`);
     } catch (e: any) {
-      const msg = e?.response?.data?.error ?? e.message;
-      setMensajes((m) => [...m, { rol: "bot", texto: `⚠️ Asistente no disponible: ${msg}`, error: true }]);
-      setAnuncio(`El asistente no está disponible: ${msg}`);
+      const msg = errorMessage(e);
+      setMensajes((m) => [...m, { rol: "bot", texto: `⚠️ ${msg}`, error: true }]);
+      setAnuncio(`El asistente no está disponible. ${msg}`);
     } finally {
       setCargando(false);
     }
@@ -76,7 +76,7 @@ export default function Asistente() {
           {mensajes.length === 0 && !cargando && (
             <div className="empty-state">
               <span className="empty-ic"><Icon name="message" size={28} /></span>
-              Pregunta sobre seguridad ciudadana. El asistente responde solo con datos oficiales.
+              Pregunte sobre seguridad ciudadana. El asistente responde solo con datos oficiales.
             </div>
           )}
           {mensajes.map((m, i) => (
@@ -102,7 +102,8 @@ export default function Asistente() {
           <input
             style={{ flex: 1, minWidth: 240 }}
             value={texto}
-            placeholder="Escribe tu pregunta sobre seguridad ciudadana…"
+            aria-label="Pregunta para el asistente"
+            placeholder="Escriba su pregunta sobre seguridad ciudadana…"
             onChange={(e) => setTexto(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && enviar(texto)}
           />

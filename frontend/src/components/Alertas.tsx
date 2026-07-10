@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAnomalies, getStats, type Anomalia, type Stats } from "../api";
+import { getAnomalies, getStats, errorMessage, type Anomalia, type Stats } from "../api";
 import { StatTile, SkeletonRows, Pagination, LiveRegion, ExportButton, nfmt, dfmt, prettyCat } from "./ui";
 import { Icon } from "./icons";
 
@@ -9,6 +9,7 @@ export default function Alertas() {
   const [data, setData] = useState<Anomalia[]>([]);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [statsErr, setStatsErr] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [anuncio, setAnuncio] = useState("");  // mensaje para el lector de pantalla
@@ -21,7 +22,7 @@ export default function Alertas() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  useEffect(() => { getStats().then(setStats).catch(() => {}); }, []);
+  useEffect(() => { getStats().then(setStats).catch(() => setStatsErr(true)); }, []);
 
   // Debounce del buscador: aplica el texto 350 ms después de teclear y vuelve a pág. 1.
   useEffect(() => {
@@ -49,7 +50,7 @@ export default function Alertas() {
       })
       .catch((e) => {
         if (!alive) return;
-        const msg = e?.response?.data?.error ?? e.message;
+        const msg = errorMessage(e);
         setError(msg); setData([]); setTotal(0);
         setAnuncio(`Error al cargar alertas: ${msg}`);
       })
@@ -65,10 +66,14 @@ export default function Alertas() {
   const arrow = (key: SortKey) =>
     sortKey === key ? <span className="arrow"> {sortDir === "asc" ? "▲" : "▼"}</span> : null;
 
+  // Cabecera ordenable ACCESIBLE: el control es un <button> dentro del <th> (foco y teclado
+  // nativos: Enter/Espacio ordenan), y el th conserva role columnheader + aria-sort.
   const th = (key: SortKey, label: string, extra = "") => (
-    <th className={`sortable ${extra}`} onClick={() => toggleSort(key)}
+    <th className={`sortable ${extra}`}
         aria-sort={sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : undefined}>
-      <span className={sortKey === key ? "active" : ""}>{label}{arrow(key)}</span>
+      <button type="button" className={`th-sort ${sortKey === key ? "active" : ""}`} onClick={() => toggleSort(key)}>
+        {label}{arrow(key)}
+      </button>
     </th>
   );
 
@@ -128,15 +133,15 @@ export default function Alertas() {
       <LiveRegion message={anuncio} />
 
       <div className="kpis">
-        <StatTile icon={<Icon name="bell" />} label="Alertas detectadas" value={nfmt(stats?.anomalias ?? 0)} loading={!stats} hint="total histórico" />
-        <StatTile icon={<Icon name="alert-triangle" />} tone="danger" label="Severidad alta" value={nfmt(stats?.anomalias_alta ?? 0)} loading={!stats} hint="picos extremos (z > 5)" />
-        <StatTile icon={<Icon name="alert-triangle" />} tone="warn" label="Severidad media" value={nfmt(stats?.anomalias_media ?? 0)} loading={!stats} hint="picos moderados" />
+        <StatTile icon={<Icon name="bell" />} label="Alertas detectadas" value={statsErr ? "—" : nfmt(stats?.anomalias ?? 0)} loading={!stats && !statsErr} hint="total histórico" />
+        <StatTile icon={<Icon name="alert-triangle" />} tone="danger" label="Severidad alta" value={statsErr ? "—" : nfmt(stats?.anomalias_alta ?? 0)} loading={!stats && !statsErr} hint="picos extremos (z > 5)" />
+        <StatTile icon={<Icon name="alert-triangle" />} tone="warn" label="Severidad media" value={statsErr ? "—" : nfmt(stats?.anomalias_media ?? 0)} loading={!stats && !statsErr} hint="picos moderados" />
       </div>
 
       <div className="card">
         <h3><Icon name="bell" /> Alertas</h3>
         <p className="card-sub">
-          {loading ? "Cargando…" : `${nfmt(total)} alerta(s) según el filtro · ordenadas en el servidor.`}
+          {loading ? "Cargando…" : `${nfmt(total)} ${total === 1 ? "alerta" : "alertas"} según el filtro (orden aplicado en el servidor).`}
         </p>
         <p className="card-sub" style={{ marginTop: -4, display: "inline-flex", alignItems: "center", gap: 6 }}>
           <Icon name="info" size={13} /> <span><b>z</b> = nº de desviaciones respecto a lo normal de ese municipio y delito; <b>z&nbsp;&gt;&nbsp;5</b> indica un pico extremo (severidad alta).</span>

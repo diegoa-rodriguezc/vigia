@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer } from "recharts";
 import {
-  getSummary, getDepartamentos, getStats,
+  getSummary, getDepartamentos, getStats, errorMessage,
   type MunicipioResumen, type DepartamentoResumen, type Stats,
 } from "../api";
 import { StatTile, ChartTooltip, SkeletonRows, Pagination, usePagination, nfmt, ExportButton } from "./ui";
@@ -45,7 +45,7 @@ export default function Panorama({
   useEffect(() => {
     getSummary(SUMMARY_LIMIT)
       .then(setData)
-      .catch((e) => setError(e?.response?.data?.error ?? e.message))
+      .catch((e) => setError(errorMessage(e)))
       .finally(() => setLoading(false));
     getDepartamentos().then(setDepartamentos).catch(() => setMapErr(true));
     // KPIs con totales reales calculados en BD (COUNT/SUM), no derivados del top 20.
@@ -83,14 +83,24 @@ export default function Panorama({
   const arrow = (key: SortKey) =>
     sortKey === key ? <span className="arrow"> {sortDir === "asc" ? "▲" : "▼"}</span> : null;
 
+  // Cabecera ordenable ACCESIBLE: el control es un <button> dentro del <th> (foco y teclado
+  // nativos: Enter/Espacio ordenan), y el th conserva role columnheader + aria-sort.
+  const thSort = (key: SortKey, label: string, extra = "") => (
+    <th className={`sortable ${extra}`} aria-sort={ariaSort(sortKey === key, sortDir)}>
+      <button type="button" className={`th-sort ${sortKey === key ? "active" : ""}`} onClick={() => toggleSort(key)}>
+        {label}{arrow(key)}
+      </button>
+    </th>
+  );
+
   // Paginación en cliente sobre la vista filtrada/ordenada; vuelve a la pág. 1 al filtrar.
   const pg = usePagination(vista, 10, `${filtro}|${sortKey}|${sortDir}`);
 
   if (error) return (
-    <div className="empty-state">
+    <div className="empty-state" role="alert">
       <span className="empty-ic"><Icon name="inbox" size={28} /></span>
-      No hay datos todavía: {error}
-      <div className="muted" style={{ marginTop: 8 }}>Ejecuta el pipeline: <code>make docker-pipeline</code></div>
+      No hay datos todavía.
+      <div className="muted" style={{ marginTop: 8 }}>{error}</div>
     </div>
   );
 
@@ -159,18 +169,10 @@ export default function Panorama({
               <thead>
                 <tr>
                   <th className="rank">#</th>
-                  <th className="sortable" onClick={() => toggleSort("departamento")} aria-sort={ariaSort(sortKey === "departamento", sortDir)}>
-                    <span className={sortKey === "departamento" ? "active" : ""}>Departamento{arrow("departamento")}</span>
-                  </th>
-                  <th className="sortable" onClick={() => toggleSort("municipio")} aria-sort={ariaSort(sortKey === "municipio", sortDir)}>
-                    <span className={sortKey === "municipio" ? "active" : ""}>Municipio{arrow("municipio")}</span>
-                  </th>
-                  <th className="sortable text-right" onClick={() => toggleSort("total_delitos")} aria-sort={ariaSort(sortKey === "total_delitos", sortDir)}>
-                    <span className={sortKey === "total_delitos" ? "active" : ""}>Delitos{arrow("total_delitos")}</span>
-                  </th>
-                  <th className="sortable text-right" onClick={() => toggleSort("categorias")} aria-sort={ariaSort(sortKey === "categorias", sortDir)}>
-                    <span className={sortKey === "categorias" ? "active" : ""}>Tipos{arrow("categorias")}</span>
-                  </th>
+                  {thSort("departamento", "Departamento")}
+                  {thSort("municipio", "Municipio")}
+                  {thSort("total_delitos", "Delitos", "text-right")}
+                  {thSort("categorias", "Tipos", "text-right")}
                 </tr>
               </thead>
               {loading ? <SkeletonRows rows={8} cols={5} /> : (
@@ -211,7 +213,8 @@ export default function Panorama({
         <div className="card" style={{ display: "flex", flexDirection: "column" }}>
           <h3><Icon name="bar-chart" /> Top 10 por número de delitos</h3>
           {loading ? <div className="skeleton" style={{ flex: 1, minHeight: 360 }} /> : (
-            <div style={{ flex: 1, minHeight: 360 }}>
+            <div style={{ flex: 1, minHeight: 360 }} role="img"
+                 aria-label="Gráfica de barras con los diez municipios de mayor número de delitos registrados.">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 16 }}>
                   <XAxis type="number" stroke="#94a3b8" fontSize={11} />
@@ -229,7 +232,11 @@ export default function Panorama({
             <h3><Icon name="map" /> Mapa coroplético por departamento</h3>
             <p className="card-sub">
               Intensidad de color según los delitos registrados del departamento (clases por cuantiles).{" "}
-              Haz clic en un departamento para ver sus señales de prensa recientes.
+              Haga clic en un departamento para ver sus señales de prensa recientes.
+            </p>
+            <p className="card-sub" style={{ marginTop: -4, fontSize: "0.78rem" }}>
+              El mapa se explora con el ratón; las mismas cifras por municipio están en la tabla y en su
+              descarga CSV.
             </p>
             {mapErr
               ? <div className="table-empty">No se pudo cargar el mapa por departamento.</div>

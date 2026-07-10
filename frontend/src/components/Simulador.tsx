@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
-import { getMunicipios, getCategories, getSimulate, type MunicipioRef, type SimulateResponse } from "../api";
+import { getMunicipios, getCategories, getSimulate, errorMessage, type MunicipioRef, type SimulateResponse } from "../api";
 import { Combobox, ChartTooltip, LiveRegion, ExportButton, prettyCat, type ComboItem } from "./ui";
 import { Icon } from "./icons";
 
@@ -27,14 +27,14 @@ export default function Simulador() {
         setMunicipios(ms);
         setCod((c) => (ms.some((m) => m.cod_municipio === c) ? c : ms[0]?.cod_municipio ?? c));
       })
-      .catch(() => {});
+      .catch((e) => setError(errorMessage(e)));
   }, []);
 
   useEffect(() => {
     if (!cod) return;
     getCategories(cod)
       .then((cs) => { setCategorias(cs); setCategoria((cat) => (cs.includes(cat) ? cat : cs[0] ?? "")); })
-      .catch(() => {});
+      .catch((e) => setError(errorMessage(e)));
   }, [cod]);
 
   const municipioItems: ComboItem[] = useMemo(
@@ -58,7 +58,7 @@ export default function Simulador() {
       let msg: string;
       const muni = municipios.find((m) => m.cod_municipio === cod)?.municipio ?? cod;
       if (e?.response?.status === 404) msg = `No hay historial de ${prettyCat(categoria)} en ${muni} para simular.`;
-      else msg = e?.response?.data?.detail ?? e?.response?.data?.error ?? e.message;
+      else msg = errorMessage(e);
       setError(msg);
       setAnuncio(`Simulación no disponible: ${msg}`);
       setRes(null);
@@ -122,7 +122,7 @@ export default function Simulador() {
         {!res && !error && (
           <div className="empty-state">
             <span className="empty-ic"><Icon name="sliders" size={28} /></span>
-            Ajusta las palancas y pulsa <b>Simular</b> para comparar el escenario con el pronóstico base.
+            Ajuste las palancas y pulse <b>Simular</b> para comparar el escenario con el pronóstico base.
             <div className="muted" style={{ marginTop: 6 }}>
               La población es una palanca del modelo; la intervención es un supuesto del usuario.
             </div>
@@ -151,6 +151,7 @@ export default function Simulador() {
                 }))}
               />
             </div>
+            <div role="img" aria-label={`Gráfica que compara el pronóstico base con el escenario simulado de ${prettyCat(categoria)} y los hechos ${evitadosLabel} por mes.`}>
             <ResponsiveContainer width="100%" height={400}>
               <ComposedChart data={chart} margin={{ top: 24, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#26324a" />
@@ -163,6 +164,7 @@ export default function Simulador() {
                 <Line type="monotone" dataKey="escenario" name="Escenario" stroke="#38bdf8" strokeWidth={2} dot={{ r: 3 }} />
               </ComposedChart>
             </ResponsiveContainer>
+            </div>
             <p className="muted" style={{ marginTop: 8, display: "inline-flex", alignItems: "flex-start", gap: 6 }}>
               <Icon name="info" size={15} /> {res.nota}
             </p>

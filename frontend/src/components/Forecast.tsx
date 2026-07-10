@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine,
 } from "recharts";
-import { getMunicipios, getCategories, getTimeSeries, getForecast, type MunicipioRef } from "../api";
+import { getMunicipios, getCategories, getTimeSeries, getForecast, errorMessage, type MunicipioRef } from "../api";
 import { Combobox, ChartTooltip, LiveRegion, ExportButton, prettyCat, type ComboItem } from "./ui";
 import { Icon } from "./icons";
 
@@ -27,7 +27,7 @@ export default function Forecast({ initialCod }: { initialCod?: string | null })
         // Conserva el municipio actual si existe; si no (p. ej. otro dataset), usa el primero.
         setCod((c) => (ms.some((m) => m.cod_municipio === c) ? c : ms[0]?.cod_municipio ?? c));
       })
-      .catch(() => {});
+      .catch((e) => setError(errorMessage(e)));
   }, []);
 
   // Deep-link desde el drill-down del Panorama: al llegar un municipio preseleccionado, úsalo.
@@ -42,7 +42,7 @@ export default function Forecast({ initialCod }: { initialCod?: string | null })
     if (!cod) return;
     getCategories(cod)
       .then((cs) => { setCategorias(cs); setCategoria((cat) => (cs.includes(cat) ? cat : cs[0] ?? "")); })
-      .catch(() => {});
+      .catch((e) => setError(errorMessage(e)));
   }, [cod]);
 
   const municipioItems: ComboItem[] = useMemo(
@@ -84,7 +84,7 @@ export default function Forecast({ initialCod }: { initialCod?: string | null })
       if (e?.response?.status === 404) {
         msg = `No hay historial de ${prettyCat(categoria)} en ${muni} para pronosticar.`;
       } else {
-        msg = e?.response?.data?.detail ?? e?.response?.data?.error ?? e.message;
+        msg = errorMessage(e);
       }
       setError(msg);
       setAnuncio(`Pronóstico no disponible: ${msg}`);
@@ -129,7 +129,7 @@ export default function Forecast({ initialCod }: { initialCod?: string | null })
         {!ran && !error && (
           <div className="empty-state">
             <span className="empty-ic"><Icon name="sparkles" size={28} /></span>
-            Elige un municipio y un tipo de delito, luego pulsa <b>Pronosticar</b>.
+            Elija un municipio y un tipo de delito y pulse <b>Pronosticar</b>.
             <div className="muted" style={{ marginTop: 6 }}>El modelo se entrena por código y categoría, sin sesgo por nombre.</div>
           </div>
         )}
@@ -159,6 +159,7 @@ export default function Forecast({ initialCod }: { initialCod?: string | null })
                 }))}
               />
             </div>
+            <div role="img" aria-label={`Gráfica de líneas del histórico y el pronóstico a seis meses de ${prettyCat(categoria)} en ${selected ? selected.municipio : cod}.`}>
             <ResponsiveContainer width="100%" height={400}>
               <ComposedChart data={serie} margin={{ top: 24, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#26324a" />
@@ -175,6 +176,7 @@ export default function Forecast({ initialCod }: { initialCod?: string | null })
                 <Line type="monotone" dataKey="pronostico" name="Pronóstico" stroke="#fbbf24" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 3 }} />
               </ComposedChart>
             </ResponsiveContainer>
+            </div>
             <p className="muted" style={{ marginTop: 6, fontSize: "0.8rem" }}>
               Límite declarado: en delitos de gran volumen con caída sostenida (p. ej. el homicidio en las
               grandes ciudades) el pronóstico puede quedar por encima del nivel de los últimos meses; el

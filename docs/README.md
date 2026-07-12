@@ -13,6 +13,7 @@ Contenido de la carpeta `docs/`.
 | 5 | [DATA_DICTIONARY.md](DATA_DICTIONARY.md) | **Diccionario de datos**: fuentes, esquemas crudos y unificado, capa Justicia, población DANE, tablas de PostgreSQL. | Desarrollo · datos |
 | 6 | [DATASETS.md](DATASETS.md) | **Inventario de fuentes** consultadas, validación contra la **Hoja de Ruta Nacional** y descartes justificados. | Datos · trazabilidad |
 | 7 | [HOJA_RUTA_SECTORIAL.md](HOJA_RUTA_SECTORIAL.md) | Alineación con las **Hojas de Ruta SECTORIALES** (Defensa y Justicia, con el PDF oficial de Justicia como evidencia) e índice de las 25 hojas. | Jurado · trazabilidad |
+| 8 | [MANUAL_USUARIO.pdf](MANUAL_USUARIO.pdf) | **Manual de usuario**: acceso y sesión, las ocho pestañas paso a paso con capturas, exportación, preguntas frecuentes y glosario. | Ciudadanía · jurado |
 | — | [CONCURSO.md](CONCURSO.md) | Copia de los **términos de referencia** del concurso (contexto, reglas, criterios). *No es documentación del proyecto.* | Referencia |
 
 ---

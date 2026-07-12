@@ -15,7 +15,7 @@ conocimiento accionable** para fortalecer las políticas públicas de seguridad 
 **Tabla de contenido**
 
 - [Problema y propuesta de valor](#-problema-y-propuesta-de-valor)
-- [El tablero en imágenes](#️-el-tablero-en-imágenes) — incluye el 🎬 [video de recorrido (2 min)](docs/vigia-demo.mp4)
+- [El tablero en imágenes](#️-el-tablero-en-imágenes) — incluye el 🎬 [video de recorrido/demo](docs/vigia-demo.mp4)
 - [Impacto, escalabilidad y enfoque territorial](#-impacto-escalabilidad-y-enfoque-territorial)
 - [Arquitectura](#-arquitectura)
 - [Estructura del repositorio](#️-estructura-del-repositorio)
@@ -51,13 +51,18 @@ de datos delictivos publicados por las entidades públicas en **decisiones preve
 
 ## 🖼️ El tablero en imágenes
 
+> [!NOTE]
 > El tablero cuenta con ocho pestañas. **Pronóstico**, **Simulador**, **Asistente ciudadano** e **Informe**
 > requieren inicio de sesión (cómputo de IA protegido); **Panorama**, **Alertas tempranas**, **Justicia** y
 > **Salud del modelo** son públicas.
 
-**🎬 Video de recorrido (2 min):** [docs/vigia-demo.mp4](docs/vigia-demo.mp4) — grabado sobre la
+**🎬 Video de recorrido/demo:** [docs/vigia-demo.mp4](docs/vigia-demo.mp4) — grabado sobre la
 aplicación desplegada, muestra las ocho pestañas con datos reales (mapa, alertas, embudo de justicia,
 pronóstico, simulador, asistente con fuentes citadas, informe generado con IA y salud del modelo).
+
+**📘 Manual de usuario:** [docs/MANUAL_USUARIO.pdf](docs/MANUAL_USUARIO.pdf) — acceso y sesión, uso
+paso a paso de cada pestaña con capturas, exportación de datos, preguntas frecuentes y glosario en
+lenguaje llano.
 
 A continuación se presentan las capturas de pantalla de la aplicación:
 
@@ -92,6 +97,7 @@ A continuación se presentan las capturas de pantalla de la aplicación:
 7. *Informe* — un informe ejecutivo del municipio (panorama, alertas, pronóstico y judicialización), también accesible desde el botón **Generar informe** del desglose por municipio del Panorama.
 8. *Salud del modelo* — el semáforo de frescura, la deriva (PSI - Population Stability Index) y la validación del pronóstico a 12 meses.
 
+> [!TIP]
 > Para un **recorrido guiado paso a paso** tras el despliegue, ver
 > [Navegación por el tablero](#navegación-por-el-tablero).
 
@@ -113,6 +119,7 @@ gobernaciones, observatorios del delito, los Consejos de Seguridad territoriales
 Fiscalía**, que pueden anticipar la asignación de recursos preventivos y priorizar territorios con repuntes
 atípicos.
 
+> [!NOTE]
 > **Ejes de impacto.** El aporte de VigIA es **social** (prevención del delito, control social ciudadano) y
 > **económico** (uso más eficiente del gasto preventivo). El eje **ambiental** no es objeto de este reto; su
 > única dimensión propia —la huella de cómputo— se **minimiza por diseño**: LLM local pequeño (1,7B
@@ -171,13 +178,17 @@ Detalle completo en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ```
 vigia/
 ├── data/                  # Medallion bronze/silver/gold (no versionado) + kb_docs del RAG (versionado, integridad verificable)
-├── docs/                  # Documentación general (arquitectura, CRISP-ML(Q), diccionario, etc.)
+├── docs/                  # Documentación general (arquitectura, CRISP-ML(Q), diccionario, manual de usuario, etc.)
 ├── notebooks/             # EDA de las fuentes + limpieza (002) y modelo (003)
 ├── ml/                    # Python: ETL + Machine Learning + RAG + API (FastAPI)
 ├── backend/               # Go: API REST / BFF
 ├── frontend/              # React + TypeScript: tablero y asistente
 ├── db/                    # Esquema SQL e inicialización (PostgreSQL + pgvector)
+├── models/                # Modelo entrenado (no versionado; lo regenera el pipeline)
+├── reports/               # Métricas reproducibles en JSON (versionadas — las cifras que cita esta documentación)
+├── resources/             # Archivos para sustentación (PPTX, PDF)
 ├── docker-compose.yml     # Orquestación de todos los servicios
+├── docker-compose.gpu.yml # Complemento de Compose para despliegue en GPU NVIDIA (make deploy-gpu)
 └── Makefile               # Atajos del ciclo de vida del proyecto
 ```
 
@@ -312,13 +323,17 @@ el cómputo de IA); las otras cuatro son públicas. Dos caminos:
    oficiales, con fichas auditables; misma latencia del LLM que el asistente).
 8. **Salud del modelo** (público) — semáforo de frescura, deriva (PSI) y validación a 12 meses.
 
+> [!TIP]
+> El detalle de cada pestaña (qué muestra, cómo se usa y sus advertencias de interpretación) está en el
+> **manual de usuario**: [docs/MANUAL_USUARIO.pdf](docs/MANUAL_USUARIO.pdf).
+
 ## 📐 Metodología
 
 El proyecto sigue la metodología **CRISP-ML(Q)** (*Cross-Industry Standard Process for Machine Learning with
 Quality Assurance*). Cada fase, sus controles de calidad y riesgos están documentados en
 [docs/CRISP-ML-Q.md](docs/CRISP-ML-Q.md).
 
-**Qué modelo realiza el pronóstico.** Un único **gradient boosting de histograma**
+- **Qué modelo realiza el pronóstico.** Un único **gradient boosting de histograma**
 (`HistGradientBoostingRegressor`, scikit-learn) **global**: se entrena una sola vez sobre las ~13.000
 series municipio × delito con variables de rezago, medias móviles y estacionalidad, lo que comparte señal
 entre territorios y cubre también municipios con poca historia. Modela **tasas por 100.000 habitantes**
@@ -338,7 +353,7 @@ reales y contrastado contra `reports/silver_quality.json`) y el modelo en
 [notebooks/003_Modelo_Pronostico.ipynb](notebooks/003_Modelo_Pronostico.ipynb) (entrenamiento, métricas
 frente al reporte versionado y la mezcla 0,7/0,3 desagregada y comprobada contra `predict()`).
 
-**Cómo se evalúa el modelo.** El pronóstico se valida con una **validación retrospectiva de origen
+- **Cómo se evalúa el modelo.** El pronóstico se valida con una **validación retrospectiva de origen
 rodante** (*backtesting walk-forward* recursivo, sin fuga de información) contra **dos líneas base ingenuas**: la **persistencia** (repetir el último mes) y la
 **estacional** (mismo mes del año anterior). La métrica de cabecera es el **MASE** (error escalado, estándar
 para series de conteo) —**no** el sMAPE, que en hechos casi nulos (0/1) se dispara a >100 % por artefacto
@@ -365,7 +380,7 @@ virtual), no por una triplicación de la criminalidad; el diseño lo amortigua (
 de 60 meses, deriva contra referencia móvil) y el detalle vive en
 [CRISP-ML-Q §2](docs/CRISP-ML-Q.md#limitaciones-del-dato-de-origen-declaradas).
 
-**Cómo se evalúa el asistente.** El componente generativo no se queda en los guardarraíles: `vigia rag-eval`
+- **Cómo se evalúa el asistente.** El componente generativo no se queda en los guardarraíles: `vigia rag-eval`
 lo mide con **preguntas de referencia derivadas de los propios datos** (la respuesta correcta se conoce de
 antemano porque sale de los artefactos versionados, no está quemada) y publica en
 [reports/rag_eval.json](reports/rag_eval.json) cuatro señales: **exactitud de cifras** (la cifra correcta
@@ -406,7 +421,7 @@ esquema y no duplicación. Inventario, selección y descartes justificados en
 **alineación con la Hoja de Ruta Nacional de Datos Abiertos Estratégicos** se detalla en la sección
 siguiente.
 
-**¿Por qué 18 de los 20 provienen de la Policía Nacional?** Porque es el **productor oficial de la
+- **¿Por qué 18 de los 20 provienen de la Policía Nacional?** Porque es el **productor oficial de la
 estadística delictiva** del país, y su catálogo es exactamente el conjunto que la Hoja de Ruta Nacional
 prioriza para este reto: cubrirlo **completo** es exhaustividad, no repetición. Cada fuente es un **activo
 independiente** del portal —id propio, un delito propio, publicación propia—, elegido entre ~169 candidatos
@@ -420,7 +435,7 @@ población municipal, esta última fuera del portal), cartografía GeoJSON del M
 para el pilar no estructurado del RAG, y la señal de prensa en tiempo real (newsdata.io/GDELT).
 **Concentración donde está el dato oficial; diversificación donde hay señal nueva.**
 
-**Eje de Justicia — Fiscalía General de la Nación.** Para no depender de una sola entidad (la Policía) y
+- **Eje de Justicia — Fiscalía General de la Nación.** Para no depender de una sola entidad (la Policía) y
 cubrir la mitad de *"Justicia"* del reto, VigIA incorpora el dataset *Procesos Fiscalía V3* (`dbdv-iihs`,
 ~23 millones de procesos) como **capa paralela**: aporta la sección **judicialización** (Indagación → Investigación
 → Juicio → Ejecución de Penas), una señal que ningún conteo de delitos tiene. Hallazgo nacional real: **solo
@@ -430,7 +445,7 @@ volumen, se adquiere por **paginación continua por clave (*streaming keyset*) +
 (reproducible sin token). Detalle, cifras y
 *Advertencias de uso* en [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md#capa-justicia--fiscalía-general-de-la-nación-fuente-de-otra-entidad-capa-paralela).
 
-**Contexto demográfico — población municipal (DANE).** Para medir la criminalidad como **tasa por 100.000
+- **Contexto demográfico — población municipal (DANE).** Para medir la criminalidad como **tasa por 100.000
 habitantes** (comparable entre territorios) y enriquecer el pronóstico con una señal **exógena** (no solo
 autorregresiva), se incorpora la **proyección/retroproyección de población municipal por área del DANE**
 (2005-2035, nacional). datos.gov.co **no** publica esta serie nacional municipal —solo cargas sueltas por
@@ -438,7 +453,7 @@ municipio—, así que se usa el archivo oficial de [`dane.gov.co`](https://www.
 dato abierto de entidad pública admitido por el concurso. Detalle en
 [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md#población-municipal--denominador-para-tasas-por-100000-habitantes-dane).
 
-**Datos estructurados + no estructurados.** Además de las series, el asistente RAG indexa **documentos de
+- **Datos estructurados + no estructurados.** Además de las series, el asistente RAG indexa **documentos de
 política pública** (PDF/Word) para responder sobre el marco normativo citando la fuente **por página**
 (p. ej. la *Política de Seguridad, Defensa y Convivencia Ciudadana 2022-2026*[^politica] del Ministerio de Defensa).
 El PDF versionado en `data/kb_docs/` es la **copia íntegra y sin modificaciones** del documento
@@ -451,7 +466,7 @@ comprueba el SHA-256 y el tamaño exacto contra el original en línea (47.785.15
 índice degrada con elegancia y el asistente opera solo con las cifras.
 Para incluir documentos adicionales, colóquelos en la carpeta `data/kb_docs/` y ejecute `make docker-rag-index` con el fin de indexarlos y que sean tenidos en cuenta en las respuestas del RAG.
 
-**Cartografía del mapa (recurso de referencia, no estadístico).** La coropleta del Panorama usa el GeoJSON
+- **Cartografía del mapa (recurso de referencia, no estadístico).** La coropleta del Panorama usa el GeoJSON
 `frontend/public/colombia-departamentos.json`: límites departamentales **derivados del Marco Geoestadístico
 Nacional (MGN) del DANE** —el código DANE de departamento viaja en la propiedad `DPTO`, que es como se cruza
 con `/crimes/departamentos`—, obtenidos de la distribución comunitaria de esos límites oficiales publicada
@@ -462,7 +477,7 @@ a `DPTO`/`NOMBRE_DPT` y coordenadas redondeadas a 3 decimales; 33 entidades: 32 
 datasets de la Policía; el GeoJSON solo aporta la geometría. Los teselados de fondo son de
 © OpenStreetMap / © CARTO, atribuidos en la propia interfaz del mapa.
 
-**Señal en tiempo real (prensa).** El dato oficial de la Policía es **mensual y con rezago**; como
+- **Señal en tiempo real (prensa).** El dato oficial de la Policía es **mensual y con rezago**; como
 complemento, el tablero incorpora una **señal en tiempo real** de prensa. En la pestaña **Panorama**, al
 seleccionar un departamento en el mapa, el panel de la derecha carga sus **noticias de seguridad recientes**;
 en **Alertas tempranas**, pulsar el departamento de una alerta abre el mismo panel como **corroboración
@@ -474,7 +489,7 @@ señal en Redis, así que es pública y ligera. No existe una API nacional de cr
 (verificado en el *Asset Inventory*); estas fuentes internacionales cubren ese eje sin mezclar unidades
 distintas con la estadística oficial.
 
-**¿La señal en tiempo real alimenta el modelo de pronóstico?** No, y es una decisión deliberada: las
+- **¿La señal en tiempo real alimenta el modelo de pronóstico?** No, y es una decisión deliberada: las
 noticias y los hechos registrados son **unidades distintas** (una noticia no equivale a un delito, y la
 cobertura de prensa sigue sus propios sesgos), así que inyectarlas al modelo sin haber **medido** su valor
 predictivo degradaría un pronóstico que hoy está validado retrospectivamente. Por eso la señal se combina
@@ -513,12 +528,16 @@ las 25 hojas en [docs/HOJA_RUTA_SECTORIAL.md](docs/HOJA_RUTA_SECTORIAL.md).
 
 ## 👥 Equipo
 
+ID del equipo: **296**
+
 | Integrante | Rol | Género |
 |---|---|---|
 | Jeraldine Mora Lavado | Ciencia de datos | F |
 | Jorge Esneider Henao González | Desarrollo / Backend | M |
 | Héctor Leandro Rojas Serrano | Análisis de datos | M |
 | Diego Alberto Rodríguez Cruz | Líder / Arquitectura / ML | M |
+
+**🎤 Sustentación:** [resources/SUSTENTACION.pdf](resources/SUSTENTACION.pdf).
 
 ## 🔐 Seguridad y acceso
 

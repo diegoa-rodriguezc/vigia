@@ -15,7 +15,7 @@ conocimiento accionable** para fortalecer las políticas públicas de seguridad 
 **Tabla de contenido**
 
 - [Problema y propuesta de valor](#-problema-y-propuesta-de-valor)
-- [El tablero en imágenes](#️-el-tablero-en-imágenes) — incluye el 🎬 [video de recorrido (2 min)](docs/vigia-demo.mp4)
+- [El tablero en imágenes](#️-el-tablero-en-imágenes) — incluye el 🎬 [video de recorrido (1,5 min)](docs/vigia-demo.mp4)
 - [Impacto, escalabilidad y enfoque territorial](#-impacto-escalabilidad-y-enfoque-territorial)
 - [Arquitectura](#-arquitectura)
 - [Estructura del repositorio](#️-estructura-del-repositorio)
@@ -55,7 +55,7 @@ de datos delictivos publicados por las entidades públicas en **decisiones preve
 > requieren inicio de sesión (cómputo de IA protegido); **Panorama**, **Alertas tempranas**, **Justicia** y
 > **Salud del modelo** son públicas.
 
-**🎬 Video de recorrido (2 min):** [docs/vigia-demo.mp4](docs/vigia-demo.mp4) — grabado sobre la
+**🎬 Video de recorrido (1,5 min):** [docs/vigia-demo.mp4](docs/vigia-demo.mp4) — grabado sobre la
 aplicación desplegada, muestra las ocho pestañas con datos reales (mapa, alertas, embudo de justicia,
 pronóstico, simulador, asistente con fuentes citadas, informe generado con IA y salud del modelo).
 
